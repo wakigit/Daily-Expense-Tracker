@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Secrets — the Anthropic API key must NEVER be committed.
+# This repo is public: anything committed here is public forever, even if
+# deleted later, because it stays in the git history.
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# macOS
+.DS_Store
+
+# Python (for the backend, later)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Smoke-test build output
+.smoke-build/
+
+# Claude Code agents — third-party, reinstallable via npx claude-code-templates
+.claude/
