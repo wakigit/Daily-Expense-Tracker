@@ -3,6 +3,7 @@ import { useAppData } from './hooks/useAppData';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
 import { WORTH_OPTIONS, worthLabel } from './lib/worth';
+import { answer } from './lib/ask';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -13,6 +14,7 @@ import HomeView from './views/HomeView';
 import CategoryView from './views/CategoryView';
 import HistoryView from './views/HistoryView';
 import AddView from './views/AddView';
+import AskView from './views/AskView';
 import SettingsView from './views/SettingsView';
 
 const blankForm = (catId) => ({
@@ -48,6 +50,9 @@ export default function App() {
   const [delCatId, setDelCatId] = useState(null);
   const [newCat, setNewCat] = useState({ label: '', color: '#D85A30' });
   const [toast, setToast] = useState(null);
+  // Conversation lives here rather than in the view so switching tabs and
+  // coming back doesn't wipe the thread.
+  const [chat, setChat] = useState([]);
   // Holds the last deleted expense so the toast can put it back.
   const [undoExp, setUndoExp] = useState(null);
 
@@ -75,7 +80,11 @@ export default function App() {
   const monthList = useMemo(() => {
     const cur = curYm();
     if (!expenses.length) return [cur];
-    const earliest = expenses.map((e) => e.date.slice(0, 7)).sort()[0];
+    // Defensive: a row without a date would throw here and white-screen the
+    // whole app. Can't happen through the UI, but localStorage can be edited.
+    const dated = expenses.filter((e) => typeof e?.date === 'string');
+    if (!dated.length) return [cur];
+    const earliest = dated.map((e) => e.date.slice(0, 7)).sort()[0];
     const [ey, em] = earliest.split('-').map(Number);
     const list = [];
     let d = new Date(ey, em - 1);
@@ -223,6 +232,19 @@ export default function App() {
     setToast({ message: 'Entry deleted', kind: 'undo' });
   };
 
+  /**
+   * Answer a question about the data. Every number comes from lib/stats.js —
+   * the arithmetic is exact and matches what the rest of the app shows.
+   */
+  const askQuestion = (text) => {
+    const reply = answer(text, { expenses, cats });
+    setChat((c) => [
+      ...c,
+      { from: 'me', text },
+      { from: 'bot', text: reply.text, detail: reply.detail },
+    ]);
+  };
+
   /** Tag (or untag) how an expense felt. Always optional. */
   const tagWorth = (id, worth) => {
     setExpenses((p) => p.map((e) => (e.id === id ? { ...e, worth } : e)));
@@ -358,6 +380,10 @@ export default function App() {
             onWorth={(w) => setForm((f) => ({ ...f, worth: w }))}
             onVoice={applyVoice}
           />
+        )}
+
+        {tab === 'ask' && (
+          <AskView messages={chat} onSend={askQuestion} hasData={expenses.length > 0} />
         )}
 
         {tab === 'settings' && (

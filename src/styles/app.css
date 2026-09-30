@@ -909,3 +909,87 @@ button:active { transform: scale(0.96); }
   text-align: center;
   margin-top: 8px;
 }
+
+/* ═══ Ask ══════════════════════════════════════════════════════ */
+
+.ask-card { display: flex; flex-direction: column; }
+
+.ask-intro { text-align: center; padding: 1.5rem 1rem 1.25rem; }
+.ask-intro-text { font-size: 13.5px; color: var(--text-muted); }
+
+.ask-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 2px 2px 8px;
+  margin-bottom: 0.5rem;
+}
+
+.bubble {
+  max-width: 88%;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  animation: rise 0.28s var(--ease-out);
+}
+
+.bubble.me {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-right-radius: 5px;
+}
+
+.bubble.bot {
+  align-self: flex-start;
+  background: rgba(var(--tint-rgb), 0.85);
+  border: 1px solid rgba(var(--border-rgb), 0.4);
+  color: var(--text);
+  border-bottom-left-radius: 5px;
+}
+
+.bubble-detail {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+/* Suggestions scroll sideways rather than wrapping into a wall of chips. */
+.ask-chips {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 0.7rem;
+  scrollbar-width: none;
+}
+.ask-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 7px 13px;
+  font-size: 12px;
+  border-radius: var(--r-pill);
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+.ask-form { display: flex; gap: 8px; }
+.ask-form input { border-radius: var(--r-pill); }
+
+.ask-send {
+  flex-shrink: 0;
+  width: 48px;
+  padding: 0;
+  font-size: 19px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+.ask-send:disabled { opacity: 0.4; box-shadow: none; }
+
+/* Five tabs need a little less breathing room than four. */
+.bottom-nav .nav-btn { padding: 8px 10px; }

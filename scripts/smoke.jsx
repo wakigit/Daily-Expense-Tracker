@@ -19,6 +19,8 @@ import { DEF_CATS } from '../src/themes/themes';
 import { matchesQuery, sortExpenses, filterAndSort } from '../src/lib/search';
 import { worthStats, isTagged, WORTH_OPTIONS } from '../src/lib/worth';
 import { parseUtterance } from '../src/lib/parseUtterance';
+import { answer } from '../src/lib/ask';
+import * as St from '../src/lib/stats';
 import { paintBackground } from '../src/themes/scenes';
 import { THEMES } from '../src/themes/themes';
 
@@ -428,6 +430,93 @@ logic('voice: null input is safe', said(null), {});
 logic('voice: gibberish yields nothing usable', said('hmm uh').amount, undefined);
 logic('voice: amount of zero is rejected', said('zero dollars kopi').amount, undefined);
 logic('voice: works with no categories supplied', parseUtterance('four fifty kopi').amount, '4.50');
+
+/* ── Stats engine ──────────────────────────────────────────────── */
+
+const sCats = [
+  { id: 'food', label: 'Food' },
+  { id: 'hire', label: 'Private hire' },
+  { id: 'shop', label: 'Shopping' },
+];
+const sExp = [
+  { date: '2026-09-28', category: 'food', amount: 10 },   // Mon
+  { date: '2026-09-28', category: 'hire', amount: 5 },
+  { date: '2026-09-29', category: 'food', amount: 30 },   // Tue — biggest day
+  { date: '2026-09-21', category: 'food', amount: 4 },    // previous Mon
+  { date: '2026-08-15', category: 'shop', amount: 60 },   // August
+];
+const TODAY = '2026-09-30';
+
+logic('stats: week starts on Monday', St.weekStart('2026-09-28'), '2026-09-28');
+logic('stats: Sunday belongs to the week that began Monday', St.weekStart('2026-09-27'), '2026-09-21');
+logic('stats: addDays crosses a month boundary', St.addDays('2026-08-31', 1), '2026-09-01');
+logic('stats: addDays goes backwards', St.addDays('2026-09-01', -1), '2026-08-31');
+
+// Across ALL data the August S$60 shopping entry is the peak on every axis.
+logic('stats: biggest day', St.topDay(sExp), { key: '2026-08-15', total: 60 });
+logic('stats: biggest week', St.topWeek(sExp), { key: '2026-08-10', total: 60 });
+logic('stats: biggest month', St.topMonth(sExp), { key: '2026-08', total: 60 });
+logic('stats: biggest category', St.topCategory(sExp), { key: 'shop', total: 60 });
+// Narrowed to September, the peaks move.
+const sept = St.inRange(sExp, '2026-09-01', '2026-09-30');
+logic('stats: biggest day within September', St.topDay(sept), { key: '2026-09-29', total: 30 });
+logic('stats: biggest week within September', St.topWeek(sept), { key: '2026-09-28', total: 45 });
+logic('stats: biggest category within September', St.topCategory(sept), { key: 'food', total: 44 });
+logic('stats: empty list has no peak', St.topDay([]), null);
+
+logic('stats: inRange is inclusive of both bounds',
+  St.sum(St.inRange(sExp, '2026-09-28', '2026-09-29')), 45);
+logic('stats: inRange skips rows without a date',
+  St.inRange([{ amount: 5 }], '2026-01-01', '2026-12-31').length, 0);
+
+// 2026-08-15 .. 2026-09-29 inclusive is 46 days; 109 total.
+logic('stats: average per day spans idle days',
+  Number(St.averagePerDay(sExp).toFixed(2)), Number((109 / 46).toFixed(2)));
+logic('stats: average per active day ignores idle days',
+  Number(St.averagePerDay(sExp, { mode: 'active' }).toFixed(2)), Number((109 / 4).toFixed(2)));
+logic('stats: average per month divides by months with data',
+  Number(St.averagePerMonth(sExp).toFixed(2)), Number((109 / 2).toFixed(2)));
+logic('stats: averages of nothing are zero', St.averagePerDay([]), 0);
+
+logic('stats: this week', St.period('week', TODAY).start, '2026-09-28');
+logic('stats: last week', [St.period('lastweek', TODAY).start, St.period('lastweek', TODAY).end], ['2026-09-21', '2026-09-27']);
+logic('stats: last month', [St.period('lastmonth', TODAY).start, St.period('lastmonth', TODAY).end], ['2026-08-01', '2026-08-31']);
+
+/* ── Question answering ────────────────────────────────────────── */
+
+const ask = (q) => answer(q, { expenses: sExp, cats: sCats, today: TODAY });
+
+logic('ask: total this week', ask('how much did I spend this week').text, 'You spent S$45.00 this week.');
+logic('ask: total this month defaults when no period given', ask('how much have I spent').text, 'You spent S$49.00 this month.');
+logic('ask: total last month', ask('how much did I spend last month').text, 'You spent S$60.00 last month.');
+logic('ask: total for a category', ask('how much on food this month').text, 'You spent S$44.00 on Food this month.');
+logic('ask: biggest day', ask('which day did I spend the most').intent, 'topDay');
+logic('ask: biggest day names the amount', ask('which day did I spend the most').text.includes('S$60.00'), true);
+logic('ask: biggest day can be scoped to a period', ask('which day did I spend the most this month').text.includes('S$30.00'), true);
+logic('ask: biggest week', ask('which week did I spend the most').intent, 'topWeek');
+logic('ask: biggest week amount', ask('what week did I spend the most amount').text.includes('S$60.00'), true);
+logic('ask: biggest week scoped to this month', ask('which week did I spend the most this month').text.includes('S$45.00'), true);
+logic('ask: biggest month', ask('which month did I spend the most').text.includes('August'), true);
+logic('ask: average per week', ask('what is my average spending per week').intent, 'avgWeek');
+logic('ask: average per month', ask('average spending for the month').intent, 'avgMonth');
+logic('ask: average per day', ask('how much do I spend on average a day').intent, 'avgDay');
+logic('ask: top category all time', ask('what do I spend the most on').text.includes('Shopping'), true);
+logic('ask: top category this month', ask('what do I spend the most on this month').text.includes('Food'), true);
+logic('ask: count', ask('how many entries this month').text.includes('4'), true);
+logic('ask: empty question', answer('', { expenses: sExp, cats: sCats }).intent, 'none');
+logic('ask: unrecognised question is honest', ask('what is the meaning of life').intent, 'unknown');
+logic('ask: no data for a period says so', answer('how much did I spend today', { expenses: sExp, cats: sCats, today: TODAY }).intent, 'empty');
+logic('ask: no expenses at all is safe', answer('which day did I spend the most', { expenses: [], cats: sCats, today: TODAY }).intent, 'empty');
+
+// The whole point of this design: arithmetic is exact, never approximated.
+logic('ask: singular entry is not "1 entries"',
+  ask('which day did I spend the most').detail.startsWith('1 entry'), true);
+logic('ask: no stray space before the full stop',
+  ask('what do I spend the most on').detail.includes(' .'), false);
+
+logic('ask: reported total matches a direct sum',
+  ask('how much did I spend this week').text.includes(
+    'S$' + St.sum(St.inRange(sExp, '2026-09-28', '2026-09-30')).toFixed(2)), true);
 
 let failed = 0;
 for (const c of checks) {
