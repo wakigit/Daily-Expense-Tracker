@@ -21,7 +21,6 @@ const VALID = new Set(WORTH_OPTIONS.map((o) => o.id));
 export const isTagged = (expense) => VALID.has(expense?.worth);
 
 export const worthLabel = (id) => WORTH_OPTIONS.find((o) => o.id === id)?.label ?? '';
-export const worthEmoji = (id) => WORTH_OPTIONS.find((o) => o.id === id)?.emoji ?? '';
 
 /**
  * Every figure here is computed against TAGGED expenses only. Counting

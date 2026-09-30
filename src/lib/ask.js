@@ -12,7 +12,7 @@
 
 import { money, ymLabel, dayLabel } from './format';
 import {
-  inRange, sum, topDay, topWeek, topMonth, topCategory, byCategory,
+  inRange, sum, topDay, topWeek, topMonth, topCategory,
   averagePerDay, averagePerWeek, averagePerMonth, period, addDays,
 } from './stats';
 
