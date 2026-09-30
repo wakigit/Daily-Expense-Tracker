@@ -35,6 +35,38 @@ const MAHJONG_LAYOUT = [[45, 60, 16, 0, -4], [150, 40, 18, 0, 5], [260, 55, 15, 
 
 /* ── Full scenes ───────────────────────────────────────────────── */
 
+/* ── Budget-reactive colour ────────────────────────────────────────
+ *
+ * `health` runs 0 (budget untouched) → 1 (budget spent or blown). The scenes
+ * read it to darken: the forest moon wanes toward a blood moon, the beach sun
+ * sinks and reddens. It's ambient feedback — you register how the month is
+ * going before you read a single number.
+ */
+
+const clamp01 = (n) => Math.max(0, Math.min(1, Number(n) || 0));
+
+const hexToRgb = (hex) => {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+};
+
+const toHex = (n) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
+
+/** Blend two hex colours. t=0 returns `a`, t=1 returns `b`. */
+const mix = (a, b, t) => {
+  const [r1, g1, b1] = hexToRgb(a);
+  const [r2, g2, b2] = hexToRgb(b);
+  const k = clamp01(t);
+  return `#${toHex(r1 + (r2 - r1) * k)}${toHex(g1 + (g2 - g1) * k)}${toHex(b1 + (b2 - b1) * k)}`;
+};
+
+/** Linear interpolation for plain numbers. */
+const lerp = (a, b, t) => a + (b - a) * clamp01(t);
+
 /**
  * Scene sizing.
  *
@@ -73,8 +105,9 @@ const FOREST_TREES = [
   [0.85, 0.709, 0.62], [0.94, 0.716, 0.5],
 ];
 
-function forestScene() {
+function forestScene(health = 0) {
   const { w, h } = sceneBox();
+  const hp = clamp01(health);
   const wide = w > PHONE_W;
 
   // 14 stars across 390px was the original density: one per ~28px.
@@ -83,7 +116,7 @@ function forestScene() {
     const x = (i * 37 + 13) % Math.round(w);
     const y = h * 0.02 + ((i * 53) % Math.round(h * 0.27));
     const r = (1 + ((i * 7) % 3) * 0.4).toFixed(1);
-    const o = (0.35 + ((i * 13) % 50) / 100).toFixed(2);
+    const o = ((0.35 + ((i * 13) % 50) / 100) * lerp(1, 0.32, hp)).toFixed(2);
     const dur = (2.8 + ((i * 11) % 30) / 10).toFixed(1);
     const delay = ((i * 7) % 30) / 10;
     return `<circle cx="${x}" cy="${y.toFixed(0)}" r="${r}" fill="#fff" opacity="${o}"><animate attributeName="opacity" values="${o};${(o * 0.28).toFixed(2)};${o}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/></circle>`;
@@ -108,10 +141,23 @@ function forestScene() {
     : FOREST_TREES;
   const trees = treeSpecs.map((t) => pine(...t)).join('');
 
-  const moonR = Math.min(w, h) * 0.062, moonX = w * 0.75, moonY = h * 0.155;
+  const moonR = Math.min(w, h) * 0.062 * lerp(1, 0.62, hp);
+  const moonX = w * 0.75;
+  // Only a slight sink: any further and the moon disappears behind the
+  // summary card, hiding the most expressive part of the effect.
+  const moonY = lerp(0.155, 0.172, hp) * h;
+  // Past ~80% spent the moon turns; below that it just dims.
+  const blood = clamp01((hp - 0.55) / 0.45);
+  const moonCore = mix('#FFFBEF', '#FFD9B0', blood);
+  const moonMid = mix('#F6E6B8', '#E8834A', blood);
+  const moonEdge = mix('#E9CE8E', '#B23A22', blood);
+  const glowOpacity = (0.22 * lerp(1, 0.45, hp)).toFixed(3);
+  const skyTop = mix('#0A0F24', '#05060F', hp);
+  const skyMid = mix('#182B4A', '#0D1626', hp);
+  const skyLow = mix('#274566', '#132436', hp);
   const hill1Y = h * 0.663, hill2Y = h * 0.71, lakeY = h * 0.735;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0A0F24"/><stop offset="55%" stop-color="#182B4A"/><stop offset="100%" stop-color="#274566"/></linearGradient><radialGradient id="fMoon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFFBEF"/><stop offset="70%" stop-color="#F6E6B8"/><stop offset="100%" stop-color="#E9CE8E"/></radialGradient><linearGradient id="fLake" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22405F"/><stop offset="100%" stop-color="#0A1526"/></linearGradient><linearGradient id="fGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F6E6B8" stop-opacity="0.55"/><stop offset="100%" stop-color="#F6E6B8" stop-opacity="0"/></linearGradient><filter id="fBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><rect width="${w}" height="${h}" fill="url(#fSky)"/>${stars}<circle cx="${moonX}" cy="${moonY}" r="${moonR * 2.1}" fill="#F6E6B8" opacity="0.22" filter="url(#fBlur)"/><circle cx="${moonX}" cy="${moonY}" r="${moonR}" fill="url(#fMoon)"/><path d="M0,${hill1Y} Q${w * 0.25},${hill1Y - 40} ${w * 0.5},${hill1Y - 28} T${w},${hill1Y - 46} V${h} H0 Z" fill="#20385A" opacity="0.85"/><path d="M0,${hill2Y} Q${w * 0.28},${hill2Y - 34} ${w * 0.5},${hill2Y - 22} T${w},${hill2Y - 42} V${h} H0 Z" fill="#16223A"/>${trees}<rect x="0" y="${lakeY}" width="${w}" height="${h - lakeY}" fill="url(#fLake)"/><rect x="${moonX - moonR * 0.95}" y="${lakeY}" width="${moonR * 1.9}" height="${h - lakeY}" fill="url(#fGlow)" filter="url(#fBlur)"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${skyTop}"/><stop offset="55%" stop-color="${skyMid}"/><stop offset="100%" stop-color="${skyLow}"/></linearGradient><radialGradient id="fMoon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${moonCore}"/><stop offset="70%" stop-color="${moonMid}"/><stop offset="100%" stop-color="${moonEdge}"/></radialGradient><linearGradient id="fLake" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22405F"/><stop offset="100%" stop-color="#0A1526"/></linearGradient><linearGradient id="fGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${moonMid}" stop-opacity="${(0.55 * lerp(1, 0.4, hp)).toFixed(3)}"/><stop offset="100%" stop-color="${moonMid}" stop-opacity="0"/></linearGradient><filter id="fBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><rect width="${w}" height="${h}" fill="url(#fSky)"/>${stars}<circle cx="${moonX}" cy="${moonY}" r="${moonR * 2.1}" fill="${moonMid}" opacity="${glowOpacity}" filter="url(#fBlur)"/><circle cx="${moonX}" cy="${moonY}" r="${moonR}" fill="url(#fMoon)"/><path d="M0,${hill1Y} Q${w * 0.25},${hill1Y - 40} ${w * 0.5},${hill1Y - 28} T${w},${hill1Y - 46} V${h} H0 Z" fill="#20385A" opacity="0.85"/><path d="M0,${hill2Y} Q${w * 0.28},${hill2Y - 34} ${w * 0.5},${hill2Y - 22} T${w},${hill2Y - 42} V${h} H0 Z" fill="#16223A"/>${trees}<rect x="0" y="${lakeY}" width="${w}" height="${h - lakeY}" fill="url(#fLake)"/><rect x="${moonX - moonR * 0.95}" y="${lakeY}" width="${moonR * 1.9}" height="${h - lakeY}" fill="url(#fGlow)" filter="url(#fBlur)"/></svg>`;
 }
 
 /* Original hand-tuned clouds: [xF, yF, rxF, ryF, opacity]. */
@@ -120,8 +166,9 @@ const BEACH_CLOUDS = [
   [0.77, 0.249, 0.14, 0.021, 0.22],
 ];
 
-function beachScene() {
+function beachScene(health = 0) {
   const { w, h } = sceneBox();
+  const hp = clamp01(health);
   const wide = w > PHONE_W;
   const horizonY = h * 0.557;
 
@@ -139,22 +186,33 @@ function beachScene() {
     `<ellipse cx="${(w * xf).toFixed(0)}" cy="${(h * yf).toFixed(0)}" rx="${(w * rxf).toFixed(0)}" ry="${(h * ryf).toFixed(0)}" fill="#E9BFD2" opacity="${op.toFixed(2)}" filter="url(#bBlur)"/>`
   ).join('');
 
-  const sunR = Math.min(w, h) * 0.159;
+  const sunR = Math.min(w, h) * 0.159 * lerp(1, 0.84, hp);
+  // The sun slides below the horizon line as the budget goes.
+  const sunY = horizonY + sunR * lerp(0, 0.72, hp);
+  const sunCore = mix('#FFF7DE', '#FFD9B4', hp);
+  const sunMid = mix('#FDCB7C', '#EE7A45', hp);
+  const sunEdge = mix('#F79B5C', '#B8402B', hp);
+  const skyA = mix('#3B2A5C', '#1B1430', hp);
+  const skyB = mix('#B4506B', '#6E2B45', hp);
+  const skyC = mix('#F0925A', '#B8532F', hp);
+  const skyD = mix('#FBCB82', '#D98A4E', hp);
 
   const wave = (yf, c, o) =>
     `<path d="M0,${h * yf} Q${w * 0.167},${h * yf - 14} ${w * 0.333},${h * yf} T${w * 0.667},${h * yf} T${w},${h * yf - 6} V${h} H0 Z" fill="${c}" opacity="${o}"/>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="bSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B2A5C"/><stop offset="45%" stop-color="#B4506B"/><stop offset="75%" stop-color="#F0925A"/><stop offset="100%" stop-color="#FBCB82"/></linearGradient><radialGradient id="bSun" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFF7DE"/><stop offset="60%" stop-color="#FDCB7C"/><stop offset="100%" stop-color="#F79B5C"/></radialGradient><linearGradient id="bSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0925A"/><stop offset="18%" stop-color="#C97A6E"/><stop offset="55%" stop-color="#2F6E79"/><stop offset="100%" stop-color="#123240"/></linearGradient><linearGradient id="bGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE3AE" stop-opacity="0.6"/><stop offset="100%" stop-color="#FFE3AE" stop-opacity="0"/></linearGradient><filter id="bBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter></defs><rect width="${w}" height="${h}" fill="url(#bSky)"/>${clouds}<circle cx="${w * 0.5}" cy="${horizonY}" r="${Math.min(w, h) * 0.28}" fill="#FDCB7C" opacity="0.28" filter="url(#bBlur)"><animate attributeName="opacity" values="0.28;0.4;0.28" dur="7s" repeatCount="indefinite"/></circle><circle cx="${w * 0.5}" cy="${horizonY}" r="${sunR}" fill="url(#bSun)"/><rect y="${horizonY}" width="${w}" height="${h - horizonY}" fill="url(#bSea)"/><rect x="${w * 0.5 - sunR * 1.05}" y="${horizonY}" width="${sunR * 2.1}" height="${h - horizonY}" fill="url(#bGlow)" filter="url(#bBlur)"/>${wave(0.9, '#1C4C58', 0.85)}${wave(0.947, '#153B45', 0.9)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="bSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${skyA}"/><stop offset="45%" stop-color="${skyB}"/><stop offset="75%" stop-color="${skyC}"/><stop offset="100%" stop-color="${skyD}"/></linearGradient><radialGradient id="bSun" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${sunCore}"/><stop offset="60%" stop-color="${sunMid}"/><stop offset="100%" stop-color="${sunEdge}"/></radialGradient><linearGradient id="bSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0925A"/><stop offset="18%" stop-color="#C97A6E"/><stop offset="55%" stop-color="#2F6E79"/><stop offset="100%" stop-color="#123240"/></linearGradient><linearGradient id="bGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sunMid}" stop-opacity="${(0.6 * lerp(1, 0.42, hp)).toFixed(3)}"/><stop offset="100%" stop-color="${sunMid}" stop-opacity="0"/></linearGradient><filter id="bBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter></defs><rect width="${w}" height="${h}" fill="url(#bSky)"/>${clouds}<circle cx="${w * 0.5}" cy="${sunY}" r="${Math.min(w, h) * 0.28}" fill="${sunMid}" opacity="${(0.28 * lerp(1, 0.6, hp)).toFixed(3)}" filter="url(#bBlur)"><animate attributeName="opacity" values="0.28;0.4;0.28" dur="7s" repeatCount="indefinite"/></circle><circle cx="${w * 0.5}" cy="${sunY}" r="${sunR}" fill="url(#bSun)"/><rect y="${horizonY}" width="${w}" height="${h - horizonY}" fill="url(#bSea)"/><rect x="${w * 0.5 - sunR * 1.05}" y="${horizonY}" width="${sunR * 2.1}" height="${h - horizonY}" fill="url(#bGlow)" filter="url(#bBlur)"/>${wave(0.9, '#1C4C58', 0.85)}${wave(0.947, '#153B45', 0.9)}</svg>`;
 }
 
 /* ── Entry point ───────────────────────────────────────────────── */
 
-export function paintBackground(theme) {
+export function paintBackground(theme, health = 0) {
   const bgEl = document.getElementById('bg');
   if (!bgEl) return;
 
+  const hp = clamp01(health);
+
   if (theme.bgKind === 'scene') {
-    bgEl.innerHTML = theme.scene === 'forest' ? forestScene() : beachScene();
+    bgEl.innerHTML = theme.scene === 'forest' ? forestScene(hp) : beachScene(hp);
     return;
   }
 
@@ -165,5 +223,8 @@ export function paintBackground(theme) {
     .map((pos, i) => drawIcon(pos[0], pos[1], pos[2], pos[3], theme.items[i % theme.items.length], pos[4]))
     .join('');
 
-  bgEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"><defs><pattern id="pk" x="10" y="10" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="2.8" fill="${theme.dot}"/></pattern><pattern id="mp" x="0" y="0" width="390" height="285" patternUnits="userSpaceOnUse"><rect width="390" height="285" fill="${theme.vars['--bg']}"/><rect width="390" height="285" fill="url(#pk)"/>${icons}</pattern></defs><rect width="100%" height="100%" fill="url(#mp)"/></svg>`;
+  // Keep this subtle: a tiled pattern can't tell a story, so it only recedes.
+  const iconOpacity = lerp(1, 0.55, hp).toFixed(3);
+
+  bgEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"><defs><pattern id="pk" x="10" y="10" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="2.8" fill="${theme.dot}"/></pattern><pattern id="mp" x="0" y="0" width="390" height="285" patternUnits="userSpaceOnUse"><rect width="390" height="285" fill="${theme.vars['--bg']}"/><rect width="390" height="285" fill="url(#pk)"/><g opacity="${iconOpacity}">${icons}</g></pattern></defs><rect width="100%" height="100%" fill="url(#mp)"/></svg>`;
 }

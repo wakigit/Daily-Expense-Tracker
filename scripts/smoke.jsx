@@ -199,7 +199,7 @@ logic('filterAndSort: works without catById',
 /* ── Wallpaper sizing (stubbed DOM, no browser) ────────────────── */
 
 /** Renders a theme's wallpaper at a given viewport size and returns the SVG. */
-function paintAt(themeId, w, h) {
+function paintAt(themeId, w, h, health = 0) {
   let html = '';
   globalThis.window = { innerWidth: w, innerHeight: h };
   globalThis.document = {
@@ -207,7 +207,7 @@ function paintAt(themeId, w, h) {
     getElementById: () => ({ set innerHTML(v) { html = v; }, get innerHTML() { return html; } }),
     querySelector: () => null,
   };
-  paintBackground(THEMES.find((t) => t.id === themeId));
+  paintBackground(THEMES.find((t) => t.id === themeId), health);
   return html;
 }
 
@@ -243,6 +243,44 @@ logic('beach: laptop adds clouds', count(bLaptop, '<ellipse'), Math.max(2, Math.
 
 // Deterministic: repainting the same size must not reshuffle the scene.
 logic('forest: repaint is identical (no reshuffle)', paintAt('forest', ...LAPTOP) === fLaptop, true);
+
+/* ── Budget-reactive wallpaper ─────────────────────────────────── */
+
+const num = (hay, re) => { const m = hay.match(re); return m ? Number(m[1]) : NaN; };
+const moonR = (svg) => num(svg, /r="([\d.]+)" fill="url\(#fMoon\)"/);
+const moonY = (svg) => num(svg, /cy="([\d.]+)" r="[\d.]+" fill="url\(#fMoon\)"/);
+const sunY  = (svg) => num(svg, /cy="([\d.]+)" r="[\d.]+" fill="url\(#bSun\)"/);
+
+const fHealthy = paintAt('forest', ...PHONE, 0);
+const fBroke   = paintAt('forest', ...PHONE, 1);
+
+logic('forest: moon shrinks as budget depletes', moonR(fBroke) < moonR(fHealthy), true);
+logic('forest: moon sinks as budget depletes', moonY(fBroke) > moonY(fHealthy), true);
+// mix() emits lowercase hex, so compare case-insensitively.
+const has = (svg, hex) => svg.toLowerCase().includes(hex.toLowerCase());
+logic('forest: sky darkens', has(fHealthy, '#0A0F24') && !has(fBroke, '#0A0F24'), true);
+logic('forest: moon reddens into a blood moon', /#(b|B)[0-9a-fA-F]{5}/.test(fBroke), true);
+logic('forest: healthy budget keeps the original moon size',
+  Math.abs(moonR(fHealthy) - Math.min(...PHONE) * 0.062) < 0.01, true);
+
+const bHealthy = paintAt('beach', ...PHONE, 0);
+const bBroke   = paintAt('beach', ...PHONE, 1);
+logic('beach: sun sinks toward the horizon', sunY(bBroke) > sunY(bHealthy), true);
+logic('beach: sky darkens', has(bHealthy, '#3B2A5C') && !has(bBroke, '#3B2A5C'), true);
+
+// Out-of-range health must not produce nonsense geometry or NaN in the SVG.
+logic('health clamps above 1', paintAt('forest', ...PHONE, 5) === fBroke, true);
+logic('health clamps below 0', paintAt('forest', ...PHONE, -3) === fHealthy, true);
+logic('health undefined behaves as 0', paintAt('forest', ...PHONE) === fHealthy, true);
+logic('no NaN reaches the forest svg', fBroke.includes('NaN'), false);
+logic('no NaN reaches the beach svg', bBroke.includes('NaN'), false);
+
+// Pattern themes recede but must never vanish.
+const pHealthy = paintAt('pink', ...PHONE, 0);
+const pBroke = paintAt('pink', ...PHONE, 1);
+logic('pattern: icons fade but stay visible',
+  num(pBroke, /<g opacity="([\d.]+)"/) < 1 && num(pBroke, /<g opacity="([\d.]+)"/) > 0.3, true);
+logic('pattern: healthy budget is fully opaque', num(pHealthy, /<g opacity="([\d.]+)"/), 1);
 
 // Pattern wallpapers were already full-bleed; make sure they stayed that way.
 const pink = paintAt('pink', ...LAPTOP);

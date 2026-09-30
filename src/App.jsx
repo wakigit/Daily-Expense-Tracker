@@ -32,8 +32,6 @@ export default function App() {
     themeId, setThemeId,
   } = useAppData();
 
-  useTheme(themeId);
-
   const [ym, setYm] = useState(curYm());
   const [tab, setTab] = useState('home');
   const [catFilter, setCatFilter] = useState(null);
@@ -142,6 +140,11 @@ export default function App() {
   const remaining = totalBudget - totalSpent;
   const budPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
   const isOver = totalSpent > totalBudget && totalBudget > 0;
+
+  // Drives the reactive wallpaper. budPct is already clamped to 0–100, and is
+  // 0 when no budget is set — so someone who never sets one keeps a bright
+  // scene rather than being handed a permanently dark app.
+  useTheme(themeId, budPct / 100);
 
   const chartData = cats
     .filter((c) => spending[c.id] > 0)
