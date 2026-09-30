@@ -18,6 +18,7 @@ import Header from '../src/components/Header';
 import { DEF_CATS } from '../src/themes/themes';
 import { matchesQuery, sortExpenses, filterAndSort } from '../src/lib/search';
 import { worthStats, isTagged, WORTH_OPTIONS } from '../src/lib/worth';
+import { parseUtterance } from '../src/lib/parseUtterance';
 import { paintBackground } from '../src/themes/scenes';
 import { THEMES } from '../src/themes/themes';
 
@@ -341,6 +342,43 @@ logic('worth: missing catById does not throw',
 run('WorthCard with regret', <WorthCard stats={ws} />,
   'Was it worth it?', 'S$40.00', 'of what you', 'Food', 'Based on', 'untagged');
 run('WorthCard no regrets', <WorthCard stats={wsHappy} />, 'No regrets so far', 'S$10.00');
+
+/* ── Voice: utterance parsing ──────────────────────────────────── */
+
+const vCats = [
+  { id: 'food', label: 'Food' },
+  { id: 'shop', label: 'Shopping' },
+  { id: 'pub', label: 'Public transport' },
+  { id: 'hire', label: 'Private hire' },
+];
+const said = (t) => parseUtterance(t, vCats);
+const yest = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })();
+
+logic('voice: colloquial dollars-cents', said('four fifty for chicken rice').amount, '4.50');
+logic('voice: description from colloquial', said('four fifty for chicken rice').description, 'Chicken rice');
+logic('voice: explicit decimal', said('spent 23.90 on lunch').amount, '23.90');
+logic('voice: dollar sign stripped', said('$8.20 kopi').amount, '8.20');
+logic('voice: word number', said('twelve dollars for grab').amount, '12.00');
+logic('voice: tens+unit compound is one number', said('twenty five dollars taxi').amount, '25.00');
+logic('voice: dollars and cents spoken out', said('four dollars and fifty cents kopi').amount, '4.50');
+logic('voice: dollars then cents, no "and"', said('four dollars fifty kopi').amount, '4.50');
+logic('voice: unit then tens is cents not a compound', said('one forty kopi').amount, '1.40');
+
+logic('voice: category matched by label', said('spent 20 on shopping').category, 'shop');
+logic('voice: category matched by distinctive word', said('15 dollars public transport').category, 'pub');
+logic('voice: no category when nothing matches', said('nine dollars sticker').category, undefined);
+
+logic('voice: yesterday resolves to a date', said('five dollars kopi yesterday').date, yest);
+logic('voice: no date word leaves date alone', said('five dollars kopi').date, undefined);
+
+logic('voice: filler words are dropped', said('add an expense for six dollars kopi').description, 'Kopi');
+logic('voice: bare numbers never become the description', said('seven dollars').description, undefined);
+logic('voice: description only, no amount', said('chicken rice'), { description: 'Chicken rice' });
+logic('voice: empty input is safe', said(''), {});
+logic('voice: null input is safe', said(null), {});
+logic('voice: gibberish yields nothing usable', said('hmm uh').amount, undefined);
+logic('voice: amount of zero is rejected', said('zero dollars kopi').amount, undefined);
+logic('voice: works with no categories supplied', parseUtterance('four fifty kopi').amount, '4.50');
 
 let failed = 0;
 for (const c of checks) {

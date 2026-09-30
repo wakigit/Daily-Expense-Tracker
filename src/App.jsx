@@ -186,6 +186,16 @@ export default function App() {
     setTab('home');
   };
 
+  /**
+   * Fills the form from a spoken sentence. Only the fields speech actually
+   * resolved are overwritten — whatever it couldn't hear is left as-is rather
+   * than blanked, so a second attempt adds to the first instead of resetting it.
+   */
+  const applyVoice = (fields) => {
+    setForm((f) => ({ ...f, ...fields }));
+    setErrors({});
+  };
+
   const startEdit = (exp) => {
     setForm({
       date: exp.date,
@@ -346,6 +356,7 @@ export default function App() {
             onSubmit={submit}
             onCancel={cancelEdit}
             onWorth={(w) => setForm((f) => ({ ...f, worth: w }))}
+            onVoice={applyVoice}
           />
         )}
 

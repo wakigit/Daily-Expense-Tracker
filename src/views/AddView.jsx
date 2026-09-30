@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import WorthPicker from '../components/WorthPicker';
+import VoiceButton from '../components/VoiceButton';
 
 /** Add / edit form. The same view serves both; `editId` decides the wording. */
-export default function AddView({ form, setField, errors, cats, editId, onSubmit, onCancel, onWorth }) {
+export default function AddView({ form, setField, errors, cats, editId, onSubmit, onCancel, onWorth, onVoice }) {
   const descRef = useRef(null);
 
   // Focus the first field on arrival so you can start typing immediately.
@@ -22,6 +23,10 @@ export default function AddView({ form, setField, errors, cats, editId, onSubmit
         </h2>
         {editId && <button onClick={onCancel} className="cancel-link">Cancel</button>}
       </div>
+
+      {/* Voice is offered only for new expenses — correcting an existing one
+          by speaking the whole thing again would be slower than typing. */}
+      {!editId && <VoiceButton cats={cats} onParsed={onVoice} />}
 
       <div className="field">
         <label htmlFor="f-desc">Description</label>
