@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from './hooks/useAppData';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
+import { WORTH_OPTIONS, worthLabel } from './lib/worth';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -20,6 +21,7 @@ const blankForm = (catId) => ({
   description: '',
   amount: '',
   notes: '',
+  worth: undefined,
 });
 
 export default function App() {
@@ -58,9 +60,11 @@ export default function App() {
 
   // An undoable toast stays longer — 1.9s isn't enough time to read it,
   // decide, and reach the button.
+  // Toasts offering a choice stay longer — 1.9s isn't enough time to read
+  // them, decide, and reach the button.
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => { setToast(null); setUndoExp(null); }, toast.undo ? 4600 : 1900);
+    const t = setTimeout(() => { setToast(null); setUndoExp(null); }, toast.kind ? 4600 : 1900);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -173,8 +177,10 @@ export default function App() {
       setEditId(null);
       setToast({ message: 'Changes saved ✓' });
     } else {
-      setExpenses((p) => [...p, { ...entry, id: Date.now() }]);
-      setToast({ message: 'Expense added 🎀' });
+      // Capture the id so the toast can tag the expense it just created.
+      const id = Date.now();
+      setExpenses((p) => [...p, { ...entry, id }]);
+      setToast({ message: 'Added — worth it?', kind: 'worth', expenseId: id });
     }
     setForm(blankForm(cats[0]?.id));
     setTab('home');
@@ -187,6 +193,7 @@ export default function App() {
       description: exp.description,
       amount: String(exp.amount),
       notes: exp.notes || '',
+      worth: exp.worth,
     });
     setEditId(exp.id);
     setTab('add');
@@ -203,7 +210,13 @@ export default function App() {
   const deleteExp = (exp) => {
     setExpenses((p) => p.filter((e) => e.id !== exp.id));
     setUndoExp(exp);
-    setToast({ message: 'Entry deleted', undo: true });
+    setToast({ message: 'Entry deleted', kind: 'undo' });
+  };
+
+  /** Tag (or untag) how an expense felt. Always optional. */
+  const tagWorth = (id, worth) => {
+    setExpenses((p) => p.map((e) => (e.id === id ? { ...e, worth } : e)));
+    setToast({ message: worth ? `Marked ${worthLabel(worth).toLowerCase()}` : 'Tag cleared' });
   };
 
   const undoDelete = () => {
@@ -307,6 +320,7 @@ export default function App() {
             spending={spending}
             monthExp={monthExp}
             onPickCat={setCatFilter}
+            catById={catById}
             {...txnProps}
           />
         )}
@@ -331,6 +345,7 @@ export default function App() {
             editId={editId}
             onSubmit={submit}
             onCancel={cancelEdit}
+            onWorth={(w) => setForm((f) => ({ ...f, worth: w }))}
           />
         )}
 
@@ -360,8 +375,18 @@ export default function App() {
       <BottomNav tab={tab} onGo={goTo} />
       <Toast
         message={toast?.message}
-        actionLabel={toast?.undo ? 'Undo' : undefined}
-        onAction={undoDelete}
+        actions={
+          toast?.kind === 'undo'
+            ? [{ key: 'undo', label: 'Undo', onClick: undoDelete }]
+            : toast?.kind === 'worth'
+              ? WORTH_OPTIONS.map((o) => ({
+                  key: o.id,
+                  label: o.emoji,
+                  aria: o.label,
+                  onClick: () => tagWorth(toast.expenseId, o.id),
+                }))
+              : []
+        }
       />
     </>
   );

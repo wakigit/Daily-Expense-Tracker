@@ -10,11 +10,14 @@ import MonthSheet from '../src/components/MonthSheet';
 import SwipeRow from '../src/components/SwipeRow';
 import SearchBar from '../src/components/SearchBar';
 import Toast from '../src/components/Toast';
+import WorthCard from '../src/components/WorthCard';
+import WorthPicker from '../src/components/WorthPicker';
 import Donut from '../src/components/Donut';
 import BottomNav from '../src/components/BottomNav';
 import Header from '../src/components/Header';
 import { DEF_CATS } from '../src/themes/themes';
 import { matchesQuery, sortExpenses, filterAndSort } from '../src/lib/search';
+import { worthStats, isTagged, WORTH_OPTIONS } from '../src/lib/worth';
 import { paintBackground } from '../src/themes/scenes';
 import { THEMES } from '../src/themes/themes';
 
@@ -152,7 +155,11 @@ run('SearchBar no matches', <SearchBar query="zzz" onQuery={() => {}} sort="amou
   matchCount={0} sourceCount={6} isFiltering />, 'No matches', 'Lowest');
 
 run('Toast plain', <Toast message="Budgets saved" />, 'Budgets saved', 'role="status"');
-run('Toast with undo', <Toast message="Entry deleted" actionLabel="Undo" onAction={() => {}} />, 'Undo', 'toast-action');
+run('Toast with undo', <Toast message="Entry deleted" actions={[{ key: 'undo', label: 'Undo', onClick: () => {} }]} />, 'Undo', 'toast-action');
+run('Toast with worth actions', <Toast message="Added — worth it?" actions={WORTH_OPTIONS.map((o) => ({ key: o.id, label: o.emoji, aria: o.label, onClick: () => {} }))} />,
+  '😍', '😩', 'aria-label="Regret"');
+run('WorthPicker unselected', <WorthPicker value={undefined} onPick={() => {}} />, 'radiogroup', 'Worth it', 'aria-checked="false"');
+run('WorthPicker selected', <WorthPicker value="no" onPick={() => {}} />, 'worth-btn sel', 'aria-checked="true"');
 run('Toast hidden', <Toast message="" />, '');
 
 /* ── Pure logic tests (no React) ───────────────────────────────── */
@@ -286,6 +293,54 @@ logic('pattern: healthy budget is fully opaque', num(pHealthy, /<g opacity="([\d
 const pink = paintAt('pink', ...LAPTOP);
 logic('pattern: fills 100% width', pink.includes('width:100%'), true);
 logic('pattern: tiles bows', count(pink, '<pattern') , 2);
+
+/* ── "Was it worth it?" logic ──────────────────────────────────── */
+
+const wCats = [
+  { id: 'food', label: 'Food', color: '#D85A30' },
+  { id: 'shop', label: 'Shopping', color: '#7F77DD' },
+];
+const wCatById = (id) => wCats.find((c) => c.id === id);
+const wExp = [
+  { id: 1, category: 'food', amount: 30, worth: 'no' },
+  { id: 2, category: 'food', amount: 10, worth: 'no' },
+  { id: 3, category: 'shop', amount: 20, worth: 'yes' },
+  { id: 4, category: 'food', amount: 5,  worth: 'meh' },
+  { id: 5, category: 'food', amount: 99 },              // untagged
+  { id: 6, category: 'shop', amount: 99, worth: 'bogus' }, // unrecognised
+];
+const ws = worthStats(wExp, wCatById);
+
+logic('worth: only valid tags count as tagged', ws.taggedCount, 4);
+logic('worth: untagged includes unrecognised values', ws.untaggedCount, 2);
+logic('worth: regret total', ws.regretTotal, 40);
+logic('worth: totals by tag', [ws.totals.yes, ws.totals.meh, ws.totals.no], [20, 5, 40]);
+logic('worth: counts by tag', [ws.counts.yes, ws.counts.meh, ws.counts.no], [1, 1, 2]);
+// 40 regretted of 65 tagged — untagged 99s must NOT dilute this.
+logic('worth: regret rate is share of TAGGED spend', Math.round(ws.regretRate * 100), 62);
+logic('worth: top regret category', ws.topRegret?.label, 'Food');
+logic('worth: top regret amount', ws.topRegret?.amount, 40);
+logic('worth: top regret share', ws.topRegret?.share, 1);
+
+const wsEmpty = worthStats([], wCatById);
+logic('worth: empty list is safe', [wsEmpty.taggedCount, wsEmpty.regretRate, wsEmpty.topRegret], [0, 0, null]);
+const wsNone = worthStats([{ id: 1, category: 'food', amount: 10 }], wCatById);
+logic('worth: all-untagged has no regret rate', wsNone.regretRate, 0);
+logic('worth: all-untagged has no top category', wsNone.topRegret, null);
+const wsHappy = worthStats([{ id: 1, category: 'food', amount: 10, worth: 'yes' }], wCatById);
+logic('worth: no regrets leaves topRegret null', wsHappy.topRegret, null);
+logic('worth: isTagged rejects undefined', isTagged({ amount: 1 }), false);
+logic('worth: isTagged rejects junk', isTagged({ worth: 'maybe' }), false);
+logic('worth: isTagged accepts a real value', isTagged({ worth: 'meh' }), true);
+logic('worth: missing catById does not throw',
+  worthStats(wExp, undefined).topRegret?.label, 'Uncategorised');
+
+// React SSR splits adjacent text nodes with <!-- -->, so "62%" and "4 tagged"
+// never appear contiguously. The percentage itself is asserted in the logic
+// tests above; here we check the surrounding copy renders.
+run('WorthCard with regret', <WorthCard stats={ws} />,
+  'Was it worth it?', 'S$40.00', 'of what you', 'Food', 'Based on', 'untagged');
+run('WorthCard no regrets', <WorthCard stats={wsHappy} />, 'No regrets so far', 'S$10.00');
 
 let failed = 0;
 for (const c of checks) {

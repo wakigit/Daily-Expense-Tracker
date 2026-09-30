@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
+import WorthPicker from '../components/WorthPicker';
 
 /** Add / edit form. The same view serves both; `editId` decides the wording. */
-export default function AddView({ form, setField, errors, cats, editId, onSubmit, onCancel }) {
+export default function AddView({ form, setField, errors, cats, editId, onSubmit, onCancel, onWorth }) {
   const descRef = useRef(null);
 
   // Focus the first field on arrival so you can start typing immediately.
@@ -74,6 +75,15 @@ export default function AddView({ form, setField, errors, cats, editId, onSubmit
           onChange={setField('notes')}
         />
       </div>
+
+      {/* Only when editing: a brand-new expense gets asked via the toast, so
+          the add form stays as short as possible. */}
+      {editId && (
+        <div className="field">
+          <label>Was it worth it?</label>
+          <WorthPicker value={form.worth} onPick={onWorth} />
+        </div>
+      )}
 
       {hasErrors && (
         <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: '0.75rem', textAlign: 'center' }} role="alert">
