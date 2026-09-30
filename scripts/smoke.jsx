@@ -207,9 +207,13 @@ logic('filterAndSort: works without catById',
 /* ── Wallpaper sizing (stubbed DOM, no browser) ────────────────── */
 
 /** Renders a theme's wallpaper at a given viewport size and returns the SVG. */
-function paintAt(themeId, w, h, health = 0) {
+function paintAt(themeId, w, h, health = 0, reduced = false) {
   let html = '';
-  globalThis.window = { innerWidth: w, innerHeight: h };
+  globalThis.window = {
+    innerWidth: w,
+    innerHeight: h,
+    matchMedia: (q) => ({ matches: reduced && q.includes('reduced-motion') }),
+  };
   globalThis.document = {
     documentElement: { clientWidth: w },
     getElementById: () => ({ set innerHTML(v) { html = v; }, get innerHTML() { return html; } }),
@@ -289,6 +293,51 @@ const pBroke = paintAt('pink', ...PHONE, 1);
 logic('pattern: icons fade but stay visible',
   num(pBroke, /<g opacity="([\d.]+)"/) < 1 && num(pBroke, /<g opacity="([\d.]+)"/) > 0.3, true);
 logic('pattern: healthy budget is fully opaque', num(pHealthy, /<g opacity="([\d.]+)"/), 1);
+
+/* ── Living forest ─────────────────────────────────────────────── */
+
+const countOf = (hay, needle) => hay.split(needle).length - 1;
+
+const alive = paintAt('forest', ...PHONE, 0);
+const dying = paintAt('forest', ...PHONE, 0.5);
+const dead  = paintAt('forest', ...PHONE, 1);
+
+// Deer
+logic('forest: deer runs when the budget is healthy', countOf(alive, 'M9.5,7.5 Q5.5,5 6,9.5') , 1);
+logic('forest: deer is gone when the budget is blown', countOf(dead, 'M9.5,7.5 Q5.5,5 6,9.5'), 0);
+logic('forest: deer has a motion animation', /type="translate" values="-60,/.test(alive), true);
+
+// Leaves
+logic('forest: leaves fall when healthy', countOf(alive, '<g opacity="0.8">') > 0, true);
+logic('forest: no leaves when the budget is blown', countOf(dead, '<g opacity="0.8">'), 0);
+logic('forest: fewer leaves midway than when healthy',
+  countOf(dying, '<g opacity="0.8">') < countOf(alive, '<g opacity="0.8">'), true);
+
+// Canopy vs bare branches
+const canopyOpacity = (svg) => Number(svg.match(/<g opacity="([\d.]+)"><path d="M0,-64/)?.[1]);
+logic('forest: canopy is full when healthy', canopyOpacity(alive), 1);
+logic('forest: canopy is gone when blown', canopyOpacity(dead), 0);
+logic('forest: bare branches show through when blown', /stroke-width="2.4" fill="none" opacity="1.00"/.test(dead), true);
+logic('forest: trunks are always drawn', countOf(dead, 'M-3,40 L-2,-10') > 0, true);
+
+// River
+logic('forest: river flows when healthy', /type="translate" values="0,0;64,0"/.test(alive), true);
+logic('forest: river stops when the budget is blown', /type="translate" values="0,0;64,0"/.test(dead), false);
+logic('forest: ripples still drawn when stopped', countOf(dead, 'stroke-linecap="round"'), 3);
+
+// Moon phase — the shadow disc slides across as the budget depletes.
+const shadowX = (svg) => Number(svg.match(/<circle cx="([\d.]+)" cy="[-\d.]+" r="[\d.]+" fill="black"/)?.[1]);
+logic('forest: moon shadow clears the disc when full', shadowX(alive) > 0, true);
+logic('forest: moon wanes to a crescent as budget depletes', shadowX(dead) < shadowX(alive), true);
+logic('forest: phase mask exists', countOf(alive, 'mask="url(#fPhase)"'), 1);
+
+// Reduced motion removes the animations entirely, not just pauses them.
+const calm = paintAt('forest', ...PHONE, 0, true);
+logic('reduced motion: no animate elements at all', countOf(calm, '<animate'), 0);
+logic('reduced motion: scene still renders trees', countOf(calm, 'M0,-64') > 0, true);
+logic('reduced motion: deer still present, just static', countOf(calm, 'M9.5,7.5 Q5.5,5 6,9.5'), 1);
+
+logic('forest: no NaN with the living layers', dying.includes('NaN'), false);
 
 // Pattern wallpapers were already full-bleed; make sure they stayed that way.
 const pink = paintAt('pink', ...LAPTOP);

@@ -105,12 +105,81 @@ const FOREST_TREES = [
   [0.85, 0.709, 0.62], [0.94, 0.716, 0.5],
 ];
 
+
+/**
+ * Motion is opt-out. Everything animated below is omitted entirely — not just
+ * paused — when the OS asks for reduced motion, so no timers run at all.
+ */
+const stillMode = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+/**
+ * A deer silhouette, side on. Drawn in a ~36x50 unit box with the origin at
+ * the shoulder, hooves at y=30.
+ *
+ * Order matters: legs first so the body covers where they meet it, then the
+ * barrel, then neck and head on top.
+ */
+function deer(colour, still) {
+  // The rotate animation must sit on its OWN group. animateTransform replaces
+  // the transform attribute it animates, so putting it beside the translate
+  // discards that translate and collapses every leg onto the origin.
+  const leg = (x, delay, from, to) =>
+    `<g transform="translate(${x} 14)"><g>` +
+    (still ? '' : `<animateTransform attributeName="transform" type="rotate" values="${from};${to};${from}" dur="0.48s" begin="${delay}s" repeatCount="indefinite"/>`) +
+    `<path d="M-1.3,0 L1.3,0 L1.7,15 L-0.9,15 Z"/></g></g>`;
+
+  return `<g fill="${colour}">
+    ${leg(12, 0.24, '-16 0 0', '16 0 0')}
+    ${leg(25, 0.24, '14 0 0', '-14 0 0')}
+    ${leg(10, 0, '17 0 0', '-17 0 0')}
+    ${leg(27, 0, '-15 0 0', '15 0 0')}
+    <ellipse cx="19" cy="11.5" rx="11" ry="6"/>
+    <ellipse cx="27" cy="11" rx="5" ry="5.6"/>
+    <path d="M9.5,7.5 Q5.5,5 6,9.5 Q7.5,11 10,9.8 Z"/>
+    <path d="M25.5,9 Q29.5,2 32.5,-4.2 L35.6,-2.6 Q32.5,2.2 29.5,10.5 Z"/>
+    <ellipse cx="37" cy="-6.2" rx="4.3" ry="2.7" transform="rotate(-20 37 -6.2)"/>
+    <path d="M40.6,-7.8 Q42.4,-7.4 41.9,-6.2 Q40.8,-5.8 40,-6.6 Z"/>
+    <path d="M34.6,-8.4 Q33.2,-11 34.8,-11.6 Q36,-10.6 35.6,-8.6 Z"/>
+    <path d="M35.4,-9.6 L34.2,-17.4 L35.5,-17.6 L36.6,-10.4 Z"/>
+    <path d="M34.7,-14 L31.4,-16.6 L32.2,-17.7 L35.3,-15.3 Z"/>
+    <path d="M38.3,-9.2 L39.2,-17.2 L40.5,-17 L39.6,-9.8 Z"/>
+    <path d="M38.9,-14.2 L42,-17 L42.9,-16 L39.6,-13.4 Z"/>
+  </g>`;
+}
+
+/** One falling, swaying leaf. Two nested groups so drift and spin don't clash. */
+function leaf(x, y, size, colour, delay, dur, still) {
+  const drift = still
+    ? ''
+    : `<animateTransform attributeName="transform" type="translate" values="0,0; ${(size * 2.4).toFixed(1)},${(size * 9).toFixed(1)}; ${(-size * 1.6).toFixed(1)},${(size * 18).toFixed(1)}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>`;
+  const spin = still
+    ? ''
+    : `<animateTransform attributeName="transform" type="rotate" values="0;170;360" dur="${(dur * 0.55).toFixed(1)}s" begin="${delay}s" repeatCount="indefinite"/>`;
+  const fade = still
+    ? ''
+    : `<animate attributeName="opacity" values="0;0.85;0" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>`;
+
+  // The base position lives on the outer group; the animation drives an inner
+  // group that starts at 0,0. animateTransform REPLACES the transform it
+  // animates, so a drift starting at "0,0" on the positioned group would
+  // teleport the leaf to the top-left corner of the screen.
+  return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})"><g>${drift}<g opacity="0.8">${fade}<path d="M0,0 q${size},${-size * 0.8} ${size * 2},0 q${-size},${size * 0.8} ${-size * 2},0Z" fill="${colour}">${spin}</path></g></g></g>`;
+}
+
 function forestScene(health = 0) {
   const { w, h } = sceneBox();
   const hp = clamp01(health);
   const wide = w > PHONE_W;
+  const still = stillMode();
 
-  // 14 stars across 390px was the original density: one per ~28px.
+  // How alive the scene is. Leaves and the deer thin out well before the
+  // budget is fully gone, so the change is visible while it still matters.
+  const lush = clamp01(1 - hp / 0.85);
+  const deerAlpha = clamp01((0.7 - hp) / 0.25);
+  const flowing = hp < 0.8;
+
   const starCount = wide ? Math.round(w / 28) : 14;
   const stars = Array.from({ length: starCount }).map((_, i) => {
     const x = (i * 37 + 13) % Math.round(w);
@@ -119,18 +188,11 @@ function forestScene(health = 0) {
     const o = ((0.35 + ((i * 13) % 50) / 100) * lerp(1, 0.32, hp)).toFixed(2);
     const dur = (2.8 + ((i * 11) % 30) / 10).toFixed(1);
     const delay = ((i * 7) % 30) / 10;
-    return `<circle cx="${x}" cy="${y.toFixed(0)}" r="${r}" fill="#fff" opacity="${o}"><animate attributeName="opacity" values="${o};${(o * 0.28).toFixed(2)};${o}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/></circle>`;
+    const tw = still ? '' : `<animate attributeName="opacity" values="${o};${(o * 0.28).toFixed(2)};${o}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>`;
+    return `<circle cx="${x}" cy="${y.toFixed(0)}" r="${r}" fill="#fff" opacity="${o}">${tw}</circle>`;
   }).join('');
 
-  // Capped so trees stay their intended size on a wide screen rather than
-  // scaling up into giants.
   const treeScale = Math.min(w, PHONE_W) / 390;
-  const pine = (xf, baseYf, sc) =>
-    `<g transform="translate(${(xf * w).toFixed(0)} ${(baseYf * h).toFixed(0)}) scale(${(sc * treeScale).toFixed(3)})"><path d="M0,-64 L18,-22 L9,-22 L26,10 L14,10 L30,40 L-30,40 L-14,10 L-26,10 L-9,-22 L-18,-22 Z" fill="#0E1524"/></g>`;
-
-  // One tree per ~39px, matching the original 10-across-390 density.
-  // (Array.from's map fn gets (element, index) only — no third array arg —
-  // so the count has to be its own binding.)
   const treeCount = Math.round(w / 39);
   const treeSpecs = wide
     ? Array.from({ length: treeCount }, (_, i) => [
@@ -139,14 +201,40 @@ function forestScene(health = 0) {
         0.5 + rnd(i, 3) * 0.42,
       ])
     : FOREST_TREES;
-  const trees = treeSpecs.map((t) => pine(...t)).join('');
+
+  // Bare trunk and branches sit underneath; the canopy fades away on top of
+  // it, so an overspent month leaves a visibly dead winter forest.
+  const tree = (xf, baseYf, sc, i) => {
+    const sway = still || lush < 0.15
+      ? ''
+      : `<animateTransform attributeName="transform" type="rotate" values="-1.4 0 40;1.4 0 40;-1.4 0 40" dur="${(4 + (i % 5) * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`;
+    return `<g transform="translate(${(xf * w).toFixed(0)} ${(baseYf * h).toFixed(0)}) scale(${(sc * treeScale).toFixed(3)})">` +
+      `<path d="M-3,40 L-2,-10 L2,-10 L3,40 Z" fill="#090E18"/>` +
+      `<path d="M0,2 L-14,-14 M0,8 L13,-8 M0,-6 L-11,-22" stroke="#090E18" stroke-width="2.4" fill="none" opacity="${(1 - lush).toFixed(2)}"/>` +
+      `<g opacity="${lush.toFixed(3)}"><path d="M0,-64 L18,-22 L9,-22 L26,10 L14,10 L30,40 L-30,40 L-14,10 L-26,10 L-9,-22 L-18,-22 Z" fill="#0E1524"/>${sway}</g>` +
+      `</g>`;
+  };
+  const trees = treeSpecs.map((t, i) => tree(...t, i)).join('');
+
+  // Leaves come loose from the canopy and spiral down.
+  const leafCount = Math.round(lush * (wide ? 16 : 9));
+  const leaves = Array.from({ length: leafCount }, (_, i) =>
+    leaf(
+      rnd(i, 11) * w,
+      h * (0.56 + rnd(i, 12) * 0.12),
+      3.4 + rnd(i, 13) * 2.6,
+      ['#4C7A4E', '#6B8F45', '#8A9350'][i % 3],
+      Number((rnd(i, 14) * 9).toFixed(1)),
+      Number((7 + rnd(i, 15) * 6).toFixed(1)),
+      still
+    )
+  ).join('');
 
   const moonR = Math.min(w, h) * 0.062 * lerp(1, 0.62, hp);
   const moonX = w * 0.75;
   // Only a slight sink: any further and the moon disappears behind the
   // summary card, hiding the most expressive part of the effect.
   const moonY = lerp(0.155, 0.172, hp) * h;
-  // Past ~80% spent the moon turns; below that it just dims.
   const blood = clamp01((hp - 0.55) / 0.45);
   const moonCore = mix('#FFFBEF', '#FFD9B0', blood);
   const moonMid = mix('#F6E6B8', '#E8834A', blood);
@@ -155,10 +243,59 @@ function forestScene(health = 0) {
   const skyTop = mix('#0A0F24', '#05060F', hp);
   const skyMid = mix('#182B4A', '#0D1626', hp);
   const skyLow = mix('#274566', '#132436', hp);
+
+  // The moon wanes to a crescent: a shadow disc slides across it. At full
+  // health the shadow sits clear of the moon entirely.
+  const shadowDx = moonR * lerp(2.3, 1.02, hp);
+
   const hill1Y = h * 0.663, hill2Y = h * 0.71, lakeY = h * 0.735;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${skyTop}"/><stop offset="55%" stop-color="${skyMid}"/><stop offset="100%" stop-color="${skyLow}"/></linearGradient><radialGradient id="fMoon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${moonCore}"/><stop offset="70%" stop-color="${moonMid}"/><stop offset="100%" stop-color="${moonEdge}"/></radialGradient><linearGradient id="fLake" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22405F"/><stop offset="100%" stop-color="#0A1526"/></linearGradient><linearGradient id="fGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${moonMid}" stop-opacity="${(0.55 * lerp(1, 0.4, hp)).toFixed(3)}"/><stop offset="100%" stop-color="${moonMid}" stop-opacity="0"/></linearGradient><filter id="fBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><rect width="${w}" height="${h}" fill="url(#fSky)"/>${stars}<circle cx="${moonX}" cy="${moonY}" r="${moonR * 2.1}" fill="${moonMid}" opacity="${glowOpacity}" filter="url(#fBlur)"/><circle cx="${moonX}" cy="${moonY}" r="${moonR}" fill="url(#fMoon)"/><path d="M0,${hill1Y} Q${w * 0.25},${hill1Y - 40} ${w * 0.5},${hill1Y - 28} T${w},${hill1Y - 46} V${h} H0 Z" fill="#20385A" opacity="0.85"/><path d="M0,${hill2Y} Q${w * 0.28},${hill2Y - 34} ${w * 0.5},${hill2Y - 22} T${w},${hill2Y - 42} V${h} H0 Z" fill="#16223A"/>${trees}<rect x="0" y="${lakeY}" width="${w}" height="${h - lakeY}" fill="url(#fLake)"/><rect x="${moonX - moonR * 0.95}" y="${lakeY}" width="${moonR * 1.9}" height="${h - lakeY}" fill="url(#fGlow)" filter="url(#fBlur)"/></svg>`;
+  // River ripples: a periodic wave translated by exactly one wavelength, so
+  // the loop is seamless. When the budget is gone the water stops moving.
+  const WAVE = 64;
+  const ripple = (yOff, opacity, dur) => {
+    const y = lakeY + yOff;
+    let d = `M-${WAVE},${y.toFixed(1)}`;
+    for (let x = -WAVE; x < w + WAVE * 2; x += WAVE) {
+      d += ` q${WAVE / 4},-6 ${WAVE / 2},0 q${WAVE / 4},6 ${WAVE / 2},0`;
+    }
+    const flow = still || !flowing
+      ? ''
+      : `<animateTransform attributeName="transform" type="translate" values="0,0;${WAVE},0" dur="${dur}s" repeatCount="indefinite"/>`;
+    const op = (opacity * (flowing ? 1 : 0.45)).toFixed(3);
+    return `<path d="${d}" fill="none" stroke="${moonMid}" stroke-width="1.4" opacity="${op}" stroke-linecap="round">${flow}</path>`;
+  };
+  const river = [
+    ripple((h - lakeY) * 0.18, 0.3, 7),
+    ripple((h - lakeY) * 0.42, 0.22, 9.5),
+    ripple((h - lakeY) * 0.68, 0.16, 12),
+  ].join('');
+
+  // The deer trots across the hill in FRONT of the treeline — drawn after the
+  // trees, or they paint straight over it.
+  //
+  // The animateTransform has to be a direct child of the element whose
+  // transform it drives, and it replaces that transform wholesale while
+  // running — so the scale lives on a nested group, not alongside it.
+  // Silhouetted on the ridge against the sky, not down among the trees —
+  // a dark deer on a dark treeline is invisible, which is exactly how the
+  // first attempt looked. Hooves sit at y=30 in the deer's own units, so the
+  // origin is backed off the ridge line by that much.
+  const deerSc = 1.05 * treeScale;
+  const deerY = h * 0.658 - 30 * deerSc;
+  const deerScale = deerSc.toFixed(3);
+  const deerInner = `<g transform="scale(${deerScale})">${deer('#070C14', still)}</g>`;
+  const deerGroup = deerAlpha > 0.02
+    ? `<g opacity="${deerAlpha.toFixed(3)}">` +
+      (still
+        ? `<g transform="translate(${(w * 0.16).toFixed(0)} ${deerY.toFixed(0)})">${deerInner}</g>`
+        : `<g transform="translate(-60 ${deerY.toFixed(0)})"><animateTransform attributeName="transform" type="translate" values="-60,${deerY.toFixed(0)}; ${(w + 60).toFixed(0)},${deerY.toFixed(0)}" dur="16s" repeatCount="indefinite"/>${deerInner}</g>`) +
+      `</g>`
+    : '';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="${SCENE_STYLE(w, h)}"><defs><linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${skyTop}"/><stop offset="55%" stop-color="${skyMid}"/><stop offset="100%" stop-color="${skyLow}"/></linearGradient><radialGradient id="fMoon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${moonCore}"/><stop offset="70%" stop-color="${moonMid}"/><stop offset="100%" stop-color="${moonEdge}"/></radialGradient><mask id="fPhase"><rect width="${w}" height="${h}" fill="black"/><circle cx="${moonX}" cy="${moonY}" r="${moonR}" fill="white"/><circle cx="${(moonX + shadowDx).toFixed(1)}" cy="${(moonY - moonR * 0.18).toFixed(1)}" r="${(moonR * 1.04).toFixed(1)}" fill="black"/></mask><linearGradient id="fLake" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22405F"/><stop offset="100%" stop-color="#0A1526"/></linearGradient><linearGradient id="fGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${moonMid}" stop-opacity="${(0.55 * lerp(1, 0.4, hp)).toFixed(3)}"/><stop offset="100%" stop-color="${moonMid}" stop-opacity="0"/></linearGradient><filter id="fBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><rect width="${w}" height="${h}" fill="url(#fSky)"/>${stars}<circle cx="${moonX}" cy="${moonY}" r="${moonR * 2.1}" fill="${moonMid}" opacity="${glowOpacity}" filter="url(#fBlur)"/><circle cx="${moonX}" cy="${moonY}" r="${moonR}" fill="url(#fMoon)" mask="url(#fPhase)"/><path d="M0,${hill1Y} Q${w * 0.25},${hill1Y - 40} ${w * 0.5},${hill1Y - 28} T${w},${hill1Y - 46} V${h} H0 Z" fill="#20385A" opacity="0.85"/><path d="M0,${hill2Y} Q${w * 0.28},${hill2Y - 34} ${w * 0.5},${hill2Y - 22} T${w},${hill2Y - 42} V${h} H0 Z" fill="#16223A"/>${trees}${deerGroup}${leaves}<rect x="0" y="${lakeY}" width="${w}" height="${h - lakeY}" fill="url(#fLake)"/><rect x="${moonX - moonR * 0.95}" y="${lakeY}" width="${moonR * 1.9}" height="${h - lakeY}" fill="url(#fGlow)" filter="url(#fBlur)"/>${river}</svg>`;
 }
+
 
 /* Original hand-tuned clouds: [xF, yF, rxF, ryF, opacity]. */
 const BEACH_CLOUDS = [
