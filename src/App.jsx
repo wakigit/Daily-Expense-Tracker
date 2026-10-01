@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from './hooks/useAppData';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
-import { WORTH_OPTIONS, worthLabel } from './lib/worth';
 import { answer } from './lib/ask';
 
 import Header from './components/Header';
@@ -23,7 +22,6 @@ const blankForm = (catId) => ({
   description: '',
   amount: '',
   notes: '',
-  worth: undefined,
 });
 
 export default function App() {
@@ -186,10 +184,8 @@ export default function App() {
       setEditId(null);
       setToast({ message: 'Changes saved ✓' });
     } else {
-      // Capture the id so the toast can tag the expense it just created.
-      const id = Date.now();
-      setExpenses((p) => [...p, { ...entry, id }]);
-      setToast({ message: 'Added — worth it?', kind: 'worth', expenseId: id });
+      setExpenses((p) => [...p, { ...entry, id: Date.now() }]);
+      setToast({ message: 'Added ✓' });
     }
     setForm(blankForm(cats[0]?.id));
     setTab('home');
@@ -212,7 +208,6 @@ export default function App() {
       description: exp.description,
       amount: String(exp.amount),
       notes: exp.notes || '',
-      worth: exp.worth,
     });
     setEditId(exp.id);
     setTab('add');
@@ -243,12 +238,6 @@ export default function App() {
       { from: 'me', text },
       { from: 'bot', text: reply.text, detail: reply.detail },
     ]);
-  };
-
-  /** Tag (or untag) how an expense felt. Always optional. */
-  const tagWorth = (id, worth) => {
-    setExpenses((p) => p.map((e) => (e.id === id ? { ...e, worth } : e)));
-    setToast({ message: worth ? `Marked ${worthLabel(worth).toLowerCase()}` : 'Tag cleared' });
   };
 
   const undoDelete = () => {
@@ -377,7 +366,6 @@ export default function App() {
             editId={editId}
             onSubmit={submit}
             onCancel={cancelEdit}
-            onWorth={(w) => setForm((f) => ({ ...f, worth: w }))}
             onVoice={applyVoice}
           />
         )}
@@ -415,14 +403,7 @@ export default function App() {
         actions={
           toast?.kind === 'undo'
             ? [{ key: 'undo', label: 'Undo', onClick: undoDelete }]
-            : toast?.kind === 'worth'
-              ? WORTH_OPTIONS.map((o) => ({
-                  key: o.id,
-                  label: o.emoji,
-                  aria: o.label,
-                  onClick: () => tagWorth(toast.expenseId, o.id),
-                }))
-              : []
+            : []
         }
       />
     </>

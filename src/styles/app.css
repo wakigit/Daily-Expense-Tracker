@@ -765,76 +765,7 @@ button:active { transform: scale(0.96); }
 }
 .toast-action:hover { background: rgba(var(--accent-rgb), 0.2); }
 
-/* ═══ "Was it worth it?" ═══════════════════════════════════════ */
-
-.worth-picker { display: flex; gap: 8px; }
-
-.worth-btn {
-  flex: 1;
-  flex-direction: column;
-  gap: 3px;
-  padding: 10px 6px;
-  min-height: 62px;
-  border-radius: var(--r-ctl);
-  border: 1.5px solid rgba(var(--border-rgb), 0.5);
-  background: rgba(var(--surface-rgb), 0.6);
-}
-.worth-btn.sel {
-  border-color: var(--accent);
-  background: rgba(var(--accent-rgb), 0.14);
-}
-.worth-emoji { font-size: 19px; line-height: 1; }
-.worth-label { font-size: 10px; color: var(--text-sub); font-weight: 500; }
-.worth-btn.sel .worth-label { color: var(--accent); }
-
-.worth-picker.sm .worth-btn { min-height: 44px; padding: 6px; }
-.worth-picker.sm .worth-label { display: none; }
-
-/* ── Insight card ── */
-
-.worth-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 0.9rem;
-}
-
-.worth-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 10px 4px;
-  border-radius: var(--r-ctl);
-  background: rgba(var(--tint-rgb), 0.5);
-}
-.worth-stat-emoji { font-size: 18px; line-height: 1.1; }
-.worth-stat-amt { font-size: 14px; font-weight: 700; color: var(--text); }
-.worth-stat-cap { font-size: 10px; color: var(--text-muted); }
-
-.worth-insight {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--text-sub);
-}
-.worth-insight strong { color: var(--text); font-weight: 700; }
-
-.worth-cat {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.worth-foot {
-  font-size: 10.5px;
-  color: var(--text-muted);
-  margin-top: 7px;
-}
-
-/* The toast shows three emoji buttons after an add; keep them compact. */
+/* Toast actions sit beside the message; keep both on one line. */
 .toast-msg { white-space: nowrap; }
 .toast-action { white-space: nowrap; }
 

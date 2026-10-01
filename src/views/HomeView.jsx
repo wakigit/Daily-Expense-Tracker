@@ -1,17 +1,12 @@
 import Donut from '../components/Donut';
 import TxnList from '../components/TxnList';
 import SearchBar from '../components/SearchBar';
-import WorthCard from '../components/WorthCard';
 import { money, signedMoney } from '../lib/format';
 import { useCountUp } from '../hooks/useCountUp';
 import { useTxnFilter } from '../hooks/useTxnFilter';
-import { worthStats } from '../lib/worth';
 
 // Below this many rows a search box is clutter, not help.
 const SEARCH_THRESHOLD = 6;
-
-// An insight drawn from one or two tagged expenses is noise, not a finding.
-const WORTH_THRESHOLD = 3;
 
 export default function HomeView({
   totalSpent, totalBudget, remaining, budPct, isOver,
@@ -21,7 +16,6 @@ export default function HomeView({
   const shownTotal = useCountUp(totalSpent);
   const shownRemaining = useCountUp(remaining);
   const f = useTxnFilter(monthExp, catById);
-  const worth = worthStats(monthExp, catById);
 
   return (
     <>
@@ -87,11 +81,8 @@ export default function HomeView({
         )}
       </section>
 
-      {/* ── Was it worth it? ── */}
-      {worth.taggedCount >= WORTH_THRESHOLD && <WorthCard stats={worth} index={2} />}
-
       {/* ── Budgets ── */}
-      <section className="card" style={{ '--i': worth.taggedCount >= WORTH_THRESHOLD ? 3 : 2 }}>
+      <section className="card" style={{ '--i': 2 }}>
         <p className="lbl">Budget by category — tap to view ›</p>
         {cats.map((c) => {
           const spent = spending[c.id] || 0;
@@ -132,7 +123,7 @@ export default function HomeView({
 
       {/* ── Transactions ── */}
       {monthExp.length > 0 && (
-        <section className="card" style={{ '--i': worth.taggedCount >= WORTH_THRESHOLD ? 4 : 3 }}>
+        <section className="card" style={{ '--i': 3 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <p className="lbl">Transactions</p>
             {f.isFiltering && (

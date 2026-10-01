@@ -1,9 +1,8 @@
 /**
  * Transient confirmation, optionally carrying one or more actions.
  *
- * Generalised from a single Undo button so the same component can offer the
- * three "was it worth it?" reactions after an expense is added — one toast
- * component, not two.
+ * Generalised from a single Undo button so the same component can carry any
+ * number of actions — one toast component, not two.
  *
  * role="status" + aria-live announces it without stealing focus.
  */
