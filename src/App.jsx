@@ -11,20 +11,22 @@ import Toast from './components/Toast';
 
 import HomeView from './views/HomeView';
 import CategoryView from './views/CategoryView';
-import HistoryView from './views/HistoryView';
+import OverviewView from './views/OverviewView';
 import AddView from './views/AddView';
 import AskView from './views/AskView';
 import SettingsView from './views/SettingsView';
-import BudgetView from './views/BudgetView';
 
 /** §4 zone 1: every page but Home shows its name where the month picker sits. */
 const PAGE_TITLES = {
-  history: 'History',
+  overview: 'Overview',
   add: 'Add expense',
   ask: 'Ask',
-  budget: 'Budget',
   settings: 'Settings',
 };
+
+/** Budgets as editable strings; 0 shows as an empty field, not a stubborn 0. */
+const toDraft = (budgets) =>
+  Object.fromEntries(Object.entries(budgets || {}).map(([id, v]) => [id, v ? String(v) : '']));
 
 const blankForm = (catId) => ({
   date: today(),
@@ -65,7 +67,7 @@ export default function App() {
   // Holds the last deleted expense so the toast can put it back.
   const [undoExp, setUndoExp] = useState(null);
 
-  useEffect(() => { setBudDraft(budgets); }, [budgets]);
+  useEffect(() => { setBudDraft(toDraft(budgets)); }, [budgets]);
 
   // §4: Home gets the masked left-hand gradient so the moon stays bright;
   // every other page gets the flat scrim, because there is no hero to protect.
@@ -283,16 +285,33 @@ export default function App() {
   };
 
   const saveBudgets = () => {
-    setBudgets(budDraft);
+    // An empty field means "no budget", which is zero — but only on save, never
+    // while typing.
+    setBudgets(Object.fromEntries(
+      Object.entries(budDraft).map(([id, v]) => [id, Number(v) || 0])
+    ));
     setSavedFlash(true);
     setToast({ message: 'Budgets saved' });
     setTimeout(() => setSavedFlash(false), 1500);
   };
 
+  /**
+   * Open Add already pointed at another month. Defaults to the 1st, except for
+   * the month in progress, where today is what you almost always mean.
+   */
+  const addToMonth = (m) => {
+    setYm(m);
+    setEditId(null);
+    setErrors({});
+    setForm({ ...blankForm(cats[0]?.id), date: m === curYm() ? today() : `${m}-01` });
+    setCatFilter(null);
+    setTab('add');
+  };
+
   const goTo = (t) => {
     if (t !== 'home') setCatFilter(null);
     if (t === 'add' && !editId) { setForm(blankForm(cats[0]?.id)); setErrors({}); }
-    if (t === 'settings') setBudDraft({ ...budgets });
+    if (t === 'settings') setBudDraft(toDraft(budgets));
     setTab(t);
   };
 
@@ -333,7 +352,6 @@ export default function App() {
           onClearFilter={() => setCatFilter(null)}
           ym={ym}
           onOpenPicker={() => setShowPicker(true)}
-          onOpenSettings={() => goTo('settings')}
         />
 
         {tab === 'home' && catFilter && (
@@ -363,14 +381,15 @@ export default function App() {
           />
         )}
 
-        {tab === 'history' && (
-          <HistoryView
+        {tab === 'overview' && (
+          <OverviewView
             histByYear={histByYear}
             monthTotals={monthTotals}
             ym={ym}
             totalBudget={totalBudget}
             hasExpenses={expenses.length > 0}
             onPickMonth={(m) => { setYm(m); setTab('home'); }}
+            onAddToMonth={addToMonth}
           />
         )}
 
@@ -384,17 +403,6 @@ export default function App() {
             onSubmit={submit}
             onCancel={cancelEdit}
             onVoice={applyVoice}
-          />
-        )}
-
-        {tab === 'budget' && (
-          <BudgetView
-            totalSpent={totalSpent}
-            totalBudget={totalBudget}
-            cats={cats}
-            budgets={budgets}
-            spending={spending}
-            onEdit={() => goTo('settings')}
           />
         )}
 

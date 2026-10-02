@@ -10,7 +10,7 @@ export default function SettingsView({
   delCatId, onAskDelCat, onDelCat,
   newCat, onNewCat, onAddCat,
 }) {
-  const draftTotal = cats.reduce((s, c) => s + (budDraft[c.id] || 0), 0);
+  const draftTotal = cats.reduce((s, c) => s + (Number(budDraft[c.id]) || 0), 0);
 
   return (
     <>
@@ -107,8 +107,9 @@ export default function SettingsView({
               inputMode="decimal"
               min="0"
               step="1"
-              value={budDraft[c.id] ?? 0}
-              onChange={(ev) => onBudDraft(c.id, parseFloat(ev.target.value) || 0)}
+              placeholder="0"
+              value={budDraft[c.id] ?? ''}
+              onChange={(ev) => onBudDraft(c.id, ev.target.value)}
             />
           </div>
         ))}

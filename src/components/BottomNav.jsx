@@ -1,16 +1,18 @@
 import NavIcon from './NavIcon';
 
 /**
- * §5: Home, History, Add, Ask, Budget. Add is raised because logging an
- * expense is the one thing the app exists for; Settings moved to the header
- * gear to make room for Budget.
+ * Home, Overview, Add, Ask, Settings. Add is raised because logging an expense
+ * is the one thing the app exists for.
+ *
+ * Budget had this last slot briefly; it showed figures Home already showed, so
+ * the slot went to Settings and the header gear went with it.
  */
 const TABS = [
   { id: 'home', label: 'Home' },
-  { id: 'history', label: 'History' },
+  { id: 'overview', label: 'Overview' },
   { id: 'add', label: 'Add', raised: true },
   { id: 'ask', label: 'Ask' },
-  { id: 'budget', label: 'Budget' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export default function BottomNav({ tab, onGo }) {

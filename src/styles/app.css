@@ -411,7 +411,30 @@ button:active { transform: scale(0.96); }
   padding: 13px 6px;
   border-radius: 13px;
 }
+.hist-row {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.hist-row.sel { background: rgba(var(--accent-rgb), 0.08); }
 .hist-row:hover { background: rgba(var(--accent-rgb), 0.05); }
+
+/* Says out loud that a past month is still writable. */
+.row-add {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 6px 10px;
+  min-height: 40px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.row-add:hover { background: rgba(var(--accent-rgb), 0.08); border-radius: var(--r-ctl); }
 .hist-row:active { background: rgba(var(--accent-rgb), 0.1); transform: scale(0.995); }
 
 .cat-row { padding: 6px; border-radius: 12px; margin-bottom: 14px; }

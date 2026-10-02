@@ -20,7 +20,7 @@ export default function NavIcon({ id }) {
       </svg>
     );
 
-  if (id === 'history')
+  if (id === 'overview')
     return (
       <svg {...props}>
         <circle cx="12" cy="12" r="10" />
@@ -43,11 +43,11 @@ export default function NavIcon({ id }) {
       </svg>
     );
 
-  if (id === 'budget')
+  if (id === 'settings')
     return (
       <svg {...props}>
-        <path d="M3 7.5A2.5 2.5 0 015.5 5H18a2 2 0 012 2v10a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5z" />
-        <path d="M20 10.5h-3.2a1.75 1.75 0 000 3.5H20" />
+        <circle cx="12" cy="12" r="3.2" />
+        <path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8" />
       </svg>
     );
 

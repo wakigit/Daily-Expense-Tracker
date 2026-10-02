@@ -39,7 +39,7 @@ export const THEMES = [
     preview: ['#0A111F', '#E2B866'],
     vars: {
       '--ground': '#0A111F',
-      '--card': 'rgba(13,21,37,0.9)',
+      '--card': 'rgba(13,21,37,0.8)',
       '--card-line': 'rgba(176,196,226,0.16)',
       '--tx': '#F2EEE3', '--tx-sub': '#BAC4D2', '--tx-muted': '#93A1B4',
       '--on-scene': '#F8F3E6', '--on-scene-sub': '#D5DCE6',
@@ -64,7 +64,7 @@ export const THEMES = [
     preview: ['#E07A5F', '#B04419'],
     vars: {
       '--ground': '#2A1A2E',
-      '--card': 'rgba(255,248,242,0.95)',
+      '--card': 'rgba(255,248,242,0.8)',
       '--card-line': 'rgba(201,140,120,0.34)',
       '--tx': '#3A1F2B', '--tx-sub': '#6E4655', '--tx-muted': '#7E5866',
       '--on-scene': '#FFF7EE', '--on-scene-sub': '#FBE6D8',
@@ -89,7 +89,7 @@ export const THEMES = [
     preview: ['#0D1119', '#F2A65A'],
     vars: {
       '--ground': '#0D1119',
-      '--card': 'rgba(17,22,33,0.9)',
+      '--card': 'rgba(17,22,33,0.8)',
       '--card-line': 'rgba(160,180,210,0.16)',
       '--tx': '#EEF1F5', '--tx-sub': '#B5BFCC', '--tx-muted': '#919DAD',
       '--on-scene': '#F4F6FA', '--on-scene-sub': '#D2D9E3',

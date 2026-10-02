@@ -10,7 +10,7 @@
  */
 :root {
   --ground: #0A111F;
-  --card: rgba(13,21,37,0.9);
+  --card: rgba(13,21,37,0.8);
   --card-line: rgba(176,196,226,0.16);
   --tx: #F2EEE3;
   --tx-sub: #BAC4D2;

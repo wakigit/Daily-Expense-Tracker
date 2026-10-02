@@ -26,11 +26,20 @@
 const VB_W = 390;
 const VB_H = 844;
 
-/** Deterministic 0–1 pseudo-random, so a rebuild never reshuffles the scene. */
+/**
+ * One seed per page load. Within a session every rebuild draws exactly the same
+ * scene — so a theme switch and back does not reshuffle the forest — but open
+ * the app tomorrow and the stars, the fish and the crab have moved.
+ */
+const SEED = Math.random() * 997;
+
 const rnd = (i, s) => {
-  const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453;
+  const v = Math.sin((i + SEED) * 12.9898 + s * 78.233) * 43758.5453;
   return v - Math.floor(v);
 };
+
+/** Random float in a range, from the per-load seed. */
+const rr = (i, s, lo, hi) => lo + rnd(i, s) * (hi - lo);
 
 /**
  * Every calm/over difference in the three scenes, as CSS.
@@ -85,25 +94,37 @@ const SCENE_CSS = `
 #bg .s2{stop-color:#E07A5F}
 #bg .s3{stop-color:#F9B97F}
 #bg .sun-edge{stop-color:#F29A5B}
-#bg .sun,#bg .sun-glow{cy:280px}
+#bg .sun,#bg .sun-glow{cy:230px}
 #bg .sun{opacity:1}
 #bg .sea-top{stop-color:#E59A72}
+#bg .waterline{fill:#FFD9B4}
 #bg .sand-top{stop-color:#D9A184}
 #bg .cloud-col{fill:#F4B49A}
 #bg .reflect{fill:#FFD7A1;opacity:0.9}
 #bg .beach-stars{opacity:0}
+#bg .pennant-fill{fill:#FFF1E2}
+#bg .pennant-face{fill:#B3261E}
+#bg .mouth-happy,#bg .mouth-sad{stroke:#B3261E}
+#bg .mouth-happy{opacity:1}
+#bg .mouth-sad{opacity:0}
 #bg .scene[data-over="true"] .s0{stop-color:#0B1230}
 #bg .scene[data-over="true"] .s1{stop-color:#23295A}
 #bg .scene[data-over="true"] .s2{stop-color:#4B3F72}
 #bg .scene[data-over="true"] .s3{stop-color:#8C6A8E}
 #bg .scene[data-over="true"] .sun-edge{stop-color:#C9637A}
-#bg .scene[data-over="true"] .sun,#bg .scene[data-over="true"] .sun-glow{cy:324px}
+#bg .scene[data-over="true"] .sun,#bg .scene[data-over="true"] .sun-glow{cy:280px}
 #bg .scene[data-over="true"] .sun{opacity:0.6}
 #bg .scene[data-over="true"] .sea-top{stop-color:#4E4A72}
+#bg .scene[data-over="true"] .waterline{fill:#9A93C0}
 #bg .scene[data-over="true"] .sand-top{stop-color:#6E5470}
 #bg .scene[data-over="true"] .cloud-col{fill:#5D5884}
 #bg .scene[data-over="true"] .reflect{fill:#B79BC4;opacity:0.4}
 #bg .scene[data-over="true"] .beach-stars{opacity:1}
+#bg .scene[data-over="true"] .pennant-fill{fill:#E8D9E4}
+#bg .scene[data-over="true"] .pennant-face{fill:#7A4A63}
+#bg .scene[data-over="true"] .mouth-happy,#bg .scene[data-over="true"] .mouth-sad{stroke:#7A4A63}
+#bg .scene[data-over="true"] .mouth-happy{opacity:0}
+#bg .scene[data-over="true"] .mouth-sad{opacity:1}
 
 /* city */
 #bg .win-col{fill:#F6C27A}
@@ -114,6 +135,8 @@ const SCENE_CSS = `
 #bg .rain-layer{opacity:0.2}
 #bg .rain-heavy{opacity:0}
 #bg .street-ref{opacity:0.5}
+#bg .face-happy{opacity:1}
+#bg .face-sad{opacity:0}
 #bg .scene[data-over="true"] .win-col{fill:#A9C1DE}
 #bg .scene[data-over="true"] .win-stop{stop-color:#A9C1DE}
 #bg .scene[data-over="true"] .lamp-col{fill:#D3E2F4}
@@ -122,6 +145,8 @@ const SCENE_CSS = `
 #bg .scene[data-over="true"] .rain-layer{opacity:0.6}
 #bg .scene[data-over="true"] .rain-heavy{opacity:0.6}
 #bg .scene[data-over="true"] .street-ref{opacity:0.9}
+#bg .scene[data-over="true"] .face-happy{opacity:0}
+#bg .scene[data-over="true"] .face-sad{opacity:1}
 
 /* ── The one-off calm↔over move (3.8). Reversible by construction. ── */
 #bg .tr{transition:transform 3.2s cubic-bezier(0.45,0,0.55,1),opacity 1.4s ease 1.8s}
@@ -136,10 +161,102 @@ const SCENE_CSS = `
 @keyframes w-rustle{0%,68%,100%{transform:rotate(0)}74%{transform:rotate(16deg)}80%{transform:rotate(-12deg)}86%{transform:rotate(6deg)}}
 #bg .flow{animation:w-flow 5s linear infinite}
 @keyframes w-flow{to{stroke-dashoffset:-48}}
-#bg .deerwalk{transform-box:fill-box;transform-origin:50% 50%;animation:w-deer 24s ease-in-out infinite}
-@keyframes w-deer{0%,6%{transform:translateX(0) scaleX(1)}20%{transform:translateX(24px) scaleX(1)}60%{transform:translateX(24px) scaleX(1)}62%{transform:translateX(24px) scaleX(-1)}78%{transform:translateX(0) scaleX(-1)}80%,100%{transform:translateX(0) scaleX(1)}}
-#bg .deerhead{transform-box:fill-box;transform-origin:0% 100%;animation:w-graze 24s ease-in-out infinite}
-@keyframes w-graze{0%,22%{transform:rotate(0)}28%,50%{transform:rotate(70deg)}34%{transform:rotate(64deg)}42%{transform:rotate(72deg)}56%,100%{transform:rotate(0)}}
+/* The deer works the clearing rather than pacing: out, graze, further out,
+   graze, turn, back, graze, home — ending on the opening pose so the 34s loop
+   closes invisibly. The head keyframes share the duration so the grazes land
+   while it is standing still. */
+#bg .deerwalk{transform-box:fill-box;transform-origin:50% 50%;animation:w-deer 34s ease-in-out infinite}
+@keyframes w-deer{
+  0%,4%{transform:translateX(0) scaleX(1)}
+  14%,24%{transform:translateX(34px) scaleX(1)}
+  34%,44%{transform:translateX(74px) scaleX(1)}
+  46%{transform:translateX(74px) scaleX(-1)}
+  58%,68%{transform:translateX(40px) scaleX(-1)}
+  80%{transform:translateX(0) scaleX(-1)}
+  84%,100%{transform:translateX(0) scaleX(1)}
+}
+#bg .deerhead{transform-box:fill-box;transform-origin:0% 100%;animation:w-graze 34s ease-in-out infinite}
+@keyframes w-graze{
+  0%,16%{transform:rotate(0)}
+  19%,23%{transform:rotate(68deg)}
+  21%{transform:rotate(61deg)}
+  26%,36%{transform:rotate(0)}
+  39%,43%{transform:rotate(71deg)}
+  41%{transform:rotate(64deg)}
+  46%,60%{transform:rotate(0)}
+  63%,67%{transform:rotate(66deg)}
+  65%{transform:rotate(59deg)}
+  70%,100%{transform:rotate(0)}
+}
+
+/* Traffic. One 24s cycle shared by the light and both cars, so they can't drift
+   out of agreement: red 0-35%, green 35-85%, amber 85-92%, red again to the
+   end. Starting and ending on red is what makes the loop close.
+   The cars leave on green, exit right, and return from the left while entirely
+   off-frame — the jump between those two positions happens outside the 0..390
+   box, so nothing is seen teleporting. */
+#bg .lamp-red{animation:w-red 24s steps(1) infinite}
+@keyframes w-red{0%,35%{opacity:1}35.01%,91.99%{opacity:0.1}92%,100%{opacity:1}}
+#bg .lamp-amber{animation:w-amber 24s steps(1) infinite}
+@keyframes w-amber{0%,84.99%{opacity:0.1}85%,92%{opacity:1}92.01%,100%{opacity:0.1}}
+#bg .lamp-green{animation:w-green 24s steps(1) infinite}
+@keyframes w-green{0%,34.99%{opacity:0.1}35%,85%{opacity:1}85.01%,100%{opacity:0.1}}
+
+#bg .car-a{animation:w-car-a 24s linear infinite}
+@keyframes w-car-a{
+  0%,35%{transform:translateX(0)}
+  60%{transform:translateX(330px)}
+  60.001%{transform:translateX(-440px)}
+  86%,100%{transform:translateX(0)}
+}
+#bg .car-b{animation:w-car-b 24s linear infinite}
+@keyframes w-car-b{
+  0%,38%{transform:translateX(0)}
+  64%{transform:translateX(340px)}
+  64.001%{transform:translateX(-440px)}
+  90%,100%{transform:translateX(0)}
+}
+
+/* The plane crosses once a minute, pennant trailing. Parked off-frame at both
+   ends of the loop so the reset is never seen. */
+#bg .plane{animation:w-plane 58s linear infinite}
+@keyframes w-plane{0%{transform:translateX(-200px)}72%,100%{transform:translateX(470px)}}
+#bg .pennant{transform-box:fill-box;transform-origin:0% 50%;animation:w-flap 1.6s ease-in-out infinite}
+@keyframes w-flap{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
+
+/* The surfer tracks a crest across the bay, rising and dropping with it. */
+#bg .surfer{animation:w-surf 26s linear infinite}
+@keyframes w-surf{
+  0%{opacity:0;transform:translate(410px,0)}
+  6%{opacity:1}
+  25%{transform:translate(300px,-3px)}
+  50%{transform:translate(190px,2px)}
+  75%{transform:translate(80px,-2px)}
+  94%{opacity:1}
+  100%{opacity:0;transform:translate(-30px,0)}
+}
+
+/* The crab works the sand sideways, the way crabs do, pausing to dig. */
+#bg .crab{animation:w-crab 38s ease-in-out infinite}
+@keyframes w-crab{
+  0%,5%{transform:translateX(0)}
+  22%,30%{transform:translateX(58px)}
+  48%,56%{transform:translateX(126px)}
+  72%,80%{transform:translateX(64px)}
+  96%,100%{transform:translateX(0)}
+}
+#bg .crab-leg{transform-box:fill-box;transform-origin:50% 0%;animation:w-scuttle 0.42s ease-in-out infinite}
+@keyframes w-scuttle{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(13deg)}}
+
+/* A shooting star is almost all waiting. Opacity 0 at both ends of the loop is
+   what lets it reset its position without anyone seeing the jump (§3.7). */
+#bg .shoot{animation:w-shoot 1s linear infinite}
+@keyframes w-shoot{
+  0%,87%{opacity:0;transform:translate(0,0)}
+  88.5%{opacity:0.95;transform:translate(-8px,5px)}
+  96%{opacity:0.95;transform:translate(-96px,58px)}
+  100%{opacity:0;transform:translate(-124px,75px)}
+}
 #bg .fish{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-fish 11s ease-out infinite}
 @keyframes w-fish{0%,84%{opacity:0;transform:translate(0,0) rotate(-40deg)}86%{opacity:1;transform:translate(-6px,-16px) rotate(-22deg)}90%{opacity:1;transform:translate(-13px,-22px) rotate(12deg)}94%{opacity:1;transform:translate(-20px,-6px) rotate(48deg)}96%,100%{opacity:0;transform:translate(-22px,0) rotate(60deg)}}
 #bg .ripple{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-ripple 11s ease-out infinite}
@@ -155,8 +272,6 @@ const SCENE_CSS = `
 @keyframes w-glow{0%,100%{opacity:.75}50%{opacity:1}}
 #bg .train{animation:w-train 20s linear infinite}
 @keyframes w-train{0%{transform:translateX(-360px)}42%{transform:translateX(430px)}100%{transform:translateX(430px)}}
-#bg .bus{animation:w-bus 26s linear infinite}
-@keyframes w-bus{0%,30%{transform:translateX(240px)}62%{transform:translateX(-380px)}100%{transform:translateX(-380px)}}
 #bg .flick{animation:w-flick 13s steps(1) infinite}
 @keyframes w-flick{0%,58%{opacity:1}60%,74%{opacity:.15}76%,100%{opacity:1}}
 #bg .rain{animation:w-rain .95s linear infinite}
@@ -225,12 +340,35 @@ function forestScene() {
     .map((p, i) => `<ellipse class="a rustle" cx="${p[0]}" cy="${p[1]}" rx="3.2" ry="1.5" style="animation-delay:${(-i * 0.9).toFixed(1)}s"/>`)
     .join('');
 
-  // Both fish share one shape; the second is half a loop out of phase so they
-  // never jump together.
-  const fish = (tx, ty, delay) =>
-    `<g transform="translate(${tx} ${ty})">` +
-    `<ellipse class="a ripple" cx="0" cy="2" rx="9" ry="2.2" fill="none" stroke="#BFD2EA" stroke-width="0.9"${delay}/>` +
-    `<path class="a fish" d="M0,0 C4,-3 9,-3 12,0 C9,3 4,3 0,0 Z M12,0 L16,-3 L16,3 Z" fill="#C9D9EE"${delay}/></g>`;
+  // Three fish, each with its own interval, phase and size, so the river never
+  // settles into a rhythm. The ripple shares the fish's timing — it is the same
+  // event seen on the surface.
+  const fish = (i) => {
+    const tx = rr(i, 41, 150, 350).toFixed(0);
+    const ty = rr(i, 42, 344, 396).toFixed(0);
+    const dur = rr(i, 43, 9, 17).toFixed(1);
+    const delay = (-rr(i, 44, 0, 17)).toFixed(1);
+    const sc = rr(i, 45, 0.78, 1.15).toFixed(2);
+    const st = ` style="animation-duration:${dur}s;animation-delay:${delay}s"`;
+    return `<g transform="translate(${tx} ${ty}) scale(${sc})">` +
+      `<ellipse class="a ripple" cx="0" cy="2" rx="9" ry="2.2" fill="none" stroke="#BFD2EA" stroke-width="0.9"${st}/>` +
+      `<path class="a fish" d="M0,0 C4,-3 9,-3 12,0 C9,3 4,3 0,0 Z M12,0 L16,-3 L16,3 Z" fill="#C9D9EE"${st}/></g>`;
+  };
+  const fishes = [0, 1, 2].map(fish).join('');
+
+  // One or two shooting stars, somewhere in the upper sky, on long lazy cycles
+  // so they stay an event rather than a feature.
+  const shootCount = rnd(0, 51) > 0.45 ? 2 : 1;
+  const shooting = Array.from({ length: shootCount }, (_, i) => {
+    const x = rr(i, 52, 150, 360).toFixed(0);
+    const y = rr(i, 53, 24, 150).toFixed(0);
+    const len = rr(i, 54, 16, 30).toFixed(0);
+    const dur = rr(i, 55, 26, 48).toFixed(0);
+    const delay = (-rr(i, 56, 0, 40)).toFixed(0);
+    return `<g class="a shoot" style="animation-duration:${dur}s;animation-delay:${delay}s">` +
+      `<line x1="${x}" y1="${y}" x2="${Number(x) + Number(len)}" y2="${Number(y) - len * 0.6}" ` +
+      `stroke="#F3F7FF" stroke-width="1.5" stroke-linecap="round"/></g>`;
+  }).join('');
 
   return `<svg class="scene" data-over="false" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -241,6 +379,7 @@ function forestScene() {
 </defs>
 <rect width="${VB_W}" height="${VB_H}" fill="url(#fsky)"/>
 <g>${stars.join('')}</g>
+${shooting}
 <circle class="trc moon-glow" cx="310" cy="100" r="96" fill="url(#fglow)"/>
 <circle cx="310" cy="100" r="28" fill="#F4ECD2" mask="url(#fmoon)"/>
 <path d="M0,282 C60,262 110,274 160,266 C220,256 280,272 330,262 C360,256 380,262 390,260 L390,340 L0,340 Z" fill="#121D33"/>
@@ -253,7 +392,7 @@ function forestScene() {
 <path class="a flow" d="M390,354 C322,367 272,386 212,392 C142,399 82,416 0,434" stroke-width="1" stroke-dasharray="4 20" style="animation-duration:7s"/>
 <path class="a flow" d="M390,339 C320,352 270,370 210,376 C140,383 80,400 0,418" stroke-width="0.9" stroke-dasharray="8 16" style="animation-duration:6s"/>
 </g>
-<g class="trc fish-group">${fish(332, 350, '')}${fish(228, 386, ' style="animation-delay:-5.5s"')}</g>
+<g class="trc fish-group">${fishes}</g>
 <g class="tr deer">
 <g transform="translate(118 292)">
 <g class="a deerwalk" fill="#05090F" stroke="rgba(196,210,232,0.38)" stroke-width="0.6">
@@ -275,78 +414,195 @@ function forestScene() {
 /* ── Sunset beach ──────────────────────────────────────────────── */
 
 function beachScene() {
+  // Everything that matters has to live above y 392: the cards start there and
+  // the scene is fixed, so no amount of scrolling reveals what is underneath.
+  // Within that budget the sea gets twice the sand, per §13 — sea 296..360,
+  // sand 360 down. The sun lifts to 230 so the plane and the surfer have room.
+  const HORIZON = 296;
+  const SHORE = 360;
+
   const stars = Array.from({ length: 22 }, (_, i) => {
-    const x = Math.round(rnd(i, 1) * 380 + 5);
-    const y = Math.round(rnd(i, 2) * 230 + 10);
-    return `<circle class="a tw" cx="${x}" cy="${y}" r="${(0.6 + rnd(i, 7) * 0.9).toFixed(2)}" fill="#F3EEF8" style="animation-delay:${(-rnd(i, 8) * 5).toFixed(1)}s;animation-duration:${(3.5 + rnd(i, 9) * 4).toFixed(1)}s"/>`;
+    const x = Math.round(rr(i, 1, 5, 385));
+    const y = Math.round(rr(i, 2, 10, 240));
+    return `<circle class="a tw" cx="${x}" cy="${y}" r="${rr(i, 7, 0.6, 1.5).toFixed(2)}" fill="#F3EEF8" style="animation-delay:${(-rr(i, 8, 0, 5)).toFixed(1)}s;animation-duration:${rr(i, 9, 3.5, 7.5).toFixed(1)}s"/>`;
   }).join('');
 
-  // Two wavelengths of path for one screen width, so translating by exactly
-  // -390px lands on an identical crest and the loop is invisible.
+  // Two wavelengths per screen width, so translating by exactly -390 lands on
+  // an identical crest and the loop is invisible.
   const wavePath = (y, a) => {
-    let s = `M0,${y}`;
-    for (let x = 0; x < 780; x += 30) s += ` Q${x + 15},${y - a} ${x + 30},${y}`;
-    return s;
+    let d = `M0,${y}`;
+    for (let x = 0; x < 780; x += 30) d += ` Q${x + 15},${y - a} ${x + 30},${y}`;
+    return d;
   };
 
+  const waves = [
+    [306, 1.8, 1.0, 0.34, 30], [318, 2.1, 1.0, 0.30, 37], [332, 2.4, 1.0, 0.26, 44],
+    [344, 2.7, 0.9, 0.22, 52], [354, 3.0, 0.9, 0.18, 61],
+  ].map(([y, amp, w, op, dur]) =>
+    `<path class="a wave" d="${wavePath(y, amp)}" stroke="#F7D2B4" stroke-width="${w}" opacity="${op}" style="animation-duration:${dur}s"/>`
+  ).join('');
+
   const reflect = Array.from({ length: 9 }, (_, i) => {
-    const w = 46 - i * 4;
-    return `<rect class="a shim" x="${(290 - w / 2 + (rnd(i, 11) - 0.5) * 6).toFixed(1)}" y="${334 + i * 4}" width="${w}" height="2" rx="1" style="animation-delay:${(-i * 0.4).toFixed(1)}s"/>`;
+    const w = 48 - i * 4;
+    return `<rect class="a shim" x="${(290 - w / 2 + (rnd(i, 11) - 0.5) * 7).toFixed(1)}" y="${300 + i * 6}" width="${w}" height="2" rx="1" style="animation-delay:${(-rr(i, 12, 0, 4)).toFixed(1)}s"/>`;
   }).join('');
+
+  // Sand grain: a scatter of dots and short strokes, denser near the water.
+  const grains = Array.from({ length: 150 }, (_, i) => {
+    const x = rr(i, 61, 0, 390).toFixed(1);
+    const y = rr(i, 62, SHORE + 3, SHORE + 120).toFixed(1);
+    const r = rr(i, 63, 0.4, 1.3).toFixed(2);
+    const o = rr(i, 64, 0.06, 0.26).toFixed(2);
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFF0DC" opacity="${o}"/>`;
+  }).join('');
+
+  const pebbles = Array.from({ length: 14 }, (_, i) =>
+    `<ellipse cx="${rr(i, 65, 10, 380).toFixed(0)}" cy="${rr(i, 66, SHORE + 12, SHORE + 100).toFixed(0)}" rx="${rr(i, 67, 1.6, 3.4).toFixed(1)}" ry="${rr(i, 68, 1, 2).toFixed(1)}" fill="#3A2230" opacity="0.3"/>`
+  ).join('');
+
+  const crabX = rr(0, 69, 30, 110).toFixed(0);
+  const crabY = rr(0, 70, SHORE + 13, SHORE + 21).toFixed(0);
+  const crabLeg = (x, d) =>
+    `<line class="a crab-leg" x1="${x}" y1="0" x2="${x + d}" y2="5" stroke="#B3261E" stroke-width="1.4" stroke-linecap="round" style="animation-delay:${(-Math.abs(x) * 0.06).toFixed(2)}s"/>`;
 
   return `<svg class="scene" data-over="false" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<linearGradient id="bsky" x1="0" y1="0" x2="0" y2="1"><stop class="trc s0" offset="0"/><stop class="trc s1" offset="0.18"/><stop class="trc s2" offset="0.32"/><stop class="trc s3" offset="0.39"/><stop offset="1" stop-color="#1A1426"/></linearGradient>
+<linearGradient id="bsky" x1="0" y1="0" x2="0" y2="1"><stop class="trc s0" offset="0"/><stop class="trc s1" offset="0.18"/><stop class="trc s2" offset="0.30"/><stop class="trc s3" offset="0.38"/><stop offset="1" stop-color="#1A1426"/></linearGradient>
 <radialGradient id="bsun"><stop offset="0" stop-color="#FFF4D6"/><stop offset="0.6" stop-color="#FFD39A"/><stop class="trc sun-edge" offset="1"/></radialGradient>
 <radialGradient id="bglow"><stop class="trc sun-edge" offset="0" stop-opacity="0.55"/><stop offset="1" stop-color="#F29A5B" stop-opacity="0"/></radialGradient>
-<linearGradient id="bsea" x1="0" y1="0" x2="0" y2="1"><stop class="trc sea-top" offset="0"/><stop offset="0.5" stop-color="#2E5A6E"/><stop offset="1" stop-color="#12283A"/></linearGradient>
+<linearGradient id="bsea" x1="0" y1="0" x2="0" y2="1"><stop class="trc sea-top" offset="0"/><stop offset="0.04" stop-color="#C06A62"/><stop offset="0.14" stop-color="#2E5A6E"/><stop offset="1" stop-color="#0E2334"/></linearGradient>
 <linearGradient id="bsand" x1="0" y1="0" x2="0" y2="1"><stop class="trc sand-top" offset="0"/><stop offset="1" stop-color="#4A2E3A"/></linearGradient>
-<clipPath id="bclip"><rect x="0" y="0" width="${VB_W}" height="330"/></clipPath>
+<clipPath id="bclip"><rect x="0" y="0" width="${VB_W}" height="${HORIZON}"/></clipPath>
+<clipPath id="bsandclip"><path d="M0,${SHORE} C130,${SHORE - 8} 250,${SHORE + 8} 390,${SHORE - 2} L390,844 L0,844 Z"/></clipPath>
 </defs>
 <rect width="${VB_W}" height="${VB_H}" fill="url(#bsky)"/>
 <g class="trc beach-stars">${stars}</g>
 <g class="trc cloud-col" opacity="0.62">
-<g class="a drift"><ellipse cx="120" cy="128" rx="84" ry="6"/><ellipse cx="150" cy="120" rx="46" ry="5"/></g>
-<g class="a drift" style="animation-duration:120s;animation-delay:-40s"><ellipse cx="300" cy="196" rx="76" ry="5"/><ellipse cx="270" cy="189" rx="40" ry="4"/></g>
-<g class="a drift" style="animation-duration:105s;animation-delay:-70s"><ellipse cx="96" cy="246" rx="70" ry="4"/></g>
+<g class="a drift"><ellipse cx="120" cy="112" rx="84" ry="6"/><ellipse cx="150" cy="104" rx="46" ry="5"/></g>
+<g class="a drift" style="animation-duration:120s;animation-delay:-40s"><ellipse cx="300" cy="178" rx="76" ry="5"/><ellipse cx="270" cy="171" rx="40" ry="4"/></g>
+<g class="a drift" style="animation-duration:105s;animation-delay:-70s"><ellipse cx="96" cy="236" rx="70" ry="4"/></g>
 </g>
 <g clip-path="url(#bclip)">
 <circle class="a glow trc sun-glow" cx="290" r="120" fill="url(#bglow)"/>
 <circle class="trc sun" cx="290" r="30" fill="url(#bsun)"/>
 </g>
-<rect x="0" y="330" width="${VB_W}" height="514" fill="url(#bsea)"/>
-<g class="trc reflect">${reflect}</g>
-<g fill="none" stroke-linecap="round">
-<path class="a wave" d="${wavePath(346, 2.5)}" stroke="#F7D2B4" stroke-width="1" opacity="0.32"/>
-<path class="a wave" d="${wavePath(358, 2)}" stroke="#F7D2B4" stroke-width="0.8" opacity="0.22" style="animation-duration:44s"/>
+
+<!-- The plane tows a pennant, not a slogan: the status is the chip's job. -->
+<g class="a plane">
+<g transform="translate(0 150)">
+<path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
+<path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
+<g class="a pennant">
+<path d="M0,1 L-46,-5 L-46,8 Z" class="trc pennant-fill"/>
+<circle class="trc pennant-face" cx="-30" cy="1.5" r="1.5"/>
+<circle class="trc pennant-face" cx="-22" cy="1.5" r="1.5"/>
+<path class="trc mouth-happy" d="M-32,5 Q-26,9.5 -20,5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
+<path class="trc mouth-sad" d="M-32,7.5 Q-26,3 -20,7.5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
 </g>
-<path d="M0,372 C130,364 250,380 390,370 L390,844 L0,844 Z" fill="url(#bsand)"/>
-<path class="a lap" d="M0,371 C130,363 250,379 390,369" fill="none" stroke="#FFF1E2" stroke-width="1.6" opacity="0.55"/>
+</g>
+</g>
+
+<rect x="0" y="${HORIZON}" width="${VB_W}" height="${844 - HORIZON}" fill="url(#bsea)"/>
+<rect class="trc waterline" x="0" y="${HORIZON - 1}" width="${VB_W}" height="1.6" opacity="0.6"/>
+<g class="trc reflect">${reflect}</g>
+<g fill="none" stroke-linecap="round">${waves}</g>
+
+<!-- Surfer, riding the crest line rather than sitting on top of it. -->
+<g class="a surfer">
+<g transform="translate(0 330)">
+<path d="M-11,4 Q0,8 12,3 Q0,7 -11,4 Z" fill="#F2E3C9"/>
+<path d="M0,3 L0,-7" stroke="#2E2235" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="0" cy="-10" r="2.4" fill="#2E2235"/>
+<path d="M0,-5 L6,-8 M0,-5 L-6,-9" stroke="#2E2235" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M-14,6 Q-4,11 10,5" fill="none" stroke="#FFF1E2" stroke-width="1.6" opacity="0.75" stroke-linecap="round"/>
+</g>
+</g>
+
+<path d="M0,${SHORE} C130,${SHORE - 8} 250,${SHORE + 8} 390,${SHORE - 2} L390,844 L0,844 Z" fill="url(#bsand)"/>
+<g clip-path="url(#bsandclip)">${grains}${pebbles}</g>
+<path class="a lap" d="M0,${SHORE - 1} C130,${SHORE - 9} 250,${SHORE + 7} 390,${SHORE - 3}" fill="none" stroke="#FFF1E2" stroke-width="1.8" opacity="0.6"/>
+
+<!-- Crab. Drawn after the sand so it is on the beach, not under it. -->
+<g class="a crab">
+<g transform="translate(${crabX} ${crabY})">
+${crabLeg(-7, -4)}${crabLeg(-3, -3)}${crabLeg(3, 3)}${crabLeg(7, 4)}
+<ellipse cx="0" cy="-2" rx="8" ry="5.4" fill="#D7372A"/>
+<ellipse cx="0" cy="-3.4" rx="6" ry="3" fill="#E8564A" opacity="0.8"/>
+<path d="M-8,-4 L-13,-8 L-10,-9 L-6,-6 Z" fill="#B3261E"/>
+<path d="M8,-4 L13,-8 L10,-9 L6,-6 Z" fill="#B3261E"/>
+<circle cx="-3" cy="-6.6" r="1.5" fill="#2B0F0C"/>
+<circle cx="3" cy="-6.6" r="1.5" fill="#2B0F0C"/>
+<circle cx="-2.6" cy="-7" r="0.5" fill="#fff"/>
+<circle cx="3.4" cy="-7" r="0.5" fill="#fff"/>
+</g>
+</g>
 </svg>`;
 }
 
 /* ── Rainy city ────────────────────────────────────────────────── */
 
 function cityScene() {
-  // Lit windows, skipped at random so the blocks don't read as graph paper.
-  // About one in twelve flickers, which is what makes the city feel occupied.
+  /* The tower's lit windows carry a face — §13, a face only: the grid is 8
+     columns wide and "BELOW BUDGET" would need about 60. Rows 2..8 of columns
+     0..6 are reserved for it; the random fill skips those cells but leaves them
+     dimly lit, so the facade still reads as a building rather than a billboard
+     with a hole punched in it. */
+  const FACE_HAPPY = [
+    '.......',
+    '.X...X.',
+    '.X...X.',
+    '.......',
+    'X.....X',
+    '.X...X.',
+    '..XXX..',
+  ];
+  const FACE_SAD = [
+    '.......',
+    '.X...X.',
+    '.X...X.',
+    '.......',
+    '..XXX..',
+    '.X...X.',
+    'X.....X',
+  ];
+  const FACE_X = 258, FACE_Y = 92, DX = 17, DY = 12.5, FACE_ROW0 = 2;
+  // The reserved block spans all 8 columns so no stray window sits beside the
+  // face and breaks it up; the 7-wide face is centred inside it.
+  const inFace = (r) => r >= FACE_ROW0 && r < FACE_ROW0 + 7;
+
+  const win = (x, y, opacity, cls = '', delay = '') =>
+    `<rect class="${cls}" x="${x}" y="${y}" width="7" height="4.5" rx="0.6" opacity="${opacity}"${delay}/>`;
+
   const windows = [];
-  const grid = (x0, y0, cols, rows, dx, dy, base, salt) => {
+  const grid = (x0, y0, cols, rows, dx, dy, base, salt, reserve = false) => {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const k = r * cols + c + salt * 100;
+        // Reserved rows stay dark. A faint window in every spare cell read as a
+        // lit block with holes in it rather than as a face.
+        if (reserve && inFace(r)) continue;
         if (rnd(k, salt) < 0.4) continue;
         const flick = rnd(k, salt + 7) > 0.92 ? 'a flick' : '';
-        windows.push(`<rect class="${flick}" x="${x0 + c * dx}" y="${y0 + r * dy}" width="7" height="4.5" rx="0.6" opacity="${(base * (0.6 + rnd(k, salt + 3) * 0.4)).toFixed(2)}" style="animation-delay:${(-rnd(k, salt + 5) * 12).toFixed(1)}s"/>`);
+        const delay = ` style="animation-delay:${(-rr(k, salt + 5, 0, 12)).toFixed(1)}s"`;
+        windows.push(win(x0 + c * dx, y0 + r * dy, (base * rr(k, salt + 3, 0.6, 1)).toFixed(2), flick, delay));
       }
     }
   };
-  grid(250, 92, 8, 16, 17, 12.5, 0.95, 1);
+  grid(250, 92, 8, 16, DX, DY, 0.95, 1, true);
   grid(112, 160, 5, 10, 17, 13, 0.6, 2);
   grid(4, 210, 5, 6, 18, 13, 0.45, 3);
 
-  // Rain fades to nothing at both ends of its loop, so a drop never visibly
-  // teleports back to the top of the screen.
+  // A couple of face windows still flicker — a perfectly steady face would read
+  // as a sign rather than as a building that happens to look cheerful.
+  const face = (pattern, cls) => pattern.flatMap((row, r) =>
+    [...row].map((ch, c) => {
+      if (ch !== 'X') return '';
+      const flick = rnd(r * 7 + c, 91) > 0.86 ? ' a flick' : '';
+      return win(FACE_X + c * DX, FACE_Y + (r + FACE_ROW0) * DY, 0.98, `${cls}${flick}`,
+        ` style="animation-delay:${(-rr(r * 7 + c, 92, 0, 12)).toFixed(1)}s"`);
+    })
+  ).join('');
+
   const streaks = (n, saltBase, len, drift, dur0, durSpan) =>
     Array.from({ length: n }, (_, i) => {
       const x = rnd(i, saltBase) * 400, y = rnd(i, saltBase + 1) * 820;
@@ -358,6 +614,23 @@ function cityScene() {
     .join('');
 
   const puddle = (x, w) => `<rect x="${x}" y="334" width="${w}" height="58" fill="url(#cref)"/>`;
+
+  // Lane dashes. Static: the road is not moving, the traffic is.
+  const laneDash = Array.from({ length: 13 }, (_, i) =>
+    `<rect x="${i * 30}" y="384" width="17" height="2" rx="1" fill="#C9D6E8" opacity="0.22"/>`
+  ).join('');
+
+  // Both cars sit at the stop line and are driven by translateX from there.
+  const car = (x, body, roof, cls) => `<g class="a ${cls}">
+<g transform="translate(${x} 352)">
+<path d="M4,14 L8,4 Q10,1 14,1 L34,1 Q38,1 40,4 L45,14 Z" fill="${roof}"/>
+<rect x="0" y="13" width="52" height="11" rx="4" fill="${body}"/>
+<rect class="trc win-col" x="11" y="5" width="12" height="7" rx="1.5" opacity="0.75"/>
+<rect class="trc win-col" x="26" y="5" width="12" height="7" rx="1.5" opacity="0.75"/>
+<circle cx="12" cy="25" r="4.4" fill="#05070C"/><circle cx="40" cy="25" r="4.4" fill="#05070C"/>
+<rect class="trc win-col" x="49" y="16" width="4" height="3" rx="1" opacity="0.9"/>
+<rect x="-1" y="16" width="4" height="3" rx="1" fill="#C0392B" opacity="0.85"/>
+</g></g>`;
 
   return `<svg class="scene" data-over="false" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -372,6 +645,9 @@ function cityScene() {
 <rect x="240" y="80" width="150" height="220" fill="#121826"/>
 <rect x="240" y="80" width="150" height="4" fill="#1C2436"/>
 <g class="trc win-col">${windows.join('')}</g>
+<g class="trc win-col face-happy">${face(FACE_HAPPY, 'face-happy')}</g>
+<g class="trc win-col face-sad">${face(FACE_SAD, 'face-sad')}</g>
+
 <rect x="0" y="300" width="${VB_W}" height="9" fill="#0B0F18"/>
 <g fill="#0B0F18"><rect x="56" y="308" width="10" height="24"/><rect x="186" y="308" width="10" height="24"/><rect x="316" y="308" width="10" height="24"/></g>
 <g class="a train">
@@ -379,16 +655,29 @@ function cityScene() {
 <rect class="trc win-col" x="30" y="285" width="232" height="5.5" rx="2" opacity="0.85"/>
 <rect x="88" y="284" width="3" height="8" fill="#090D15"/><rect x="150" y="284" width="3" height="8" fill="#090D15"/><rect x="212" y="284" width="3" height="8" fill="#090D15"/>
 </g>
+
 <rect x="0" y="330" width="${VB_W}" height="514" fill="#111622"/>
 <line x1="0" y1="331" x2="${VB_W}" y2="331" stroke="#2A3348" stroke-width="1.4"/>
+${laneDash}
+<rect x="0" y="336" width="${VB_W}" height="1.4" fill="#C9D6E8" opacity="0.12"/>
+<rect x="306" y="338" width="2.5" height="42" rx="1" fill="#C9D6E8" opacity="0.3"/>
+
 <rect x="108" y="304" width="3" height="28" fill="#0B0F18"/>
 <circle cx="110" cy="304" r="40" fill="url(#clampg)"/>
 <circle class="trc lamp-col" cx="110" cy="304" r="3.2"/>
-<g class="a bus">
-<rect x="210" y="340" width="122" height="24" rx="5" fill="#070A11"/>
-<rect class="trc win-col" x="218" y="345" width="100" height="7" rx="2" opacity="0.7"/>
-<circle cx="232" cy="365" r="5" fill="#05070C"/><circle cx="310" cy="365" r="5" fill="#05070C"/>
+
+${car(232, '#2F6E9E', '#24567C', 'car-a')}
+${car(150, '#8C5A2B', '#6E4621', 'car-b')}
+
+<!-- Signal on the kerb, cars stop short of it. -->
+<g>
+<rect x="316" y="330" width="3" height="52" fill="#0B0F18"/>
+<rect x="310" y="306" width="15" height="34" rx="4" fill="#0B0F18"/>
+<circle class="a lamp-red" cx="317.5" cy="314" r="4" fill="#E2483C"/>
+<circle class="a lamp-amber" cx="317.5" cy="323" r="4" fill="#E8B04F"/>
+<circle class="a lamp-green" cx="317.5" cy="332" r="4" fill="#6FD39B"/>
 </g>
+
 <g class="street-ref">${puddle(104, 14)}${puddle(252, 9)}${puddle(300, 7)}${puddle(346, 10)}${puddle(30, 6)}</g>
 <g class="rain-layer" fill="none" stroke="#B9C9DE" stroke-width="0.7">${drips}</g>
 <g class="trc rain-layer" stroke="#C9D6E8" stroke-width="0.8" stroke-linecap="round">${streaks(60, 21, 13, 3, 0.8, 0.4)}</g>

@@ -3,7 +3,7 @@
 import { renderToString } from 'react-dom/server';
 import HomeView from '../src/views/HomeView';
 import CategoryView from '../src/views/CategoryView';
-import HistoryView from '../src/views/HistoryView';
+import OverviewView from '../src/views/OverviewView';
 import AddView from '../src/views/AddView';
 import SettingsView from '../src/views/SettingsView';
 import MonthSheet from '../src/components/MonthSheet';
@@ -21,7 +21,6 @@ import * as St from '../src/lib/stats';
 import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../src/themes/scenes';
 import { THEMES, isKnownTheme, themeById, DEFAULT_THEME } from '../src/themes/themes';
 import { budgetStatus } from '../src/lib/status';
-import BudgetView from '../src/views/BudgetView';
 
 const cats = DEF_CATS;
 const catById = (id) => cats.find((c) => c.id === id);
@@ -80,16 +79,6 @@ run('HomeView empty', <HomeView
   monthExp={[]} {...home} />,
   'Nothing logged for ', 'October', 'Add your first expense', 'No budget set');
 
-run('BudgetView', <BudgetView
-  totalSpent={47.6} totalBudget={740} cats={cats} budgets={budgets}
-  spending={spending} onEdit={() => {}} />,
-  'This month', 'By category', 'On track', 'Edit budgets', 'Food');
-
-run('BudgetView over budget', <BudgetView
-  totalSpent={900} totalBudget={740} cats={cats} budgets={budgets}
-  spending={{ ...spending, food: 400 }} onEdit={() => {}} />,
-  'Over budget', 'status-chip');
-
 run('CategoryView', <CategoryView
   cat={cats[0]} items={expenses} total={47.6}
   byMonth={[['2026-09', expenses]]} {...txn} />,
@@ -99,16 +88,25 @@ run('CategoryView empty', <CategoryView
   cat={cats[0]} items={[]} total={0} byMonth={[]} {...txn} />,
   'No entries for this category yet');
 
-run('HistoryView', <HistoryView
+const overview = { onPickMonth: () => {}, onAddToMonth: () => {} };
+
+run('OverviewView', <OverviewView
   histByYear={[['2026', ['2026-09', '2026-08']]]}
   monthTotals={() => ({ spent: 47.6, count: 3 })}
-  ym="2026-09" totalBudget={740} hasExpenses onPickMonth={() => {}} />,
+  ym="2026-09" totalBudget={740} hasExpenses {...overview} />,
   '2026', 'September 2026', '3 transactions');
 
-run('HistoryView empty', <HistoryView
+// A past month has to look writable, not archived.
+run('OverviewView says a month is editable', <OverviewView
+  histByYear={[['2026', ['2026-09', '2026-08']]]}
+  monthTotals={() => ({ spent: 47.6, count: 3 })}
+  ym="2026-09" totalBudget={740} hasExpenses {...overview} />,
+  'row-add', 'Add to ', 'VIEWING', 'Open September 2026');
+
+run('OverviewView empty', <OverviewView
   histByYear={[]} monthTotals={() => ({ spent: 0, count: 0 })}
-  ym="2026-09" totalBudget={0} hasExpenses={false} onPickMonth={() => {}} />,
-  'No history yet');
+  ym="2026-09" totalBudget={0} hasExpenses={false} {...overview} />,
+  'Nothing to show yet');
 
 run('AddView new', <AddView
   form={{ date: '2026-09-30', category: 'food', description: '', amount: '', notes: '' }}
@@ -140,11 +138,11 @@ run('MonthSheet', <MonthSheet
 run('Donut single slice', <Donut data={[{ id: 'a', value: 10, color: '#f00' }]} total={10} />, 'S$10.00', 'path');
 run('Donut many slices', <Donut data={chartData} total={47.6} />, 'donut-slice', 'Total');
 run('BottomNav', <BottomNav tab="add" onGo={() => {}} />,
-  'aria-current="page"', 'Budget', 'History', 'nav-btn active raised');
-run('Header month mode', <Header ym="2026-09" onOpenPicker={() => {}} onOpenSettings={() => {}} />,
-  'September 2026', 'Change month', 'Settings');
+  'aria-current="page"', 'Overview', 'Settings', 'nav-btn active raised');
+run('Header month mode', <Header ym="2026-09" onOpenPicker={() => {}} />,
+  'September 2026', 'Change month');
 run('Header page title', <Header title="Budget" onOpenSettings={() => {}} />, 'page-title', 'Budget');
-run('Header filter mode', <Header filteredCat={cats[0]} onClearFilter={() => {}} ym="2026-09" onOpenPicker={() => {}} onOpenSettings={() => {}} />, 'Food');
+run('Header filter mode', <Header filteredCat={cats[0]} onClearFilter={() => {}} ym="2026-09" onOpenPicker={() => {}} />, 'Food');
 
 run('HomeView with search bar', <HomeView
   totalSpent={72.2} totalBudget={740}
@@ -384,7 +382,10 @@ for (const [name, frames] of [['rain', 'w-rain'], ['fish', 'w-fish'], ['ripple',
 
 // The walk cycle returns to the start pose, so the 24s loop is seamless.
 logic('deer starts and ends in the same pose',
-  css.includes('0%,6%{transform:translateX(0) scaleX(1)}') && css.includes('80%,100%{transform:translateX(0) scaleX(1)}'), true);
+  css.includes('0%,4%{transform:translateX(0) scaleX(1)}') && css.includes('84%,100%{transform:translateX(0) scaleX(1)}'), true);
+logic('deer grazes more than once a lap', (css.match(/rotate\(6[0-9]deg\)/g) || []).length >= 3, true);
+logic('shooting stars fade out at both ends',
+  /@keyframes w-shoot\{\s*0%,87%\{opacity:0/.test(css) && /100%\{opacity:0/.test(css), true);
 
 // Nothing may pulse in unison: each repeated element gets its own delay.
 const delays = new Set([...forest.html.matchAll(/animation-delay:(-?[\d.]+)s/g)].map((m) => m[1]));
