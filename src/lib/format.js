@@ -1,12 +1,9 @@
 /** Money and date helpers. Singapore dollars, en-SG formatting. */
 
-export const fmt = (n) => Number(n || 0).toFixed(2);
+const fmt = (n) => Number(n || 0).toFixed(2);
 
 /** "S$12.50" — the one place currency formatting is decided. */
 export const money = (n) => `S$${fmt(n)}`;
-
-/** Signed money, for the "remaining" figure that can go negative. */
-export const signedMoney = (n) => `${n < 0 ? '-' : ''}S$${fmt(Math.abs(n))}`;
 
 export const today = () => new Date().toISOString().slice(0, 10);
 

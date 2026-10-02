@@ -140,8 +140,7 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  /* The entrance animations fill `backwards`, so shortening them leaves the
-     element parked on the opening frame — cards sat 14px below where they
-     belong. Drop them outright instead. */
-  .card, .rise { animation: none !important; }
+  /* The entrance animation fills `backwards`, so shortening it leaves the
+     card parked on its opening frame — every card sat 14px low. Drop it. */
+  .card { animation: none !important; }
 }

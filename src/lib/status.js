@@ -31,6 +31,3 @@ export function budgetStatus(spent = 0, budget = 0) {
   if (s >= b * 0.75) return { ...base, key: WATCH, label: 'Close to limit' };
   return { ...base, key: CALM, label: 'On track' };
 }
-
-/** The wallpaper's entire share of the budget signal. */
-export const isOverBudget = (spent, budget) => Number(budget) > 0 && Number(spent) > Number(budget);
