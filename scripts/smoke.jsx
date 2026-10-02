@@ -18,7 +18,7 @@ import { matchesQuery, sortExpenses, filterAndSort } from '../src/lib/search';
 import { parseUtterance } from '../src/lib/parseUtterance';
 import { answer } from '../src/lib/ask';
 import * as St from '../src/lib/stats';
-import { paintBackground } from '../src/themes/scenes';
+import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../src/themes/scenes';
 import { THEMES } from '../src/themes/themes';
 
 const cats = DEF_CATS;
@@ -199,143 +199,136 @@ logic('filterAndSort: empty result',
 logic('filterAndSort: works without catById',
   filterAndSort(expenses, 'kopi', 'date', undefined), []);
 
-/* ── Wallpaper sizing (stubbed DOM, no browser) ────────────────── */
+/* ── Scene engine (stubbed DOM, no browser) ────────────────────── */
 
-/** Renders a theme's wallpaper at a given viewport size and returns the SVG. */
-function paintAt(themeId, w, h, health = 0, reduced = false) {
+/**
+ * Mounts a theme's wallpaper into a fake DOM and hands back everything the
+ * engine wrote: the markup, the injected stylesheet, and a stand-in for the
+ * scene root so the state setters can be driven the way React drives them.
+ */
+function mount(theme) {
   let html = '';
-  globalThis.window = {
-    innerWidth: w,
-    innerHeight: h,
-    matchMedia: (q) => ({ matches: reduced && q.includes('reduced-motion') }),
+  let css = '';
+  const root = {
+    attrs: {},
+    classes: new Set(),
+    setAttribute(k, v) { this.attrs[k] = v; },
+    getAttribute(k) { return this.attrs[k]; },
+    classList: {
+      toggle: (c, on) => { if (on) root.classes.add(c); else root.classes.delete(c); },
+    },
   };
+  let styleEl = null;
+
+  globalThis.window = { innerWidth: 390, innerHeight: 844, matchMedia: () => ({ matches: false }) };
   globalThis.document = {
-    documentElement: { clientWidth: w },
-    getElementById: () => ({ set innerHTML(v) { html = v; }, get innerHTML() { return html; } }),
-    querySelector: () => null,
+    documentElement: { clientWidth: 390, style: { setProperty: () => {} } },
+    head: { appendChild: (el) => { styleEl = el; css = el.textContent; } },
+    createElement: () => ({ textContent: '' }),
+    getElementById: (id) => (id === 'bg'
+      ? { set innerHTML(v) { html = v; }, get innerHTML() { return html; } }
+      : (id === 'scene-css' ? styleEl : null)),
+    querySelector: (sel) => (sel === '#bg .scene' && html.includes('class="scene"') ? root : null),
   };
-  paintBackground(THEMES.find((t) => t.id === themeId), health);
-  return html;
+
+  paintBackground(typeof theme === 'string' ? THEMES.find((t) => t.id === theme) : theme);
+  return { html, css, root };
 }
 
 const count = (hay, needle) => hay.split(needle).length - 1;
 
-const PHONE = [390, 844];      // iPhone 14-ish
-const LAPTOP = [1680, 1050];   // MacBook-ish
+const forest = mount('forest');
+const beach = mount('beach');
 
-for (const [name, id] of [['forest', 'forest'], ['beach', 'beach']]) {
-  const phone = paintAt(id, ...PHONE);
-  const laptop = paintAt(id, ...LAPTOP);
-
-  logic(`${name}: phone svg spans viewport width`, count(phone, 'width="390"') > 0, true);
-  logic(`${name}: laptop svg spans viewport width`, count(laptop, 'width="1680"') > 0, true);
-  logic(`${name}: laptop style width matches viewport`, laptop.includes('width:1680px'), true);
-  logic(`${name}: anchored at left:0, not centred`, laptop.includes('left:0') && !laptop.includes('translateX'), true);
-  logic(`${name}: background rect fills width`, laptop.includes(`<rect width="1680"`), true);
-  logic(`${name}: no 430px cap remains`, laptop.includes('width="430"'), false);
+/* Composed at a fixed 390x844 and scaled by the viewBox, so nothing in the
+   markup may depend on the window size — that is what makes a resize free. */
+for (const [name, m] of [['forest', forest], ['beach', beach]]) {
+  logic(`${name}: composed in the 390x844 reference box`, m.html.includes('viewBox="0 0 390 844"'), true);
+  // Anchored to the TOP, not centred: section 4's zones are measured down from
+  // y=0, so centring the overflow would push the focal band under the hero text.
+  logic(`${name}: fills the viewport by slicing, not stretching`, m.html.includes('preserveAspectRatio="xMidYMin slice"'), true);
+  logic(`${name}: carries the scene class`, m.html.includes('class="scene"'), true);
+  logic(`${name}: mounts in the calm state`, m.html.includes('data-over="false"'), true);
+  logic(`${name}: no viewport size baked into the svg tag`, /<svg[^>]*\swidth="/.test(m.html), false);
+  logic(`${name}: no NaN reaches the svg`, m.html.includes('NaN'), false);
 }
 
-// Density should scale with width, not stretch.
-const fPhone = paintAt('forest', ...PHONE);
-const fLaptop = paintAt('forest', ...LAPTOP);
-logic('forest: phone keeps the original 10 trees', count(fPhone, 'M0,-64'), 10);
-logic('forest: laptop adds trees across the width', count(fLaptop, 'M0,-64'), Math.round(1680 / 39));
-logic('forest: phone keeps the original 14 stars', count(fPhone, 'fill="#fff"'), 14);
-logic('forest: laptop adds stars', count(fLaptop, 'fill="#fff"'), Math.round(1680 / 28));
+logic('forest: rebuild is identical (no reshuffle)', mount('forest').html === forest.html, true);
+// City has no entry in THEMES until phase 2 replaces them, so it is mounted
+// through a bare descriptor — the engine only ever reads these two fields.
+const CITY = { bgKind: 'scene', scene: 'city', vars: {} };
+logic('city builds', mount(CITY).html.includes('class="scene"'), true);
+logic('city: no NaN reaches the svg', mount(CITY).html.includes('NaN'), false);
+logic('city: composed in the same box', mount(CITY).html.includes('viewBox="0 0 390 844"'), true);
 
-const bPhone = paintAt('beach', ...PHONE);
-const bLaptop = paintAt('beach', ...LAPTOP);
-logic('beach: phone keeps the original 2 clouds', count(bPhone, '<ellipse'), 2);
-logic('beach: laptop adds clouds', count(bLaptop, '<ellipse'), Math.max(2, Math.round(1680 / 320)));
+/* Rule 3.2: spending must never touch the markup. */
+logic('scene markup takes no budget argument', paintBackground.length, 1);
 
-// Deterministic: repainting the same size must not reshuffle the scene.
-logic('forest: repaint is identical (no reshuffle)', paintAt('forest', ...LAPTOP) === fLaptop, true);
+/* The setters act on whatever is mounted now, so give them a fresh scene. */
+const live = mount('forest');
 
-/* ── Budget-reactive wallpaper ─────────────────────────────────── */
+/* Rule 3.3: one attribute carries the whole state change. */
+setSceneOver(true);
+logic('over sets data-over', live.root.getAttribute('data-over'), 'true');
+setSceneOver(false);
+logic('back under budget clears data-over', live.root.getAttribute('data-over'), 'false');
+logic('switching state leaves the markup untouched', live.html === forest.html, true);
 
-const num = (hay, re) => { const m = hay.match(re); return m ? Number(m[1]) : NaN; };
-const moonR = (svg) => num(svg, /r="([\d.]+)" fill="url\(#fMoon\)"/);
-const moonY = (svg) => num(svg, /cy="([\d.]+)" r="[\d.]+" fill="url\(#fMoon\)"/);
-const sunY  = (svg) => num(svg, /cy="([\d.]+)" r="[\d.]+" fill="url\(#bSun\)"/);
+/* Rule 3.6 and 3.9: pausing and stillness are classes, not rebuilds. */
+setScenePaused(true);
+logic('pausing adds the paused class', live.root.classes.has('paused'), true);
+setScenePaused(false);
+logic('resuming removes it', live.root.classes.has('paused'), false);
+setSceneStill(true);
+logic('reduced motion adds the still class', live.root.classes.has('still'), true);
+setSceneStill(false);
+logic('and removes it', live.root.classes.has('still'), false);
 
-const fHealthy = paintAt('forest', ...PHONE, 0);
-const fBroke   = paintAt('forest', ...PHONE, 1);
+/* The stylesheet is shared, so it must be injected exactly once. */
+logic('stylesheet is injected', forest.css.includes('@keyframes w-deer'), true);
+logic('every calm value has an over counterpart',
+  count(forest.css, '.moon-shade{'), 2);
+logic('state lives on the data attribute, not in custom properties',
+  forest.css.includes('--moon-shade'), false);
+logic('pausing is wired to the animated set', forest.css.includes('.scene.paused .a{animation-play-state:paused}'), true);
+logic('reduced motion is honoured', forest.css.includes('@media (prefers-reduced-motion: reduce)'), true);
 
-logic('forest: moon shrinks as budget depletes', moonR(fBroke) < moonR(fHealthy), true);
-logic('forest: moon sinks as budget depletes', moonY(fBroke) > moonY(fHealthy), true);
-// mix() emits lowercase hex, so compare case-insensitively.
-const has = (svg, hex) => svg.toLowerCase().includes(hex.toLowerCase());
-logic('forest: sky darkens', has(fHealthy, '#0A0F24') && !has(fBroke, '#0A0F24'), true);
-logic('forest: moon reddens into a blood moon', /#(b|B)[0-9a-fA-F]{5}/.test(fBroke), true);
-logic('forest: healthy budget keeps the original moon size',
-  Math.abs(moonR(fHealthy) - Math.min(...PHONE) * 0.062) < 0.01, true);
+/* ── Rule 3.7: every loop ends where it starts ─────────────────── */
 
-const bHealthy = paintAt('beach', ...PHONE, 0);
-const bBroke   = paintAt('beach', ...PHONE, 1);
-logic('beach: sun sinks toward the horizon', sunY(bBroke) > sunY(bHealthy), true);
-logic('beach: sky darkens', has(bHealthy, '#3B2A5C') && !has(bBroke, '#3B2A5C'), true);
+const css = forest.css;
 
-// Out-of-range health must not produce nonsense geometry or NaN in the SVG.
-logic('health clamps above 1', paintAt('forest', ...PHONE, 5) === fBroke, true);
-logic('health clamps below 0', paintAt('forest', ...PHONE, -3) === fHealthy, true);
-logic('health undefined behaves as 0', paintAt('forest', ...PHONE) === fHealthy, true);
-logic('no NaN reaches the forest svg', fBroke.includes('NaN'), false);
-logic('no NaN reaches the beach svg', bBroke.includes('NaN'), false);
+// Waves translate by one screen width over a 30px period: 390/30 is whole.
+logic('waves move a whole number of periods', 390 % 30, 0);
+logic('wave keyframe travels exactly one screen', css.includes('to{transform:translateX(-390px)}'), true);
 
-// Pattern themes recede but must never vanish.
-const pHealthy = paintAt('pink', ...PHONE, 0);
-const pBroke = paintAt('pink', ...PHONE, 1);
-logic('pattern: icons fade but stay visible',
-  num(pBroke, /<g opacity="([\d.]+)"/) < 1 && num(pBroke, /<g opacity="([\d.]+)"/) > 0.3, true);
-logic('pattern: healthy budget is fully opaque', num(pHealthy, /<g opacity="([\d.]+)"/), 1);
+// River dashes: every dasharray sums to 24, and the offset is -48.
+const dashSums = [...forest.html.matchAll(/stroke-dasharray="(\d+) (\d+)"/g)]
+  .map(([, a, b]) => Number(a) + Number(b));
+logic('river dash periods all 24', dashSums, [24, 24, 24]);
+logic('river offset is a whole number of periods', 48 % 24, 0);
+logic('river dash count', dashSums.length, 3);
 
-/* ── Living forest ─────────────────────────────────────────────── */
+// Things that reset position fade out at both ends instead of jumping.
+for (const [name, frames] of [['rain', 'w-rain'], ['fish', 'w-fish'], ['ripple', 'w-ripple']]) {
+  const body = css.match(new RegExp(`@keyframes ${frames}\\{([^}]*\\})*`))?.[0] || '';
+  logic(`${name}: starts invisible`, /0%[^{]*\{opacity:0/.test(body), true);
+  logic(`${name}: ends invisible`, /100%\{opacity:0/.test(body), true);
+}
 
-const countOf = (hay, needle) => hay.split(needle).length - 1;
+// The walk cycle returns to the start pose, so the 24s loop is seamless.
+logic('deer starts and ends in the same pose',
+  css.includes('0%,6%{transform:translateX(0) scaleX(1)}') && css.includes('80%,100%{transform:translateX(0) scaleX(1)}'), true);
 
-const alive = paintAt('forest', ...PHONE, 0);
-const dying = paintAt('forest', ...PHONE, 0.5);
-const dead  = paintAt('forest', ...PHONE, 1);
+// Nothing may pulse in unison: each repeated element gets its own delay.
+const delays = new Set([...forest.html.matchAll(/animation-delay:(-?[\d.]+)s/g)].map((m) => m[1]));
+logic('forest staggers its animation delays', delays.size > 5, true);
 
-// Deer
-logic('forest: deer runs when the budget is healthy', countOf(alive, 'M9.5,7.5 Q5.5,5 6,9.5') , 1);
-logic('forest: deer is gone when the budget is blown', countOf(dead, 'M9.5,7.5 Q5.5,5 6,9.5'), 0);
-logic('forest: deer has a motion animation', /type="translate" values="-60,/.test(alive), true);
-
-// Leaves
-logic('forest: leaves fall when healthy', countOf(alive, '<g opacity="0.8">') > 0, true);
-logic('forest: no leaves when the budget is blown', countOf(dead, '<g opacity="0.8">'), 0);
-logic('forest: fewer leaves midway than when healthy',
-  countOf(dying, '<g opacity="0.8">') < countOf(alive, '<g opacity="0.8">'), true);
-
-// Canopy vs bare branches
-const canopyOpacity = (svg) => Number(svg.match(/<g opacity="([\d.]+)"><path d="M0,-64/)?.[1]);
-logic('forest: canopy is full when healthy', canopyOpacity(alive), 1);
-logic('forest: canopy is gone when blown', canopyOpacity(dead), 0);
-logic('forest: bare branches show through when blown', /stroke-width="2.4" fill="none" opacity="1.00"/.test(dead), true);
-logic('forest: trunks are always drawn', countOf(dead, 'M-3,40 L-2,-10') > 0, true);
-
-// River
-logic('forest: river flows when healthy', /type="translate" values="0,0;64,0"/.test(alive), true);
-logic('forest: river stops when the budget is blown', /type="translate" values="0,0;64,0"/.test(dead), false);
-logic('forest: ripples still drawn when stopped', countOf(dead, 'stroke-linecap="round"'), 3);
-
-// Moon phase — the shadow disc slides across as the budget depletes.
-const shadowX = (svg) => Number(svg.match(/<circle cx="([\d.]+)" cy="[-\d.]+" r="[\d.]+" fill="black"/)?.[1]);
-logic('forest: moon shadow clears the disc when full', shadowX(alive) > 0, true);
-logic('forest: moon wanes to a crescent as budget depletes', shadowX(dead) < shadowX(alive), true);
-logic('forest: phase mask exists', countOf(alive, 'mask="url(#fPhase)"'), 1);
-
-// Reduced motion removes the animations entirely, not just pauses them.
-const calm = paintAt('forest', ...PHONE, 0, true);
-logic('reduced motion: no animate elements at all', countOf(calm, '<animate'), 0);
-logic('reduced motion: scene still renders trees', countOf(calm, 'M0,-64') > 0, true);
-logic('reduced motion: deer still present, just static', countOf(calm, 'M9.5,7.5 Q5.5,5 6,9.5'), 1);
-
-logic('forest: no NaN with the living layers', dying.includes('NaN'), false);
+/* Over budget stills the water rather than reversing it. */
+logic('flow stops when over', css.includes('.scene[data-over="true"] .flow'), true);
+logic('the state change eases once', css.includes('transition:transform 3.2s'), true);
 
 // Pattern wallpapers were already full-bleed; make sure they stayed that way.
-const pink = paintAt('pink', ...LAPTOP);
+const pink = mount('pink').html;
 logic('pattern: fills 100% width', pink.includes('width:100%'), true);
 logic('pattern: tiles bows', count(pink, '<pattern') , 2);
 

@@ -152,10 +152,10 @@ export default function App() {
   const budPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
   const isOver = totalSpent > totalBudget && totalBudget > 0;
 
-  // Drives the reactive wallpaper. budPct is already clamped to 0–100, and is
-  // 0 when no budget is set — so someone who never sets one keeps a bright
-  // scene rather than being handed a permanently dark app.
-  useTheme(themeId, budPct / 100);
+  // Drives the wallpaper. The scene reads one boolean — `isOver` is false
+  // when no budget is set, so someone who never sets one keeps a calm scene
+  // rather than being handed a permanently bleak app. Loops run on Home only.
+  useTheme(themeId, { isOver, paused: tab !== 'home' });
 
   const chartData = cats
     .filter((c) => spending[c.id] > 0)

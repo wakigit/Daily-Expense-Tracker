@@ -1,42 +1,43 @@
 import { useEffect } from 'react';
 import { themeById } from '../themes/themes';
-import { paintBackground } from '../themes/scenes';
+import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../themes/scenes';
 
 /**
- * Applies a theme's CSS custom properties to :root and paints the wallpaper.
+ * Applies a theme's CSS custom properties to :root and mounts the wallpaper.
  *
- * `health` (0 = budget untouched, 1 = spent or over) makes the scene react:
- * the forest moon wanes, the beach sun sinks. It is in the dependency array,
- * so the wallpaper repaints whenever spending moves.
+ * The three effects below are deliberately separate, and the split IS the
+ * feature. Building the scene is expensive and restarts every animation, so it
+ * depends on the theme alone. Budget state and pausing are attribute flips on
+ * an element that is already mounted, so logging an expense no longer makes the
+ * deer teleport or the rain stutter.
  *
- * Scene wallpapers are sized to the viewport, so they alone need a resize
- * listener; pattern wallpapers tile and don't care. The rAF coalesces the
- * burst of resize events iOS fires when the keyboard opens or the URL bar
- * collapses, which would otherwise repaint the whole SVG dozens of times.
+ * `isOver` is the whole budget signal the scene gets: one boolean, per §2 of
+ * the redesign spec. There is no gradient of health any more — the scene is
+ * calm, or it is over.
  */
-export function useTheme(themeId, health = 0) {
+export function useTheme(themeId, { isOver = false, paused = false, still = false } = {}) {
+  // ── Build: theme changes only.
   useEffect(() => {
     const theme = themeById(themeId);
     Object.entries(theme.vars).forEach(([k, v]) =>
       document.documentElement.style.setProperty(k, v)
     );
-    paintBackground(theme, health);
+    paintBackground(theme);
 
     // Keep the iOS status bar / browser chrome in step with the theme.
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme.vars['--bg']);
+  }, [themeId]);
 
-    if (theme.bgKind !== 'scene') return;
+  // ── State: re-applied after a rebuild, hence themeId in the deps.
+  useEffect(() => { setSceneOver(isOver); }, [isOver, themeId]);
+  useEffect(() => { setSceneStill(still); }, [still, themeId]);
 
-    let raf = null;
-    const onResize = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => paintBackground(theme, health));
-    };
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      cancelAnimationFrame(raf);
-    };
-  }, [themeId, health]);
+  // ── Pausing: off the Home tab, or whenever the tab is in the background.
+  useEffect(() => {
+    const apply = () => setScenePaused(paused || document.hidden);
+    apply();
+    document.addEventListener('visibilitychange', apply);
+    return () => document.removeEventListener('visibilitychange', apply);
+  }, [paused, themeId]);
 }
