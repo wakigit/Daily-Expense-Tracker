@@ -489,7 +489,7 @@ function beachScene() {
 
 <!-- The plane tows a pennant, not a slogan: the status is the chip's job. -->
 <g class="a plane">
-<g transform="translate(0 150)">
+<g transform="translate(0 50) scale(1.8)">
 <path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
 <path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
 <g class="a pennant">
@@ -507,14 +507,20 @@ function beachScene() {
 <g class="trc reflect">${reflect}</g>
 <g fill="none" stroke-linecap="round">${waves}</g>
 
-<!-- Surfer, riding the crest line rather than sitting on top of it. -->
+<!-- Surfer on a breaking wave. The crest, the curl and the foam are all inside
+     this group, so the wave travels with him instead of him sliding over a
+     static line. -->
 <g class="a surfer">
-<g transform="translate(0 330)">
-<path d="M-11,4 Q0,8 12,3 Q0,7 -11,4 Z" fill="#F2E3C9"/>
-<path d="M0,3 L0,-7" stroke="#2E2235" stroke-width="2.4" stroke-linecap="round"/>
-<circle cx="0" cy="-10" r="2.4" fill="#2E2235"/>
-<path d="M0,-5 L6,-8 M0,-5 L-6,-9" stroke="#2E2235" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M-14,6 Q-4,11 10,5" fill="none" stroke="#FFF1E2" stroke-width="1.6" opacity="0.75" stroke-linecap="round"/>
+<g transform="translate(0 330) scale(1.9)">
+<path d="M-30,10 Q-20,-2 -6,-4 Q6,-5 14,2 Q20,7 24,12 L-30,12 Z" fill="#1F5668" opacity="0.92"/>
+<path d="M-6,-4 Q6,-5 14,2 Q8,0 2,1 Q-3,2 -6,-4 Z" fill="#CFE8EC" opacity="0.85"/>
+<path d="M-24,9 Q-12,1 0,0" fill="none" stroke="#DFF1F3" stroke-width="1.1" opacity="0.6" stroke-linecap="round"/>
+<path d="M-13,5 Q0,10 13,4" fill="none" stroke="#F2E3C9" fill-opacity="0" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M0,3 L1,-8" stroke="#2E2235" stroke-width="2.6" stroke-linecap="round"/>
+<circle cx="1.4" cy="-11" r="2.8" fill="#2E2235"/>
+<path d="M0.6,-6 L7,-9 M0.6,-6 L-5.5,-10" stroke="#2E2235" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M0,3 L-3,8 M1,3 L4,8" stroke="#2E2235" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M-18,11 Q-8,15 4,11" fill="none" stroke="#FFF6EC" stroke-width="1.5" opacity="0.75" stroke-linecap="round"/>
 </g>
 </g>
 
@@ -549,8 +555,8 @@ function cityScene() {
      with a hole punched in it. */
   const FACE_HAPPY = [
     '.......',
-    '.X...X.',
-    '.X...X.',
+    '.XX.XX.',
+    '.XX.XX.',
     '.......',
     'X.....X',
     '.X...X.',
@@ -558,20 +564,24 @@ function cityScene() {
   ];
   const FACE_SAD = [
     '.......',
-    '.X...X.',
-    '.X...X.',
+    '.XX.XX.',
+    '.XX.XX.',
     '.......',
     '..XXX..',
     '.X...X.',
     'X.....X',
   ];
-  const FACE_X = 258, FACE_Y = 92, DX = 17, DY = 12.5, FACE_ROW0 = 2;
-  // The reserved block spans all 8 columns so no stray window sits beside the
-  // face and breaks it up; the 7-wide face is centred inside it.
-  const inFace = (r) => r >= FACE_ROW0 && r < FACE_ROW0 + 7;
+  /* The face is drawn on its OWN grid, wider-spaced and with bigger panes than
+     the building's ordinary windows. Sharing the 17x12.5 grid made it the same
+     visual weight as the random fill, so it read as texture rather than as a
+     face. 20x16 with 11x7 panes is about twice the area and carries at phone
+     size. The block it sits in is cleared across all 8 ordinary columns. */
+  const FACE_X = 246, FACE_Y = 124, FDX = 20, FDY = 16;
+  const DX = 17, DY = 12.5;
+  const inFace = (r) => r >= 2 && r <= 11;
 
-  const win = (x, y, opacity, cls = '', delay = '') =>
-    `<rect class="${cls}" x="${x}" y="${y}" width="7" height="4.5" rx="0.6" opacity="${opacity}"${delay}/>`;
+  const win = (x, y, opacity, cls = '', delay = '', w = 7, h = 4.5) =>
+    `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="0.6" opacity="${opacity}"${delay}/>`;
 
   const windows = [];
   const grid = (x0, y0, cols, rows, dx, dy, base, salt, reserve = false) => {
@@ -598,8 +608,8 @@ function cityScene() {
     [...row].map((ch, c) => {
       if (ch !== 'X') return '';
       const flick = rnd(r * 7 + c, 91) > 0.86 ? ' a flick' : '';
-      return win(FACE_X + c * DX, FACE_Y + (r + FACE_ROW0) * DY, 0.98, `${cls}${flick}`,
-        ` style="animation-delay:${(-rr(r * 7 + c, 92, 0, 12)).toFixed(1)}s"`);
+      return win(FACE_X + c * FDX, FACE_Y + r * FDY, 1, `${cls}${flick}`,
+        ` style="animation-delay:${(-rr(r * 7 + c, 92, 0, 12)).toFixed(1)}s"`, 11, 7);
     })
   ).join('');
 
