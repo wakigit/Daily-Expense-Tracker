@@ -1018,26 +1018,6 @@ button:active { transform: scale(0.96); }
 }
 
 /* Suggestions scroll sideways rather than wrapping into a wall of chips. */
-.ask-chips {
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  margin-bottom: 0.7rem;
-  scrollbar-width: none;
-}
-.ask-chips::-webkit-scrollbar { display: none; }
-
-.chip {
-  flex-shrink: 0;
-  min-height: 36px;
-  padding: 7px 13px;
-  font-size: 12px;
-  border-radius: var(--r-pill);
-  color: var(--tx-sub);
-  white-space: nowrap;
-}
-
 .ask-form { display: flex; gap: 8px; }
 .ask-form input { border-radius: var(--r-pill); }
 

@@ -310,6 +310,12 @@ for (const [name, m] of [['forest', forest], ['beach', beach]]) {
 }
 
 logic('forest: rebuild is identical (no reshuffle)', mount('forest').html === forest.html, true);
+
+// Sized off the viewport HEIGHT: filling the width cropped everything below
+// y 216 on a laptop, which is the deer, the river and the treeline.
+logic('scene keeps its drawn aspect ratio', forest.css.includes('aspect-ratio:390/844'), true);
+logic('scene is sized by height, not stretched', forest.css.includes('height:100%;width:auto'), true);
+logic('scene still covers a phone edge to edge', forest.css.includes('min-width:100%'), true);
 // City has no entry in THEMES until phase 2 replaces them, so it is mounted
 // through a bare descriptor — the engine only ever reads these two fields.
 const CITY = { bgKind: 'scene', scene: 'city', vars: {} };

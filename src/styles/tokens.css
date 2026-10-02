@@ -107,6 +107,20 @@ body {
   background: var(--scrim-home);
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 46%);
   mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 46%);
+  /* The gradient is positioned against the artwork, not the window: its clear
+     end has to land where the moon is. Left spanning the viewport it dimmed the
+     moon on any screen wider than a phone, because the moon sits at 79% across
+     the scene but only ~60% across a laptop. Same panel geometry as the scene. */
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  aspect-ratio: 390 / 844;
+  min-width: 100%;
+}
+
+@media (min-aspect-ratio: 390/844) {
+  #scrim[data-home='true'] { min-width: 0; }
 }
 
 .display { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; }

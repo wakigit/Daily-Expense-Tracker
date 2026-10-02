@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { SUGGESTIONS } from '../lib/ask';
 
 /**
  * Chat interface over the spending data.
@@ -48,12 +47,6 @@ export default function AskView({ messages, onSend, hasData }) {
           <div ref={endRef} />
         </div>
       )}
-
-      <div className="ask-chips">
-        {SUGGESTIONS.map((s) => (
-          <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
-        ))}
-      </div>
 
       <form
         className="ask-form"

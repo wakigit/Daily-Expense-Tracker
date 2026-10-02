@@ -44,7 +44,20 @@ const rnd = (i, s) => {
  * `.tr`/`.trc` mark the ones that ease between the two states.
  */
 const SCENE_CSS = `
-#bg .scene{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:block}
+/* The scene keeps the 390x844 shape it was drawn in and is sized off the
+   viewport HEIGHT, not stretched to the width. Filling the width instead meant
+   that on any non-phone aspect ratio the art scaled up until only the top
+   quarter was on screen — at 1512x836 that is a 3.9x zoom showing y 0..216, so
+   the deer at y 292, the river and the whole treeline were simply gone. Sized
+   this way the full composition is always visible; on a phone the width works
+   out to the full screen anyway, and --ground covers any gap beside it. */
+#bg .scene{position:fixed;top:0;left:50%;transform:translateX(-50%);height:100%;width:auto;aspect-ratio:390/844;min-width:100%;z-index:-1;pointer-events:none;display:block}
+
+/* Only phones get the edge-to-edge treatment; wider screens let the scene sit
+   as a tall panel so nothing in the focal band is cropped away. */
+@media (min-aspect-ratio: 390/844){
+  #bg .scene{min-width:0}
+}
 
 /* ── Calm, then the over overrides. ──
  *

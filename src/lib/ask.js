@@ -16,14 +16,6 @@ import {
   averagePerDay, averagePerWeek, averagePerMonth, period, addDays,
 } from './stats';
 
-export const SUGGESTIONS = [
-  'How much did I spend this week?',
-  'Which day did I spend the most?',
-  'Which week did I spend the most?',
-  'What is my average spending per week?',
-  'What do I spend the most on?',
-];
-
 const PERIODS = [
   [/\b(today)\b/, 'today'],
   [/\b(yesterday)\b/, 'yesterday'],
