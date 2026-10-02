@@ -1,5 +1,6 @@
 import { money } from '../lib/format';
 import { THEMES, PALETTE } from '../themes/themes';
+import Icon from '../components/Icon';
 
 export default function SettingsView({
   themeId, onTheme,
@@ -14,7 +15,7 @@ export default function SettingsView({
     <>
       {/* ── Theme ── */}
       <section className="card" style={{ '--i': 0 }}>
-        <h2 className="display card-title">Theme 🎨</h2>
+        <h2 className="display card-title">Theme</h2>
         <div className="theme-grid">
           {THEMES.map((t) => (
             <div
@@ -35,8 +36,8 @@ export default function SettingsView({
                   }}
                 />
                 <div style={{ minWidth: 0 }}>
-                  <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                    {t.emoji} {t.name}
+                  <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>
+                    {t.name}
                   </p>
                   {themeId === t.id && (
                     <p style={{ fontSize: 11, color: t.vars['--accent'], margin: '2px 0 0' }}>Selected</p>
@@ -50,7 +51,7 @@ export default function SettingsView({
 
       {/* ── App name ── */}
       <section className="card" style={{ '--i': 1 }}>
-        <h2 className="display card-title">App name 🎀</h2>
+        <h2 className="display card-title">App name</h2>
         <div className="field">
           <label htmlFor="s-name">Your name for this app</label>
           <input
@@ -62,14 +63,14 @@ export default function SettingsView({
             maxLength={30}
           />
         </div>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: -4 }}>
+        <p style={{ fontSize: 11, color: 'var(--tx-muted)', marginTop: -4 }}>
           Updates the title shown at the top
         </p>
       </section>
 
       {/* ── Budgets ── */}
       <section className="card" style={{ '--i': 2 }}>
-        <h2 className="display card-title">Monthly budgets 💰</h2>
+        <h2 className="display card-title">Monthly budgets</h2>
         {cats.map((c) => (
           <div key={c.id} className="field">
             <label htmlFor={`b-${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -89,25 +90,25 @@ export default function SettingsView({
         ))}
 
         <div style={{
-          background: 'rgba(var(--tint-rgb),0.55)',
+          background: 'var(--chip)',
           borderRadius: 'var(--r-ctl)',
           padding: '12px 14px',
           display: 'flex',
           justifyContent: 'space-between',
           marginBottom: '1.2rem',
         }}>
-          <span style={{ fontSize: 14, color: 'var(--text-sub)' }}>Total monthly budget</span>
-          <span className="display" style={{ fontSize: '1rem', color: 'var(--text)' }}>{money(draftTotal)}</span>
+          <span style={{ fontSize: 14, color: 'var(--tx-sub)' }}>Total monthly budget</span>
+          <span className="display" style={{ fontSize: '1rem', color: 'var(--tx)' }}>{money(draftTotal)}</span>
         </div>
 
         <button onClick={onSaveBudgets} className="btn-primary btn-block">
-          {saved ? '✓ Saved!' : 'Save budgets'}
+          {saved ? 'Saved' : 'Save budgets'}
         </button>
       </section>
 
       {/* ── Categories ── */}
       <section className="card" style={{ '--i': 3 }}>
-        <h2 className="display card-title">Categories 🎀</h2>
+        <h2 className="display card-title">Categories</h2>
 
         {cats.map((c) => {
           const asking = delCatId === c.id;
@@ -121,14 +122,14 @@ export default function SettingsView({
                 <button
                   onClick={() => onAskDelCat(asking ? null : c.id)}
                   className="icon-btn"
-                  style={{ color: asking ? 'var(--danger)' : 'var(--text-muted)' }}
+                  style={{ color: asking ? 'var(--st-over)' : 'var(--tx-muted)' }}
                   aria-label={`Delete ${c.label}`}
-                >🗑️</button>
+                ><Icon name="trash" size={16} /></button>
               </div>
 
               {asking && (
                 <div className="danger-zone">
-                  <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 8 }}>
+                  <p style={{ fontSize: 12, color: 'var(--st-over)', marginBottom: 8 }}>
                     "{c.label}" and all its expenses will be deleted.
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -137,7 +138,7 @@ export default function SettingsView({
                     </button>
                     <button
                       onClick={() => onDelCat(c.id)}
-                      style={{ fontSize: 13, padding: '6px 14px', minHeight: 38, color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                      style={{ fontSize: 13, padding: '6px 14px', minHeight: 38, color: 'var(--st-over)', borderColor: 'var(--st-over)' }}
                     >
                       Yes, delete
                     </button>
@@ -148,8 +149,8 @@ export default function SettingsView({
           );
         })}
 
-        <div style={{ borderTop: '1px solid rgba(var(--border-rgb),0.3)', marginTop: '1rem', paddingTop: '1rem' }}>
-          <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 10, fontWeight: 500 }}>
+        <div style={{ borderTop: '1px solid var(--card-line)', marginTop: '1rem', paddingTop: '1rem' }}>
+          <p style={{ fontSize: 13, color: 'var(--tx-sub)', marginBottom: 10, fontWeight: 500 }}>
             Add new category
           </p>
           <input

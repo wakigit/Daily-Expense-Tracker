@@ -5,10 +5,9 @@ export default function HistoryView({ histByYear, monthTotals, ym, totalBudget, 
   if (!hasExpenses) {
     return (
       <section className="card empty" style={{ '--i': 0 }}>
-        <span className="empty-emoji">🎀</span>
-        <p className="display" style={{ fontSize: 15, color: 'var(--text-sub)' }}>No history yet</p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
-          Add your first expense to see monthly totals here!
+        <p className="empty-title">No history yet</p>
+        <p className="empty-body">
+          Months appear here once you have logged something in them.
         </p>
       </section>
     );
@@ -29,27 +28,27 @@ export default function HistoryView({ histByYear, monthTotals, ym, totalBudget, 
             <div className="hist-row" onClick={() => onPickMonth(m)}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: isSel ? 'var(--accent)' : 'var(--text)' }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: isSel ? 'var(--accent)' : 'var(--tx)' }}>
                     {ymLabel(m)}
                   </span>
                   {isCur && <span className="pill-now">NOW</span>}
                 </div>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: 12, color: 'var(--tx-muted)' }}>
                   {count > 0 ? `${count} transaction${count !== 1 ? 's' : ''}` : 'No entries'}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className="display" style={{ fontSize: '1.05rem', color: spent > 0 ? 'var(--text)' : 'var(--text-muted)' }}>
+                <div className="display" style={{ fontSize: '1.05rem', color: spent > 0 ? 'var(--tx)' : 'var(--tx-muted)' }}>
                   {spent > 0 ? money(spent) : '—'}
                 </div>
-                <span style={{ fontSize: 18, color: 'var(--chevron)', lineHeight: 1 }}>›</span>
+                <span style={{ fontSize: 18, color: 'var(--tx-muted)', lineHeight: 1 }}>›</span>
               </div>
             </div>
             {spent > 0 && totalBudget > 0 && (
               <div className="progress-track" style={{ margin: '0 6px 7px' }}>
                 <div
                   className="progress-fill"
-                  style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--danger)' : 'var(--accent)', opacity: 0.6 }}
+                  style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--st-over)' : 'var(--accent)', opacity: 0.6 }}
                 />
               </div>
             )}

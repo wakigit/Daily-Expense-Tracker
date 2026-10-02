@@ -31,7 +31,6 @@ export default function AskView({ messages, onSend, hasData }) {
 
       {messages.length === 0 ? (
         <div className="ask-intro">
-          <span className="empty-emoji">💬</span>
           <p className="ask-intro-text">
             {hasData
               ? 'Ask me anything about what you’ve spent.'

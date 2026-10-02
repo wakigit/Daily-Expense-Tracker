@@ -19,18 +19,18 @@ export default function CategoryView({
       <section className="card" style={{ '--i': 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.9rem' }}>
           <div className="dot" style={{ width: 16, height: 16, background: cat?.color }} />
-          <span className="display" style={{ fontSize: '1.15rem', color: 'var(--text)' }}>{cat?.label}</span>
+          <span className="display" style={{ fontSize: '1.15rem', color: 'var(--tx)' }}>{cat?.label}</span>
         </div>
         <div style={{ display: 'flex', gap: 30 }}>
           <div>
             <p className="stat-cap">All-time total</p>
-            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--text)', lineHeight: 1 }}>
+            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
               {money(shown)}
             </div>
           </div>
           <div>
             <p className="stat-cap">Transactions</p>
-            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--text)', lineHeight: 1 }}>
+            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
               {items.length}
             </div>
           </div>
@@ -56,11 +56,11 @@ export default function CategoryView({
         <section className="card" style={{ '--i': 2 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <p className="lbl">Results</p>
-            <p className="lbl money" style={{ color: 'var(--text-sub)' }}>{money(f.total)}</p>
+            <p className="lbl money" style={{ color: 'var(--tx-sub)' }}>{money(f.total)}</p>
           </div>
           {f.filtered.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '1.25rem 0' }}>
-              Nothing matches “{f.query}” 🎀
+            <p style={{ fontSize: 13, color: 'var(--tx-muted)', textAlign: 'center', padding: '1.25rem 0' }}>
+              Nothing matches “{f.query}”
             </p>
           ) : (
             <TxnList items={f.filtered} catById={catById} onDelete={onDelete} onEdit={onEdit} />
@@ -68,8 +68,8 @@ export default function CategoryView({
         </section>
       ) : items.length === 0 ? (
         <section className="card empty" style={{ '--i': 1 }}>
-          <span className="empty-emoji">🎀</span>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>No entries for this category yet</p>
+          
+          <p style={{ fontSize: 14, color: 'var(--tx-muted)' }}>No entries for this category yet</p>
         </section>
       ) : (
         byMonth.map(([m, exps], i) => (

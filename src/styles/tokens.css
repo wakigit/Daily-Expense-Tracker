@@ -1,35 +1,43 @@
 /**
  * Design tokens + reset.
  *
- * The :root block below is the Pink Bow theme, and it exists only so the very
+ * The :root block is the Moonlit Forest theme, and it exists only so the very
  * first paint (before React mounts and applies the saved theme) isn't a flash
- * of unstyled black. Every other theme overwrites these at runtime.
+ * of unstyled white. Every theme overwrites these at runtime from themes.js.
+ *
+ * Names come from §6 and §7 of docs/WALLPAPER-REDESIGN.md. The shape and motion
+ * tokens below §7 never change per theme.
  */
 :root {
-  --bg: #FFB3CE;
-  --surface-rgb: 255,255,255;
-  --tint-rgb: 255,228,238;
-  --border-rgb: 222,162,182;
-  --text: #3A1A2E;
-  --text-sub: #8A5870;
-  --text-muted: #C09AAA;
-  --text-faint: #B07090;
-  --label: #C0708A;
-  --heading-sub: #7A4060;
-  --chevron: #D4A0B8;
-  --nav-arrow: #C08098;
-  --accent: #E8709A;
-  --accent-rgb: 232,112,154;
-  --accent-hover: #D96090;
-  --on-accent: #fff;
-  --success: #2D8B60;
-  --danger: #C04040;
-  --danger-rgb: 192,64,64;
-  --danger-border: #E8A0B0;
-  --overlay: rgba(58,26,46,0.4);
-  --on-wallpaper: #3A1A2E;
+  --ground: #0A111F;
+  --card: rgba(13,21,37,0.9);
+  --card-line: rgba(176,196,226,0.16);
+  --tx: #F2EEE3;
+  --tx-sub: #BAC4D2;
+  --tx-muted: #93A1B4;
+  --on-scene: #F8F3E6;
+  --on-scene-sub: #D5DCE6;
+  --accent: #E2B866;
+  --accent-rgb: 226,184,102;
+  --on-accent: #1A1405;
+  --st-calm: #8FD9B0;
+  --st-watch: #E8B04F;
+  --st-over: #F07F6E;
+  --st-over-rgb: 240,127,110;
+  --hb-calm: #8FD9B0;
+  --hb-watch: #E8B04F;
+  --hb-over: #F07F6E;
+  --track: rgba(255,255,255,0.13);
+  --track-scene: rgba(255,255,255,0.24);
+  --nav-bg: rgba(9,14,26,0.95);
+  --nav-line: rgba(176,196,226,0.14);
+  --chip: rgba(255,255,255,0.07);
+  --field: rgba(255,255,255,0.06);
+  --field-line: rgba(176,196,226,0.24);
+  --scrim-home: linear-gradient(90deg,rgba(5,9,20,0.66) 0%,rgba(5,9,20,0.5) 55%,rgba(5,9,20,0.06) 80%,rgba(5,9,20,0) 100%);
+  --scrim-page: rgba(6,10,20,0.66);
 
-  /* ── Shape ─────────────────────────────────────────────────── */
+  /* ── Shape (§6 — never changes per theme) ──────────────────── */
   --r-card: 22px;
   --r-ctl: 14px;
   --r-pill: 999px;
@@ -37,23 +45,28 @@
 
   /* ── Elevation ─────────────────────────────────────────────────
      Two-layer shadows read as real depth; one big soft shadow reads
-     as a blur. The inset line is the glass "edge" catching light. */
+     as a blur. */
   --sh-card:
-    0 1px 2px rgba(0,0,0,0.04),
-    0 10px 30px -12px rgba(0,0,0,0.16);
+    0 1px 2px rgba(0,0,0,0.05),
+    0 10px 30px -12px rgba(0,0,0,0.3);
   --sh-raised:
-    0 2px 6px rgba(0,0,0,0.06),
-    0 18px 44px -16px rgba(0,0,0,0.22);
-  --edge-top: inset 0 1px 0 rgba(255,255,255,0.5);
+    0 2px 6px rgba(0,0,0,0.08),
+    0 18px 44px -16px rgba(0,0,0,0.36);
 
-  /* ── Motion ───────────────────────────────────────────────────
-     A slight overshoot is what separates "it moved" from "it feels
-     physical". Keep durations short; long animations feel cheap. */
+  /* ── Motion (§6) ───────────────────────────────────────────── */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 0.14s;
   --dur: 0.26s;
   --dur-slow: 0.44s;
+
+  /* ── Layout zones (§4), measured down from the top of the screen.
+     The hero owns 58–260 and the focal band 260–392 is kept clear of
+     text so the deer, the sun and the train are never covered. */
+  --zone-header: 58px;
+  --zone-hero-end: 260px;
+  --zone-cards: 392px;
+  --nav-h: 84px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,20 +74,42 @@
 html { -webkit-text-size-adjust: 100%; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 16px;
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* §6 body: Figtree 400, 15/1.45. 13px is the floor anywhere but tab labels. */
+  font-size: 15px;
+  line-height: 1.45;
   min-height: 100vh;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--tx);
+  background: var(--ground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Themes change the whole palette; ease it instead of hard-cutting. */
   transition: background-color var(--dur-slow) var(--ease-out);
 }
 
+/* The wallpaper, then the scrim that keeps text legible over it. Both sit
+   behind the content; the scrim is later in the DOM so it paints on top. */
 #bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 
-.display { font-family: 'Caprasimo', cursive; font-weight: 400; }
+#scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--scrim-page);
+  transition: background var(--dur-slow) var(--ease-out);
+}
+
+/* Home dims the left, where the text is, and leaves the right almost clear so
+   the moon stays bright — then fades out entirely by 46% down the screen so
+   the focal band and the cards below it are untouched. */
+#scrim[data-home='true'] {
+  background: var(--scrim-home);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 46%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 46%);
+}
+
+.display { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; }
 
 /* Money must never jitter as digits change — tabular figures keep every
    numeral the same width. In a finance app this is the single highest-value
@@ -105,4 +140,8 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* The entrance animations fill `backwards`, so shortening them leaves the
+     element parked on the opening frame — cards sat 14px below where they
+     belong. Drop them outright instead. */
+  .card, .rise { animation: none !important; }
 }

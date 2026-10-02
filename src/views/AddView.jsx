@@ -17,8 +17,8 @@ export default function AddView({ form, setField, errors, cats, editId, onSubmit
   return (
     <section className="card" style={{ '--i': 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <h2 className="display" style={{ fontSize: '1.3rem', color: 'var(--text)' }}>
-          {editId ? 'Edit expense ✏️' : 'New expense 🎀'}
+        <h2 className="display" style={{ fontSize: '1.3rem', color: 'var(--tx)' }}>
+          {editId ? 'Edit expense' : 'New expense'}
         </h2>
         {editId && <button onClick={onCancel} className="cancel-link">Cancel</button>}
       </div>
@@ -81,8 +81,8 @@ export default function AddView({ form, setField, errors, cats, editId, onSubmit
       </div>
 
       {hasErrors && (
-        <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: '0.75rem', textAlign: 'center' }} role="alert">
-          Please fill in the highlighted fields 🎀
+        <p style={{ fontSize: 12, color: 'var(--st-over)', marginBottom: '0.75rem', textAlign: 'center' }} role="alert">
+          Please fill in the highlighted fields
         </p>
       )}
 

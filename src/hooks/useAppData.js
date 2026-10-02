@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadAll, save } from '../lib/storage';
-import { DEF_CATS } from '../themes/themes';
+import { DEF_CATS, DEFAULT_THEME, isKnownTheme } from '../themes/themes';
 
 /**
  * Owns every piece of persisted state and writes it back on change.
@@ -14,7 +14,7 @@ export function useAppData() {
   const [budgets, setBudgets] = useState({});
   const [cats, setCats] = useState(DEF_CATS);
   const [appName, setAppName] = useState('Expense Tracker');
-  const [themeId, setThemeId] = useState('pink');
+  const [themeId, setThemeId] = useState(DEFAULT_THEME);
 
   useEffect(() => {
     (async () => {
@@ -23,7 +23,10 @@ export function useAppData() {
       if (d.budgets) setBudgets(d.budgets);
       if (d.categories) setCats(d.categories);
       if (d.appName) setAppName(d.appName);
-      if (d.theme) setThemeId(d.theme);
+      // A saved id can name a theme this build no longer has — Pink Bow,
+      // Midnight and Mahjong Fortune went in the wallpaper redesign. Anyone
+      // who had one selected lands on the forest instead of a blank palette.
+      if (d.theme && isKnownTheme(d.theme)) setThemeId(d.theme);
       setReady(true);
     })();
   }, []);

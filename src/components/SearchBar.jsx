@@ -1,3 +1,4 @@
+import Icon from './Icon';
 const SORTS = [
   { id: 'date', label: 'Newest' },
   { id: 'amount', label: 'Highest' },
@@ -12,7 +13,7 @@ export default function SearchBar({ query, onQuery, sort, onSort, matchCount, so
   return (
     <div className="search-bar">
       <div className="search-field">
-        <span className="search-icon" aria-hidden="true">🔍</span>
+        <span className="search-icon" aria-hidden="true"><Icon name="search" size={15} /></span>
         <input
           type="search"
           value={query}
@@ -26,7 +27,7 @@ export default function SearchBar({ query, onQuery, sort, onSort, matchCount, so
             className="search-clear"
             onClick={() => onQuery('')}
             aria-label="Clear search"
-          >✕</button>
+          ><Icon name="close" size={14} /></button>
         )}
       </div>
 

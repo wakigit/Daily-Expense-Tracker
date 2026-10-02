@@ -14,76 +14,107 @@ export const DEF_CATS = [
 ];
 
 /**
- * Each theme is a complete set of CSS custom properties, applied to
+ * Three scene themes, each a complete set of CSS custom properties applied to
  * document.documentElement. Nothing in the app hardcodes a colour — every
- * component reads var(--foo) — which is what makes 5 themes cost nothing.
+ * component reads var(--foo) — which is what makes a theme swap cost nothing.
  *
- * bgKind 'pattern' tiles small SVG icons; 'scene' paints a full illustration.
+ * Token values are §7 of the redesign spec verbatim. Contrast was checked
+ * against the card composited over the brightest scene colour that can sit
+ * behind it, and every text token passes 4.5:1. If you change one, recheck it.
+ *
+ * `--accent-rgb` and `--st-over-rgb` are not in §7. They are the same colours
+ * as --accent and --st-over, as bare triplets, because focus rings and error
+ * glows need rgba() with a varying alpha and CSS cannot take a hex apart.
+ *
+ * `title` is the empty-state heading from §9; it belongs to the theme because
+ * it names the scene the reader is looking at.
  */
 export const THEMES = [
   {
-    id: 'pink', name: 'Pink Bow', emoji: '🎀', bgKind: 'pattern', iconType: 'bow',
-    dot: 'rgba(255,255,255,0.38)', preview: ['#FFB3CE', '#E8709A'],
+    id: 'forest',
+    name: 'Moonlit Forest',
+    title: 'A quiet clearing',
+    bgKind: 'scene',
+    scene: 'forest',
+    preview: ['#0A111F', '#E2B866'],
     vars: {
-      '--bg': '#FFB3CE', '--surface-rgb': '255,255,255', '--tint-rgb': '255,228,238', '--border-rgb': '222,162,182',
-      '--text': '#3A1A2E', '--text-sub': '#8A5870', '--text-muted': '#C09AAA', '--text-faint': '#B07090',
-      '--label': '#C0708A', '--heading-sub': '#7A4060', '--chevron': '#D4A0B8', '--nav-arrow': '#C08098',
-      '--accent': '#E8709A', '--accent-rgb': '232,112,154', '--accent-hover': '#D96090', '--on-accent': '#fff',
-      '--success': '#2D8B60', '--danger': '#C04040', '--danger-rgb': '192,64,64', '--danger-border': '#E8A0B0',
-      '--overlay': 'rgba(58,26,46,0.4)', '--on-wallpaper': '#3A1A2E',
-    },
-    items: [['#A8D8F0', '#78B8D4'], ['#F7E8A0', '#D4C060'], ['#E8C0F0', '#B890D4'], ['#B8F0C8', '#78D490'], ['#F0B8C8', '#D480A8']],
-  },
-  {
-    id: 'midnight', name: 'Midnight', emoji: '🌙', bgKind: 'pattern', iconType: 'bow',
-    dot: 'rgba(255,255,255,0.08)', preview: ['#1B1626', '#E8709A'],
-    vars: {
-      '--bg': '#1B1626', '--surface-rgb': '58,46,74', '--tint-rgb': '45,34,58', '--border-rgb': '130,110,150',
-      '--text': '#F3E8EF', '--text-sub': '#C9AFC4', '--text-muted': '#8C7C93', '--text-faint': '#A78FA0',
-      '--label': '#E39BC2', '--heading-sub': '#D48DB2', '--chevron': '#B98CA6', '--nav-arrow': '#A97C98',
-      '--accent': '#E8709A', '--accent-rgb': '232,112,154', '--accent-hover': '#F189AC', '--on-accent': '#fff',
-      '--success': '#4ECB92', '--danger': '#FF6B6B', '--danger-rgb': '255,107,107', '--danger-border': '#7A3A4A',
-      '--overlay': 'rgba(0,0,0,0.6)', '--on-wallpaper': '#F3E8EF',
-    },
-    items: [['#3D3050', '#2E2440'], ['#4A2438', '#391C2B'], ['#213B48', '#182C38'], ['#2E4438', '#20302A'], ['#453A2A', '#332B1E']],
-  },
-  {
-    id: 'forest', name: 'Moonlit Forest', emoji: '🌲', bgKind: 'scene', scene: 'forest',
-    preview: ['#0A0F24', '#C9973E'],
-    vars: {
-      '--bg': '#16223F', '--surface-rgb': '255,255,255', '--tint-rgb': '225,235,245', '--border-rgb': '190,205,220',
-      '--text': '#16223F', '--text-sub': '#3E5570', '--text-muted': '#8FA3B8', '--text-faint': '#6C8299',
-      '--label': '#C9973E', '--heading-sub': '#2E4566', '--chevron': '#A9BED0', '--nav-arrow': '#7C93AA',
-      '--accent': '#C9973E', '--accent-rgb': '201,151,62', '--accent-hover': '#AD7F2F', '--on-accent': '#16223F',
-      '--success': '#3E8F5C', '--danger': '#C0453F', '--danger-rgb': '192,69,63', '--danger-border': '#E3A79E',
-      '--overlay': 'rgba(8,12,24,0.55)', '--on-wallpaper': '#F5EFDF',
+      '--ground': '#0A111F',
+      '--card': 'rgba(13,21,37,0.9)',
+      '--card-line': 'rgba(176,196,226,0.16)',
+      '--tx': '#F2EEE3', '--tx-sub': '#BAC4D2', '--tx-muted': '#93A1B4',
+      '--on-scene': '#F8F3E6', '--on-scene-sub': '#D5DCE6',
+      '--accent': '#E2B866', '--accent-rgb': '226,184,102', '--on-accent': '#1A1405',
+      '--st-calm': '#8FD9B0', '--st-watch': '#E8B04F', '--st-over': '#F07F6E',
+      '--st-over-rgb': '240,127,110',
+      '--hb-calm': '#8FD9B0', '--hb-watch': '#E8B04F', '--hb-over': '#F07F6E',
+      '--track': 'rgba(255,255,255,0.13)', '--track-scene': 'rgba(255,255,255,0.24)',
+      '--nav-bg': 'rgba(9,14,26,0.95)', '--nav-line': 'rgba(176,196,226,0.14)',
+      '--chip': 'rgba(255,255,255,0.07)',
+      '--field': 'rgba(255,255,255,0.06)', '--field-line': 'rgba(176,196,226,0.24)',
+      '--scrim-home': 'linear-gradient(90deg,rgba(5,9,20,0.66) 0%,rgba(5,9,20,0.5) 55%,rgba(5,9,20,0.06) 80%,rgba(5,9,20,0) 100%)',
+      '--scrim-page': 'rgba(6,10,20,0.66)',
     },
   },
   {
-    id: 'beach', name: 'Sunset Beach', emoji: '🌅', bgKind: 'scene', scene: 'beach',
-    preview: ['#3B2A5C', '#F0925A'],
+    id: 'beach',
+    name: 'Sunset Beach',
+    title: 'Calm water',
+    bgKind: 'scene',
+    scene: 'beach',
+    preview: ['#E07A5F', '#B04419'],
     vars: {
-      '--bg': '#B4506B', '--surface-rgb': '255,250,246', '--tint-rgb': '255,232,218', '--border-rgb': '232,178,155',
-      '--text': '#4A2438', '--text-sub': '#7A4256', '--text-muted': '#C58B93', '--text-faint': '#A9647A',
-      '--label': '#D9673F', '--heading-sub': '#7A3B2E', '--chevron': '#E3A98E', '--nav-arrow': '#C9836A',
-      '--accent': '#F2784B', '--accent-rgb': '242,120,75', '--accent-hover': '#D9602F', '--on-accent': '#fff',
-      '--success': '#3E8F6E', '--danger': '#C0392B', '--danger-rgb': '192,57,43', '--danger-border': '#E8A99A',
-      '--overlay': 'rgba(40,15,30,0.5)', '--on-wallpaper': '#FFF2E4',
+      '--ground': '#2A1A2E',
+      '--card': 'rgba(255,248,242,0.95)',
+      '--card-line': 'rgba(201,140,120,0.34)',
+      '--tx': '#3A1F2B', '--tx-sub': '#6E4655', '--tx-muted': '#7E5866',
+      '--on-scene': '#FFF7EE', '--on-scene-sub': '#FBE6D8',
+      '--accent': '#B04419', '--accent-rgb': '176,68,25', '--on-accent': '#FFFFFF',
+      '--st-calm': '#276B4C', '--st-watch': '#8A560B', '--st-over': '#A3322A',
+      '--st-over-rgb': '163,50,42',
+      '--hb-calm': '#BDF0D2', '--hb-watch': '#FFD58A', '--hb-over': '#FFB4A4',
+      '--track': 'rgba(58,31,43,0.12)', '--track-scene': 'rgba(255,255,255,0.3)',
+      '--nav-bg': 'rgba(255,246,239,0.97)', '--nav-line': 'rgba(201,140,120,0.3)',
+      '--chip': 'rgba(58,31,43,0.06)',
+      '--field': 'rgba(255,255,255,0.9)', '--field-line': 'rgba(201,140,120,0.5)',
+      '--scrim-home': 'linear-gradient(90deg,rgba(38,14,34,0.6) 0%,rgba(38,14,34,0.42) 55%,rgba(38,14,34,0.06) 80%,rgba(38,14,34,0) 100%)',
+      '--scrim-page': 'rgba(40,18,34,0.58)',
     },
   },
   {
-    id: 'mahjong', name: 'Mahjong Fortune', emoji: '🀄', bgKind: 'pattern', iconType: 'mahjong',
-    dot: 'rgba(255,255,255,0)', preview: ['#7D2436', '#C9982E'],
+    id: 'city',
+    name: 'Rainy City',
+    title: 'Quiet streets',
+    bgKind: 'scene',
+    scene: 'city',
+    preview: ['#0D1119', '#F2A65A'],
     vars: {
-      '--bg': '#7D2436', '--surface-rgb': '255,248,235', '--tint-rgb': '250,235,205', '--border-rgb': '200,160,90',
-      '--text': '#3A1520', '--text-sub': '#6B2E33', '--text-muted': '#B58A72', '--text-faint': '#8F5C4A',
-      '--label': '#B4222F', '--heading-sub': '#6B2027', '--chevron': '#C99A6A', '--nav-arrow': '#A97A4A',
-      '--accent': '#C9982E', '--accent-rgb': '201,152,46', '--accent-hover': '#A97A1F', '--on-accent': '#3A1520',
-      '--success': '#3E8F5C', '--danger': '#C0392B', '--danger-rgb': '192,57,43', '--danger-border': '#E0A8A0',
-      '--overlay': 'rgba(40,10,16,0.55)', '--on-wallpaper': '#F6EBD9',
+      '--ground': '#0D1119',
+      '--card': 'rgba(17,22,33,0.9)',
+      '--card-line': 'rgba(160,180,210,0.16)',
+      '--tx': '#EEF1F5', '--tx-sub': '#B5BFCC', '--tx-muted': '#919DAD',
+      '--on-scene': '#F4F6FA', '--on-scene-sub': '#D2D9E3',
+      '--accent': '#F2A65A', '--accent-rgb': '242,166,90', '--on-accent': '#1B1208',
+      '--st-calm': '#7FD8B4', '--st-watch': '#E7B85A', '--st-over': '#EE8C7A',
+      '--st-over-rgb': '238,140,122',
+      '--hb-calm': '#7FD8B4', '--hb-watch': '#E7B85A', '--hb-over': '#EE8C7A',
+      '--track': 'rgba(255,255,255,0.12)', '--track-scene': 'rgba(255,255,255,0.24)',
+      '--nav-bg': 'rgba(11,14,21,0.95)', '--nav-line': 'rgba(160,180,210,0.14)',
+      '--chip': 'rgba(255,255,255,0.07)',
+      '--field': 'rgba(255,255,255,0.06)', '--field-line': 'rgba(160,180,210,0.24)',
+      '--scrim-home': 'linear-gradient(90deg,rgba(7,10,17,0.7) 0%,rgba(7,10,17,0.5) 55%,rgba(7,10,17,0.2) 80%,rgba(7,10,17,0.14) 100%)',
+      '--scrim-page': 'rgba(7,10,17,0.66)',
     },
-    items: ['zhong', 'facai', 'baiban'],
   },
 ];
 
+export const DEFAULT_THEME = 'forest';
+
+/**
+ * Falls back to the forest rather than throwing. A saved id can outlive the
+ * theme it names — Pink Bow, Midnight and Mahjong Fortune were all removed in
+ * the redesign, and anyone who had one selected has it in localStorage.
+ */
 export const themeById = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
+
+/** True only for ids this build can actually render. */
+export const isKnownTheme = (id) => THEMES.some((t) => t.id === id);

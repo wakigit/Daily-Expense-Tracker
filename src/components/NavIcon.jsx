@@ -1,4 +1,4 @@
-/** The four bottom-nav glyphs, as inline SVG so they inherit currentColor. */
+/** The five bottom-nav glyphs, as inline SVG so they inherit currentColor. */
 export default function NavIcon({ id }) {
   const props = {
     viewBox: '0 0 24 24',
@@ -38,9 +38,16 @@ export default function NavIcon({ id }) {
   if (id === 'add')
     return (
       <svg {...props}>
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="16" />
-        <line x1="8" y1="12" x2="16" y2="12" />
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    );
+
+  if (id === 'budget')
+    return (
+      <svg {...props}>
+        <path d="M3 7.5A2.5 2.5 0 015.5 5H18a2 2 0 012 2v10a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5z" />
+        <path d="M20 10.5h-3.2a1.75 1.75 0 000 3.5H20" />
       </svg>
     );
 

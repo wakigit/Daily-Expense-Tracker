@@ -15,6 +15,16 @@ import HistoryView from './views/HistoryView';
 import AddView from './views/AddView';
 import AskView from './views/AskView';
 import SettingsView from './views/SettingsView';
+import BudgetView from './views/BudgetView';
+
+/** §4 zone 1: every page but Home shows its name where the month picker sits. */
+const PAGE_TITLES = {
+  history: 'History',
+  add: 'Add expense',
+  ask: 'Ask',
+  budget: 'Budget',
+  settings: 'Settings',
+};
 
 const blankForm = (catId) => ({
   date: today(),
@@ -55,6 +65,13 @@ export default function App() {
   const [undoExp, setUndoExp] = useState(null);
 
   useEffect(() => { setBudDraft(budgets); }, [budgets]);
+
+  // §4: Home gets the masked left-hand gradient so the moon stays bright;
+  // every other page gets the flat scrim, because there is no hero to protect.
+  useEffect(() => {
+    const el = document.getElementById('scrim');
+    if (el) el.setAttribute('data-home', String(tab === 'home' && !catFilter));
+  }, [tab, catFilter]);
 
   // Tabs have very different heights — Settings is long, Home is short. Without
   // this, leaving a scrolled-down Settings for Home drops you into blank space
@@ -182,10 +199,10 @@ export default function App() {
     if (editId !== null) {
       setExpenses((p) => p.map((e) => (e.id === editId ? { ...entry, id: editId } : e)));
       setEditId(null);
-      setToast({ message: 'Changes saved ✓' });
+      setToast({ message: 'Changes saved' });
     } else {
       setExpenses((p) => [...p, { ...entry, id: Date.now() }]);
-      setToast({ message: 'Added ✓' });
+      setToast({ message: 'Added' });
     }
     setForm(blankForm(cats[0]?.id));
     setTab('home');
@@ -244,7 +261,7 @@ export default function App() {
     if (!undoExp) return;
     setExpenses((p) => [...p, undoExp]);
     setUndoExp(null);
-    setToast({ message: 'Restored ✓' });
+    setToast({ message: 'Restored' });
   };
 
   const addCat = () => {
@@ -253,7 +270,7 @@ export default function App() {
     setCats((p) => [...p, { id, label: newCat.label.trim(), color: newCat.color }]);
     setBudgets((b) => ({ ...b, [id]: 0 }));
     setNewCat({ label: '', color: '#D85A30' });
-    setToast({ message: 'Category added 🎀' });
+    setToast({ message: 'Category added' });
   };
 
   const delCat = (id) => {
@@ -267,7 +284,7 @@ export default function App() {
   const saveBudgets = () => {
     setBudgets(budDraft);
     setSavedFlash(true);
-    setToast({ message: 'Budgets saved 💰' });
+    setToast({ message: 'Budgets saved' });
     setTimeout(() => setSavedFlash(false), 1500);
   };
 
@@ -284,10 +301,10 @@ export default function App() {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', color: 'var(--on-wallpaper)',
-        fontFamily: "'Caprasimo', cursive", fontSize: 18,
+        height: '100vh', color: 'var(--on-scene)',
+        fontFamily: "'Caprasimo', Georgia, serif", fontSize: 18,
       }}>
-        {appName || 'Expense Tracker'} 🎀
+        {appName || 'Expense Tracker'}
       </div>
     );
   }
@@ -310,12 +327,12 @@ export default function App() {
         <h1 className="sr-only">Expense Tracker</h1>
 
         <Header
-          appName={appName}
+          title={PAGE_TITLES[tab]}
           filteredCat={tab === 'home' ? filteredCat : null}
           onClearFilter={() => setCatFilter(null)}
           ym={ym}
-          onShiftMonth={(dir) => setYm((cur) => shiftYm(cur, dir))}
           onOpenPicker={() => setShowPicker(true)}
+          onOpenSettings={() => goTo('settings')}
         />
 
         {tab === 'home' && catFilter && (
@@ -332,9 +349,8 @@ export default function App() {
           <HomeView
             totalSpent={totalSpent}
             totalBudget={totalBudget}
-            remaining={remaining}
-            budPct={budPct}
-            isOver={isOver}
+            ym={ym}
+            onAddFirst={() => goTo('add')}
             chartData={chartData}
             cats={cats}
             budgets={budgets}
@@ -367,6 +383,17 @@ export default function App() {
             onSubmit={submit}
             onCancel={cancelEdit}
             onVoice={applyVoice}
+          />
+        )}
+
+        {tab === 'budget' && (
+          <BudgetView
+            totalSpent={totalSpent}
+            totalBudget={totalBudget}
+            cats={cats}
+            budgets={budgets}
+            spending={spending}
+            onEdit={() => goTo('settings')}
           />
         )}
 

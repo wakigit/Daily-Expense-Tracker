@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import SwipeRow from './SwipeRow';
 import { money, dayLabel } from '../lib/format';
+import Icon from './Icon';
 
 /**
  * Transaction rows with swipe-to-delete.
@@ -32,9 +33,9 @@ export default function TxnList({ items, catById, onDelete, onEdit }) {
             </div>
             <div style={{ minWidth: 0 }}>
               <p className="truncate" style={{ fontSize: 14, fontWeight: 600 }}>{exp.description}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-faint)', margin: '2px 0 0' }}>
+              <p style={{ fontSize: 11, color: 'var(--tx-muted)', margin: '2px 0 0' }}>
                 {dayLabel(exp.date)}
-                {exp.notes && <span style={{ color: 'var(--text-muted)' }}> · {exp.notes}</span>}
+                {exp.notes && <span style={{ color: 'var(--tx-muted)' }}> · {exp.notes}</span>}
               </p>
             </div>
           </div>
@@ -47,12 +48,12 @@ export default function TxnList({ items, catById, onDelete, onEdit }) {
               onClick={() => onEdit(exp)}
               className="icon-btn"
               aria-label={`Edit ${exp.description}`}
-            >✏️</button>
+            ><Icon name="edit" size={16} /></button>
             <button
               onClick={() => onDelete(exp)}
               className="icon-btn"
               aria-label={`Delete ${exp.description}`}
-            >🗑️</button>
+            ><Icon name="trash" size={16} /></button>
           </div>
         </div>
       </SwipeRow>

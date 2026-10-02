@@ -19,7 +19,9 @@ import { parseUtterance } from '../src/lib/parseUtterance';
 import { answer } from '../src/lib/ask';
 import * as St from '../src/lib/stats';
 import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../src/themes/scenes';
-import { THEMES } from '../src/themes/themes';
+import { THEMES, isKnownTheme, themeById, DEFAULT_THEME } from '../src/themes/themes';
+import { budgetStatus } from '../src/lib/status';
+import BudgetView from '../src/views/BudgetView';
 
 const cats = DEF_CATS;
 const catById = (id) => cats.find((c) => c.id === id);
@@ -52,23 +54,41 @@ const run = (name, el, ...must) => {
   }
 };
 
+const home = { ym: '2026-10', onPickCat: () => {}, onAddFirst: () => {}, ...txn };
+
 run('HomeView', <HomeView
-  totalSpent={47.6} totalBudget={740} remaining={692.4} budPct={6} isOver={false}
+  totalSpent={47.6} totalBudget={740}
   chartData={chartData} cats={cats} budgets={budgets} spending={spending}
-  monthExp={expenses} onPickCat={() => {}} {...txn} />,
-  'S$47.60', 'Chicken rice', 'Spending breakdown', 'donut-slice', 'swipe-wrap', 'swipe-delete');
+  monthExp={expenses} {...home} />,
+  'S$47.60', 'Chicken rice', 'Where it went', 'donut-slice', 'swipe-wrap', 'swipe-delete');
+
+run('HomeView hero states the budget plainly', <HomeView
+  totalSpent={47.6} totalBudget={740}
+  chartData={chartData} cats={cats} budgets={budgets} spending={spending}
+  monthExp={expenses} {...home} />,
+  'Spent in ', 'October', 'S$740.00', 'On track', 'hero-tick', 'status-chip');
 
 run('HomeView over budget', <HomeView
-  totalSpent={900} totalBudget={740} remaining={-160} budPct={100} isOver
+  totalSpent={900} totalBudget={740}
   chartData={chartData} cats={cats} budgets={budgets} spending={spending}
-  monthExp={[]} onPickCat={() => {}} {...txn} />,
-  'over budget', '-S$160.00', 'progress-fill over');
+  monthExp={[]} {...home} />,
+  'Over budget', 'S$160.00', 'hero-bar-fill over');
 
 run('HomeView empty', <HomeView
-  totalSpent={0} totalBudget={0} remaining={0} budPct={0} isOver={false}
+  totalSpent={0} totalBudget={0}
   chartData={[]} cats={cats} budgets={{}} spending={{}}
-  monthExp={[]} onPickCat={() => {}} {...txn} />,
-  'No expenses yet this month', 'No budget set');
+  monthExp={[]} {...home} />,
+  'Nothing logged for ', 'October', 'Add your first expense', 'No budget set');
+
+run('BudgetView', <BudgetView
+  totalSpent={47.6} totalBudget={740} cats={cats} budgets={budgets}
+  spending={spending} onEdit={() => {}} />,
+  'This month', 'By category', 'On track', 'Edit budgets', 'Food');
+
+run('BudgetView over budget', <BudgetView
+  totalSpent={900} totalBudget={740} cats={cats} budgets={budgets}
+  spending={{ ...spending, food: 400 }} onEdit={() => {}} />,
+  'Over budget', 'status-chip');
 
 run('CategoryView', <CategoryView
   cat={cats[0]} items={expenses} total={47.6}
@@ -107,7 +127,7 @@ run('SettingsView', <SettingsView
   cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
   delCatId="food" onAskDelCat={() => {}} onDelCat={() => {}}
   newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />,
-  'Moonlit Forest', 'Mahjong Fortune', 'Total monthly budget', 'S$740.00',
+  'Moonlit Forest', 'Rainy City', 'Total monthly budget', 'S$740.00',
   'will be deleted', 'Add new category', 'Selected');
 
 run('MonthSheet', <MonthSheet
@@ -118,20 +138,23 @@ run('MonthSheet', <MonthSheet
 
 run('Donut single slice', <Donut data={[{ id: 'a', value: 10, color: '#f00' }]} total={10} />, 'S$10.00', 'path');
 run('Donut many slices', <Donut data={chartData} total={47.6} />, 'donut-slice', 'Total');
-run('BottomNav', <BottomNav tab="add" onGo={() => {}} />, 'aria-current="page"', 'Settings');
-run('Header month mode', <Header appName="My Money" ym="2026-09" onShiftMonth={() => {}} onOpenPicker={() => {}} />, 'My Money', 'September 2026', 'Previous month');
-run('Header filter mode', <Header appName="X" filteredCat={cats[0]} onClearFilter={() => {}} ym="2026-09" onShiftMonth={() => {}} onOpenPicker={() => {}} />, '← All', 'Food');
+run('BottomNav', <BottomNav tab="add" onGo={() => {}} />,
+  'aria-current="page"', 'Budget', 'History', 'nav-btn active raised');
+run('Header month mode', <Header ym="2026-09" onOpenPicker={() => {}} onOpenSettings={() => {}} />,
+  'September 2026', 'Change month', 'Settings');
+run('Header page title', <Header title="Budget" onOpenSettings={() => {}} />, 'page-title', 'Budget');
+run('Header filter mode', <Header filteredCat={cats[0]} onClearFilter={() => {}} ym="2026-09" onOpenPicker={() => {}} onOpenSettings={() => {}} />, 'Food');
 
 run('HomeView with search bar', <HomeView
-  totalSpent={72.2} totalBudget={740} remaining={667.8} budPct={10} isOver={false}
+  totalSpent={72.2} totalBudget={740}
   chartData={chartData} cats={cats} budgets={budgets} spending={spending}
-  monthExp={manyExpenses} onPickCat={() => {}} {...txn} />,
+  monthExp={manyExpenses} {...home} />,
   'Search transactions', 'sort-btn', 'EZ-Link top up');
 
 run('HomeView no search bar under threshold', <HomeView
-  totalSpent={47.6} totalBudget={740} remaining={692.4} budPct={6} isOver={false}
+  totalSpent={47.6} totalBudget={740}
   chartData={chartData} cats={cats} budgets={budgets} spending={spending}
-  monthExp={expenses} onPickCat={() => {}} {...txn} />,
+  monthExp={expenses} {...home} />,
   'Chicken rice');
 
 run('CategoryView with search', <CategoryView
@@ -198,6 +221,39 @@ logic('filterAndSort: empty result',
   filterAndSort(manyExpenses, 'nothinghere', 'date', catById), []);
 logic('filterAndSort: works without catById',
   filterAndSort(expenses, 'kopi', 'date', undefined), []);
+
+/* ── Budget status model (§2) ──────────────────────────────────── */
+
+logic('status: no budget set', budgetStatus(50, 0).label, 'No budget set');
+logic('status: on track below 75%', budgetStatus(100, 200).label, 'On track');
+logic('status: 74% is still on track', budgetStatus(74, 100).label, 'On track');
+logic('status: 75% is close to limit', budgetStatus(75, 100).label, 'Close to limit');
+logic('status: 99% is close to limit', budgetStatus(99, 100).label, 'Close to limit');
+// Exactly on budget is its own state — it is not yet over.
+logic('status: exactly 100% is budget reached', budgetStatus(100, 100).label, 'Budget reached');
+logic('status: above budget is over', budgetStatus(101, 100).label, 'Over budget');
+logic('status: keys follow the labels',
+  [budgetStatus(10, 100).key, budgetStatus(80, 100).key, budgetStatus(120, 100).key],
+  ['calm', 'watch', 'over']);
+// The chip reports the true figure even past 100 — only the bar clamps.
+logic('status: pct is not capped', budgetStatus(108, 100).pct, 108);
+logic('status: over amount', budgetStatus(108, 100).over, 8);
+logic('status: left goes negative', budgetStatus(108, 100).left, -8);
+logic('status: no budget means no percentage', budgetStatus(50, 0).pct, 0);
+
+/* ── Theme list and migration ──────────────────────────────────── */
+
+logic('three scene themes', THEMES.map((t) => t.id), ['forest', 'beach', 'city']);
+logic('every theme is a scene', THEMES.every((t) => t.bgKind === 'scene'), true);
+logic('every theme carries the §7 tokens',
+  THEMES.every((t) => ['--ground', '--card', '--tx', '--on-scene', '--st-calm', '--st-over',
+    '--nav-bg', '--scrim-home', '--scrim-page'].every((k) => t.vars[k])), true);
+logic('every theme has an empty-state title', THEMES.every((t) => !!t.title), true);
+// A saved id can outlive its theme; those three went in the redesign.
+logic('removed theme ids are not known',
+  ['pink', 'midnight', 'mahjong'].some(isKnownTheme), false);
+logic('a removed id falls back to the forest', themeById('mahjong').id, DEFAULT_THEME);
+logic('a known id is kept', themeById('city').id, 'city');
 
 /* ── Scene engine (stubbed DOM, no browser) ────────────────────── */
 
@@ -327,10 +383,10 @@ logic('forest staggers its animation delays', delays.size > 5, true);
 logic('flow stops when over', css.includes('.scene[data-over="true"] .flow'), true);
 logic('the state change eases once', css.includes('transition:transform 3.2s'), true);
 
-// Pattern wallpapers were already full-bleed; make sure they stayed that way.
-const pink = mount('pink').html;
-logic('pattern: fills 100% width', pink.includes('width:100%'), true);
-logic('pattern: tiles bows', count(pink, '<pattern') , 2);
+// Every theme is a scene now; an unknown id must still paint something rather
+// than leaving the app on a bare background.
+logic('unknown theme falls back to a scene',
+  mount({ scene: 'nope' }).html.includes('class="scene"'), true);
 
 /* ── Voice: utterance parsing ──────────────────────────────────── */
 

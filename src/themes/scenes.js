@@ -1,15 +1,10 @@
 /**
  * Wallpaper painting.
  *
- * Two kinds live here:
- *
- *   - Scenes (forest, beach, city) — the live wallpapers. Built ONCE and kept
- *     mounted. Everything that changes with the budget is a CSS rule keyed on
+ * Scenes (forest, beach, city) are the live wallpapers. Built ONCE and kept
+ * mounted. Everything that changes with the budget is a CSS rule keyed on
  *     `data-over` on the scene root. No JavaScript touches the SVG after it is
  *     built, so no animation ever restarts mid-month.
- *   - Patterns (bow, mahjong) — the older tiled wallpapers, still used by the
- *     themes that phase 2 will replace. Untouched.
- *
  * Coordinates are the canvas reference verbatim: every scene is composed in a
  * 390x844 box and scaled to the viewport by `preserveAspectRatio="xMidYMin
  * slice"`. That is why nothing here reads the window size — a resize costs a
@@ -24,32 +19,6 @@
  * Kept as string generators rather than JSX on purpose: they are pure geometry
  * with no user input, and the #bg element they fill sits outside the React tree.
  */
-
-/* ── Pattern tiles ─────────────────────────────────────────────── */
-
-function bow(cx, cy, hw, hh, item, rot) {
-  const [fill, knot] = item;
-  const g0 = rot ? `<g transform="rotate(${rot} ${cx} ${cy})">` : '<g>';
-  const lw = `M${cx},${cy} Q${cx - hw * 0.38},${cy - hh} ${cx - hw},${cy} Q${cx - hw * 0.38},${cy + hh} ${cx},${cy}Z`;
-  const rw = `M${cx},${cy} Q${cx + hw * 0.38},${cy - hh} ${cx + hw},${cy} Q${cx + hw * 0.38},${cy + hh} ${cx},${cy}Z`;
-  const kr = Math.max(4, hh * 0.34);
-  const dx = cx - hw * 0.55, dxr = cx + hw * 0.55, dy0 = cy - hh * 0.22, dy1 = cy + hh * 0.22;
-  return `${g0}<path d="${lw}" fill="${fill}" opacity="0.9"/><path d="${rw}" fill="${fill}" opacity="0.9"/><circle cx="${dx}" cy="${dy0}" r="1.8" fill="white" opacity="0.62"/><circle cx="${dx}" cy="${dy1}" r="1.8" fill="white" opacity="0.62"/><circle cx="${dxr}" cy="${dy0}" r="1.8" fill="white" opacity="0.62"/><circle cx="${dxr}" cy="${dy1}" r="1.8" fill="white" opacity="0.62"/><circle cx="${cx}" cy="${cy}" r="${kr}" fill="${knot}"/></g>`;
-}
-
-function mahjongTile(cx, cy, hw, hh, type, rot) {
-  const w = hw * 1.9, h = w * 1.32, x = cx - w / 2, y = cy - h / 2;
-  const g0 = rot ? `<g transform="rotate(${rot} ${cx} ${cy})">` : '<g>';
-  const body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w * 0.14}" fill="#F6EBD9" stroke="#D8C39A" stroke-width="1.4"/><rect x="${x + w * 0.09}" y="${y + h * 0.09}" width="${w * 0.82}" height="${h * 0.82}" rx="${w * 0.1}" fill="none" stroke="#EAD9B8" stroke-width="1"/>`;
-  let glyph;
-  if (type === 'zhong') glyph = `<text x="${cx}" y="${cy + h * 0.17}" font-family="'PingFang SC','Microsoft YaHei','Heiti SC',sans-serif" font-size="${h * 0.6}" font-weight="700" fill="#B3222E" text-anchor="middle">中</text>`;
-  else if (type === 'facai') glyph = `<text x="${cx}" y="${cy + h * 0.17}" font-family="'PingFang SC','Microsoft YaHei','Heiti SC',sans-serif" font-size="${h * 0.6}" font-weight="700" fill="#2E7D4F" text-anchor="middle">發</text>`;
-  else glyph = `<rect x="${cx - w * 0.24}" y="${cy - h * 0.24}" width="${w * 0.48}" height="${h * 0.48}" fill="none" stroke="#2B4C7E" stroke-width="${w * 0.045}"/>`;
-  return `${g0}${body}${glyph}</g>`;
-}
-
-const ICON_LAYOUT = [[58, 52, 23, 15, 0], [188, 30, 18, 11, 15], [316, 68, 23, 15, -10], [82, 155, 21, 13, 5], [230, 130, 26, 16, 0], [350, 195, 20, 13, -15], [132, 238, 22, 14, 10], [275, 250, 20, 12, 0], [162, 108, 17, 11, -20], [360, 138, 21, 13, 6], [14, 198, 18, 11, 12], [205, 200, 20, 12, -8], [22, 88, 16, 10, -5], [378, 30, 17, 11, 8]];
-const MAHJONG_LAYOUT = [[45, 60, 16, 0, -4], [150, 40, 18, 0, 5], [260, 55, 15, 0, -6], [350, 80, 17, 0, 4], [90, 150, 19, 0, -3], [210, 140, 16, 0, 6], [330, 175, 15, 0, -5], [55, 230, 17, 0, 3], [170, 225, 18, 0, -4], [290, 245, 16, 0, 5]];
 
 /* ── Scene plumbing ────────────────────────────────────────────── */
 
@@ -436,21 +405,9 @@ export function paintBackground(theme) {
   const bgEl = document.getElementById('bg');
   if (!bgEl) return;
 
-  if (theme.bgKind === 'scene') {
-    ensureSceneCss();
-    const build = SCENES[theme.scene] || SCENES.forest;
-    bgEl.innerHTML = build();
-    return;
-  }
-
-  const isMahjong = theme.iconType === 'mahjong';
-  const drawIcon = isMahjong ? mahjongTile : bow;
-  const layout = isMahjong ? MAHJONG_LAYOUT : ICON_LAYOUT;
-  const icons = layout
-    .map((pos, i) => drawIcon(pos[0], pos[1], pos[2], pos[3], theme.items[i % theme.items.length], pos[4]))
-    .join('');
-
-  bgEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"><defs><pattern id="pk" x="10" y="10" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="2.8" fill="${theme.dot}"/></pattern><pattern id="mp" x="0" y="0" width="390" height="285" patternUnits="userSpaceOnUse"><rect width="390" height="285" fill="${theme.vars['--bg']}"/><rect width="390" height="285" fill="url(#pk)"/><g>${icons}</g></pattern></defs><rect width="100%" height="100%" fill="url(#mp)"/></svg>`;
+  ensureSceneCss();
+  const build = SCENES[theme?.scene] || SCENES.forest;
+  bgEl.innerHTML = build();
 }
 
 /**

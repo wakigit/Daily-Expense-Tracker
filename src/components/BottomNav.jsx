@@ -1,11 +1,16 @@
 import NavIcon from './NavIcon';
 
+/**
+ * §5: Home, History, Add, Ask, Budget. Add is raised because logging an
+ * expense is the one thing the app exists for; Settings moved to the header
+ * gear to make room for Budget.
+ */
 const TABS = [
   { id: 'home', label: 'Home' },
   { id: 'history', label: 'History' },
-  { id: 'add', label: 'Add' },
+  { id: 'add', label: 'Add', raised: true },
   { id: 'ask', label: 'Ask' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'budget', label: 'Budget' },
 ];
 
 export default function BottomNav({ tab, onGo }) {
@@ -14,11 +19,13 @@ export default function BottomNav({ tab, onGo }) {
       {TABS.map((item) => (
         <button
           key={item.id}
-          className={`nav-btn${tab === item.id ? ' active' : ''}`}
+          className={`nav-btn${tab === item.id ? ' active' : ''}${item.raised ? ' raised' : ''}`}
           onClick={() => onGo(item.id)}
           aria-current={tab === item.id ? 'page' : undefined}
         >
-          <NavIcon id={item.id} />
+          <span className="nav-ico">
+            <NavIcon id={item.id} />
+          </span>
           <span>{item.label}</span>
         </button>
       ))}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { isSupported, listenOnce } from '../lib/speech';
 import { parseUtterance } from '../lib/parseUtterance';
+import Icon from './Icon';
 
 /**
  * Mic button that fills the expense form from speech.
@@ -45,7 +46,7 @@ export default function VoiceButton({ cats, onParsed }) {
         disabled={state === 'listening'}
         aria-label={state === 'listening' ? 'Listening' : 'Add expense by voice'}
       >
-        <span className="voice-icon">🎤</span>
+        <span className="voice-icon"><Icon name="mic" size={17} /></span>
         <span>{state === 'listening' ? 'Listening…' : 'Say it instead'}</span>
       </button>
 
