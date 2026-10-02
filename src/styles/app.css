@@ -567,6 +567,57 @@ button:active { transform: scale(0.96); }
   letter-spacing: 0.06em;
 }
 
+/* ═══ Switch ═══════════════════════════════════════════════════ */
+
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-height: 44px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.switch-label { display: block; font-size: 15px; color: var(--tx); font-weight: 600; }
+
+.switch-hint {
+  display: block;
+  font-size: 13px;
+  color: var(--tx-muted);
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+.switch {
+  flex-shrink: 0;
+  width: 48px;
+  height: 29px;
+  border-radius: var(--r-pill);
+  background: var(--track);
+  border: 1px solid var(--field-line);
+  padding: 2px;
+  display: flex;
+  transition: background var(--dur) var(--ease-out);
+}
+
+.switch.on { background: var(--accent); border-color: var(--accent); }
+
+.switch-knob {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: var(--on-scene);
+  transition: transform var(--dur) var(--ease-spring);
+}
+
+.switch.on .switch-knob { transform: translateX(19px); background: var(--on-accent); }
+
 /* ═══ Swatches & theme cards ═══════════════════════════════════ */
 
 .swatch {

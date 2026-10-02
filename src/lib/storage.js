@@ -15,6 +15,7 @@ const KEYS = {
   categories: 'ww_cats',
   appName: 'ww_name',
   theme: 'ww_theme',
+  motion: 'ww_motion',
 };
 
 export async function load(key) {
@@ -36,12 +37,13 @@ export async function save(key, value) {
 }
 
 export async function loadAll() {
-  const [expenses, budgets, categories, appName, theme] = await Promise.all([
+  const [expenses, budgets, categories, appName, theme, motion] = await Promise.all([
     load('expenses'),
     load('budgets'),
     load('categories'),
     load('appName'),
     load('theme'),
+    load('motion'),
   ]);
-  return { expenses, budgets, categories, appName, theme };
+  return { expenses, budgets, categories, appName, theme, motion };
 }

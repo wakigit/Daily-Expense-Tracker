@@ -15,7 +15,7 @@ import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '..
  * the redesign spec. There is no gradient of health any more — the scene is
  * calm, or it is over.
  */
-export function useTheme(themeId, { isOver = false, paused = false, still = false } = {}) {
+export function useTheme(themeId, { isOver = false, paused = false, still = false, motion = 'auto' } = {}) {
   // ── Build: theme changes only.
   useEffect(() => {
     const theme = themeById(themeId);
@@ -26,8 +26,15 @@ export function useTheme(themeId, { isOver = false, paused = false, still = fals
 
     // Keep the iOS status bar / browser chrome in step with the theme.
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme.vars['--bg']);
+    if (meta) meta.setAttribute('content', theme.vars['--ground']);
   }, [themeId]);
+
+  // ── Motion: 'on' opts out of the reduced-motion rules, 'auto' defers to the
+  // system. Stamped on :root because the rules it unlocks are global, not just
+  // the scene's — the card entrance animation reads it too.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-motion', motion === 'on' ? 'on' : 'auto');
+  }, [motion]);
 
   // ── State: re-applied after a rebuild, hence themeId in the deps.
   useEffect(() => { setSceneOver(isOver); }, [isOver, themeId]);

@@ -123,11 +123,12 @@ run('AddView edit + errors', <AddView
   'Edit expense', 'Save changes', 'highlighted fields', 'class="err"');
 
 run('SettingsView', <SettingsView
-  themeId="forest" onTheme={() => {}} appName="Expense Tracker" onAppName={() => {}}
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="Expense Tracker" onAppName={() => {}}
   cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
   delCatId="food" onAskDelCat={() => {}} onDelCat={() => {}}
   newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />,
-  'Moonlit Forest', 'Rainy City', 'Total monthly budget', 'S$740.00',
+  'Moonlit Forest', 'Rainy City', 'Animate the wallpaper', 'role="switch"', 'aria-checked="false"', 'Total monthly budget', 'S$740.00',
   'will be deleted', 'Add new category', 'Selected');
 
 run('MonthSheet', <MonthSheet
@@ -354,6 +355,10 @@ logic('state lives on the data attribute, not in custom properties',
   forest.css.includes('--moon-shade'), false);
 logic('pausing is wired to the animated set', forest.css.includes('.scene.paused .a{animation-play-state:paused}'), true);
 logic('reduced motion is honoured', forest.css.includes('@media (prefers-reduced-motion: reduce)'), true);
+// §3.9's in-app switch. Reduce Motion is an accessibility preference, so the
+// opt-out is explicit and is never the default.
+logic('reduced motion yields only to an explicit opt-in',
+  forest.css.includes(':root:not([data-motion="on"]) #bg .scene .a{animation:none !important}'), true);
 
 /* ── Rule 3.7: every loop ends where it starts ─────────────────── */
 

@@ -175,8 +175,9 @@ const SCENE_CSS = `
 #bg .scene.still .a{animation:none !important}
 #bg .scene.still .tr,#bg .scene.still .trc{transition:opacity .25s linear !important}
 @media (prefers-reduced-motion: reduce){
-  #bg .scene .a{animation:none !important}
-  #bg .scene .tr,#bg .scene .trc{transition:opacity .25s linear !important}
+  :root:not([data-motion="on"]) #bg .scene .a{animation:none !important}
+  :root:not([data-motion="on"]) #bg .scene .tr,
+  :root:not([data-motion="on"]) #bg .scene .trc{transition:opacity .25s linear !important}
 }
 `;
 

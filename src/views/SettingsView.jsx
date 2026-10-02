@@ -4,6 +4,7 @@ import Icon from '../components/Icon';
 
 export default function SettingsView({
   themeId, onTheme,
+  motion, onMotion,
   appName, onAppName,
   cats, budDraft, onBudDraft, onSaveBudgets, saved,
   delCatId, onAskDelCat, onDelCat,
@@ -49,8 +50,31 @@ export default function SettingsView({
         </div>
       </section>
 
-      {/* ── App name ── */}
+      {/* ── Motion ── */}
       <section className="card" style={{ '--i': 1 }}>
+        <h2 className="display card-title">Motion</h2>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={motion === 'on'}
+          onClick={() => onMotion(motion === 'on' ? 'auto' : 'on')}
+          className="switch-row"
+        >
+          <span>
+            <span className="switch-label">Animate the wallpaper</span>
+            <span className="switch-hint">
+              Your device has Reduce Motion turned on, which stops the scene. Turn
+              this on to let it move anyway.
+            </span>
+          </span>
+          <span className={`switch${motion === 'on' ? ' on' : ''}`} aria-hidden="true">
+            <span className="switch-knob" />
+          </span>
+        </button>
+      </section>
+
+      {/* ── App name ── */}
+      <section className="card" style={{ '--i': 2 }}>
         <h2 className="display card-title">App name</h2>
         <div className="field">
           <label htmlFor="s-name">Your name for this app</label>
@@ -69,7 +93,7 @@ export default function SettingsView({
       </section>
 
       {/* ── Budgets ── */}
-      <section className="card" style={{ '--i': 2 }}>
+      <section className="card" style={{ '--i': 3 }}>
         <h2 className="display card-title">Monthly budgets</h2>
         {cats.map((c) => (
           <div key={c.id} className="field">
@@ -107,7 +131,7 @@ export default function SettingsView({
       </section>
 
       {/* ── Categories ── */}
-      <section className="card" style={{ '--i': 3 }}>
+      <section className="card" style={{ '--i': 4 }}>
         <h2 className="display card-title">Categories</h2>
 
         {cats.map((c) => {

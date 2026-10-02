@@ -15,6 +15,8 @@ export function useAppData() {
   const [cats, setCats] = useState(DEF_CATS);
   const [appName, setAppName] = useState('Expense Tracker');
   const [themeId, setThemeId] = useState(DEFAULT_THEME);
+  // 'auto' follows the system Reduce Motion setting; 'on' overrides it.
+  const [motion, setMotion] = useState('auto');
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,7 @@ export function useAppData() {
       // Midnight and Mahjong Fortune went in the wallpaper redesign. Anyone
       // who had one selected lands on the forest instead of a blank palette.
       if (d.theme && isKnownTheme(d.theme)) setThemeId(d.theme);
+      if (d.motion === 'on' || d.motion === 'auto') setMotion(d.motion);
       setReady(true);
     })();
   }, []);
@@ -36,6 +39,7 @@ export function useAppData() {
   useEffect(() => { if (ready) save('categories', cats); }, [cats, ready]);
   useEffect(() => { if (ready && appName) save('appName', appName); }, [appName, ready]);
   useEffect(() => { if (ready) save('theme', themeId); }, [themeId, ready]);
+  useEffect(() => { if (ready) save('motion', motion); }, [motion, ready]);
 
   return {
     ready,
@@ -44,5 +48,6 @@ export function useAppData() {
     cats, setCats,
     appName, setAppName,
     themeId, setThemeId,
+    motion, setMotion,
   };
 }

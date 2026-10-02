@@ -147,14 +147,18 @@ body {
 
 ::selection { background: rgba(var(--accent-rgb), 0.28); }
 
-/* Honour the OS setting. Everything below degrades to instant. */
+/* Honour the OS setting — unless the reader has explicitly asked for motion
+   inside the app (§3.9). Reduce Motion is a real accessibility preference, so
+   the override is opt-in and never the default. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  :root:not([data-motion='on']) *,
+  :root:not([data-motion='on']) *::before,
+  :root:not([data-motion='on']) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
   /* The entrance animation fills `backwards`, so shortening it leaves the
      card parked on its opening frame — every card sat 14px low. Drop it. */
-  .card { animation: none !important; }
+  :root:not([data-motion='on']) .card { animation: none !important; }
 }

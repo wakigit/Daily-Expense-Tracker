@@ -42,6 +42,7 @@ export default function App() {
     cats, setCats,
     appName, setAppName,
     themeId, setThemeId,
+    motion, setMotion,
   } = useAppData();
 
   const [ym, setYm] = useState(curYm());
@@ -172,7 +173,7 @@ export default function App() {
   // Drives the wallpaper. The scene reads one boolean — `isOver` is false
   // when no budget is set, so someone who never sets one keeps a calm scene
   // rather than being handed a permanently bleak app. Loops run on Home only.
-  useTheme(themeId, { isOver, paused: tab !== 'home' });
+  useTheme(themeId, { isOver, paused: tab !== 'home', motion });
 
   const chartData = cats
     .filter((c) => spending[c.id] > 0)
@@ -405,6 +406,8 @@ export default function App() {
           <SettingsView
             themeId={themeId}
             onTheme={setThemeId}
+            motion={motion}
+            onMotion={setMotion}
             appName={appName}
             onAppName={setAppName}
             cats={cats}
