@@ -224,17 +224,43 @@ const SCENE_CSS = `
 #bg .pennant{transform-box:fill-box;transform-origin:0% 50%;animation:w-flap 1.6s ease-in-out infinite}
 @keyframes w-flap{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
 
-/* The surfer tracks a crest across the bay, rising and dropping with it. */
+/* The surfer.
+ *
+ * Travel alone made him a sticker sliding across a painting: the group moved,
+ * nothing inside it did. The motion is layered instead, on four periods that
+ * do not divide into each other (26s, 2.6s, 1.9s, 1.3s, 0.9s), so the
+ * combination never repeats in a way the eye can latch onto.
+ *   .surfer     — crosses the bay
+ *   .surf-bob   — board and rider ride up and down the face, tilting with it
+ *   .surf-crest — the wave body swells and leans
+ *   .surf-curl  — the lip throws forward
+ *   .surf-foam  — spray, fastest and least regular
+ */
 #bg .surfer{animation:w-surf 26s linear infinite}
 @keyframes w-surf{
-  0%{opacity:0;transform:translate(410px,0)}
+  0%{opacity:0;transform:translateX(410px)}
   6%{opacity:1}
-  25%{transform:translate(300px,-3px)}
-  50%{transform:translate(190px,2px)}
-  75%{transform:translate(80px,-2px)}
   94%{opacity:1}
-  100%{opacity:0;transform:translate(-30px,0)}
+  100%{opacity:0;transform:translateX(-40px)}
 }
+#bg .surf-bob{transform-box:fill-box;transform-origin:50% 100%;animation:w-surfbob 2.6s ease-in-out infinite}
+@keyframes w-surfbob{
+  0%,100%{transform:translateY(1px) rotate(-5deg)}
+  32%{transform:translateY(-4px) rotate(6deg)}
+  64%{transform:translateY(3px) rotate(-2deg)}
+}
+#bg .surf-rider{transform-box:fill-box;transform-origin:50% 100%;animation:w-rider 2.6s ease-in-out infinite}
+@keyframes w-rider{
+  0%,100%{transform:rotate(4deg)}
+  32%{transform:rotate(-5deg)}
+  64%{transform:rotate(2deg)}
+}
+#bg .surf-crest{transform-box:fill-box;transform-origin:50% 100%;animation:w-crest 1.9s ease-in-out infinite}
+@keyframes w-crest{0%,100%{transform:scaleY(1) skewX(0deg)}50%{transform:scaleY(1.12) skewX(-4deg)}}
+#bg .surf-curl{transform-box:fill-box;transform-origin:100% 100%;animation:w-curl 1.3s ease-in-out infinite}
+@keyframes w-curl{0%,100%{transform:translate(0,0) rotate(0deg)}50%{transform:translate(-3px,-2px) rotate(-8deg)}}
+#bg .surf-foam{animation:w-foam 0.9s ease-in-out infinite}
+@keyframes w-foam{0%,100%{opacity:0.4;transform:translate(0,0)}50%{opacity:0.95;transform:translate(-2px,-1.5px)}}
 
 /* The crab works the sand sideways, the way crabs do, pausing to dig. */
 #bg .crab{animation:w-crab 38s ease-in-out infinite}
@@ -507,20 +533,79 @@ function beachScene() {
 <g class="trc reflect">${reflect}</g>
 <g fill="none" stroke-linecap="round">${waves}</g>
 
-<!-- Surfer on a breaking wave. The crest, the curl and the foam are all inside
-     this group, so the wave travels with him instead of him sliding over a
-     static line. -->
+<path d="M0,${SHORE} C130,${SHORE - 8} 250,${SHORE + 8} 390,${SHORE - 2} L390,844 L0,844 Z"/></clipPath>
+</defs>
+<rect width="${VB_W}" height="${VB_H}" fill="url(#bsky)"/>
+<g class="trc beach-stars">${stars}</g>
+<g class="trc cloud-col" opacity="0.62">
+<g class="a drift"><ellipse cx="120" cy="112" rx="84" ry="6"/><ellipse cx="150" cy="104" rx="46" ry="5"/></g>
+<g class="a drift" style="animation-duration:120s;animation-delay:-40s"><ellipse cx="300" cy="178" rx="76" ry="5"/><ellipse cx="270" cy="171" rx="40" ry="4"/></g>
+<g class="a drift" style="animation-duration:105s;animation-delay:-70s"><ellipse cx="96" cy="236" rx="70" ry="4"/></g>
+</g>
+<g clip-path="url(#bclip)">
+<circle class="a glow trc sun-glow" cx="290" r="120" fill="url(#bglow)"/>
+<circle class="trc sun" cx="290" r="30" fill="url(#bsun)"/>
+</g>
+
+<!-- The plane tows a pennant, not a slogan: the status is the chip's job. -->
+<g class="a plane">
+<g transform="translate(0 50) scale(1.8)">
+<path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
+<path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
+<g class="a pennant">
+<path d="M0,1 L-46,-5 L-46,8 Z" class="trc pennant-fill"/>
+<circle class="trc pennant-face" cx="-30" cy="1.5" r="1.5"/>
+<circle class="trc pennant-face" cx="-22" cy="1.5" r="1.5"/>
+<path class="trc mouth-happy" d="M-32,5 Q-26,9.5 -20,5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
+<path class="trc mouth-sad" d="M-32,7.5 Q-26,3 -20,7.5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
+</g>
+</g>
+</g>
+
+<rect x="0" y="${HORIZON}" width="${VB_W}" height="${844 - HORIZON}" fill="url(#bsea)"/>
+<rect class="trc waterline" x="0" y="${HORIZON - 1}" width="${VB_W}" height="1.6" opacity="0.6"/>
+<g class="trc reflect">${reflect}</g>
+<g fill="none" stroke-linecap="round">${waves}</g>
+
+<!-- Surfer on a breaking wave. Every part of this moves on its own clock; the
+     group as a whole only supplies the travel across the bay. -->
 <g class="a surfer">
-<g transform="translate(0 330) scale(1.9)">
-<path d="M-30,10 Q-20,-2 -6,-4 Q6,-5 14,2 Q20,7 24,12 L-30,12 Z" fill="#1F5668" opacity="0.92"/>
-<path d="M-6,-4 Q6,-5 14,2 Q8,0 2,1 Q-3,2 -6,-4 Z" fill="#CFE8EC" opacity="0.85"/>
-<path d="M-24,9 Q-12,1 0,0" fill="none" stroke="#DFF1F3" stroke-width="1.1" opacity="0.6" stroke-linecap="round"/>
-<path d="M-13,5 Q0,10 13,4" fill="none" stroke="#F2E3C9" fill-opacity="0" stroke-width="2.6" stroke-linecap="round"/>
-<path d="M0,3 L1,-8" stroke="#2E2235" stroke-width="2.6" stroke-linecap="round"/>
-<circle cx="1.4" cy="-11" r="2.8" fill="#2E2235"/>
-<path d="M0.6,-6 L7,-9 M0.6,-6 L-5.5,-10" stroke="#2E2235" stroke-width="1.7" stroke-linecap="round"/>
-<path d="M0,3 L-3,8 M1,3 L4,8" stroke="#2E2235" stroke-width="1.7" stroke-linecap="round"/>
-<path d="M-18,11 Q-8,15 4,11" fill="none" stroke="#FFF6EC" stroke-width="1.5" opacity="0.75" stroke-linecap="round"/>
+<g transform="translate(0 322) scale(1.9)">
+
+<g class="a surf-crest">
+<path d="M-42,13 Q-24,11 -9,4 Q3,-3 14,-9 Q25,-15 30,-7 Q34,1 32,13 Z" fill="#4E97B0"/>
+<path d="M-34,13 Q-18,11 -5,5 Q6,-1 15,-6 Q24,-11 28,-4 Q31,3 29,13 Z" fill="#7CBFD2" opacity="0.85"/>
+<path d="M-20,13 Q-8,11 2,6 Q11,1 19,-2 Q26,-4 27,4 L27,13 Z" fill="#B6E2EC" opacity="0.55"/>
+</g>
+
+<g class="a surf-curl">
+<path d="M14,-9 Q25,-15 30,-7 Q22,-12 13,-7 Q6,-4 1,-1 Q7,-6 14,-9 Z" fill="#FFFFFF"/>
+<path d="M19,-9 Q27,-12 30,-7 Q25,-10 19,-9 Z" fill="#FFFFFF" opacity="0.8"/>
+</g>
+
+<g class="a surf-bob">
+<g transform="translate(-7 3)">
+<path d="M-13,4 Q0,9 14,3 Q0,7 -13,4 Z" fill="#FFF3DC"/>
+<path d="M-13,4 Q0,9 14,3" fill="none" stroke="#C9A97E" stroke-width="0.7"/>
+<g class="a surf-rider">
+<path d="M0,3 L1,-9" stroke="#2E2235" stroke-width="2.6" stroke-linecap="round"/>
+<circle cx="1.6" cy="-12.2" r="2.8" fill="#2E2235"/>
+<path d="M0.8,-7 L8,-10.5 M0.8,-7 L-6,-11.5" stroke="#2E2235" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M0,3 L-3.4,7 M1,3 L4.4,7" stroke="#2E2235" stroke-width="1.8" stroke-linecap="round"/>
+</g>
+</g>
+</g>
+
+<g class="a surf-foam">
+<path d="M1,-1 Q-7,3 -16,6 Q-25,9 -33,11" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+<path d="M-30,13 Q-16,16 -2,13" fill="none" stroke="#FFF6EC" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="-20" cy="7" r="1.1" fill="#FFFFFF"/>
+<circle cx="-27" cy="10" r="0.8" fill="#FFFFFF"/>
+<circle cx="-12" cy="5" r="0.7" fill="#FFFFFF"/>
+<circle cx="26" cy="-9" r="1" fill="#FFFFFF"/>
+<circle cx="30" cy="-12" r="0.7" fill="#FFFFFF"/>
+</g>
+
 </g>
 </g>
 
