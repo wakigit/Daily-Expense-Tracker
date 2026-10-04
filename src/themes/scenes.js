@@ -445,7 +445,7 @@ function beachScene() {
   // Within that budget the sea gets twice the sand, per §13 — sea 296..360,
   // sand 360 down. The sun lifts to 230 so the plane and the surfer have room.
   const HORIZON = 296;
-  const SHORE = 360;
+  const SHORE = 354;
 
   const stars = Array.from({ length: 22 }, (_, i) => {
     const x = Math.round(rr(i, 1, 5, 385));
@@ -487,7 +487,7 @@ function beachScene() {
   ).join('');
 
   const crabX = rr(0, 69, 30, 110).toFixed(0);
-  const crabY = rr(0, 70, SHORE + 13, SHORE + 21).toFixed(0);
+  const crabY = rr(0, 70, SHORE + 8, SHORE + 13).toFixed(0);
   const crabLeg = (x, d) =>
     `<line class="a crab-leg" x1="${x}" y1="0" x2="${x + d}" y2="5" stroke="#B3261E" stroke-width="1.4" stroke-linecap="round" style="animation-delay:${(-Math.abs(x) * 0.06).toFixed(2)}s"/>`;
 
@@ -518,7 +518,7 @@ function beachScene() {
      A wedge tapers, so the smile ran out through the underside of it — at the
      mouth's widest the banner was only 5 units deep and the curve dipped 7. -->
 <g class="a plane">
-<g transform="translate(0 280) scale(2.2)">
+<g transform="translate(0 176) scale(2.2)">
 <path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
 <path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
 <path d="M1,1.5 L-5,0" stroke="#2E2235" stroke-width="1.1" opacity="0.8"/>
