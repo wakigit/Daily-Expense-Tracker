@@ -220,8 +220,8 @@ const SCENE_CSS = `
 /* The plane crosses once a minute, pennant trailing. Parked off-frame at both
    ends of the loop so the reset is never seen. */
 #bg .plane{animation:w-plane 58s linear infinite}
-@keyframes w-plane{0%{transform:translateX(-200px)}72%,100%{transform:translateX(470px)}}
-#bg .pennant{transform-box:fill-box;transform-origin:0% 50%;animation:w-flap 1.6s ease-in-out infinite}
+@keyframes w-plane{0%{transform:translateX(-240px)}72%,100%{transform:translateX(540px)}}
+#bg .pennant{transform-box:fill-box;transform-origin:100% 50%;animation:w-flap 1.6s ease-in-out infinite}
 @keyframes w-flap{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
 
 /* The surfer.
@@ -513,51 +513,21 @@ function beachScene() {
 <circle class="trc sun" cx="290" r="30" fill="url(#bsun)"/>
 </g>
 
-<!-- The plane tows a pennant, not a slogan: the status is the chip's job. -->
+<!-- The plane tows a banner, not a slogan: the status is the chip's job.
+     The banner is a rectangle with a swallowtail, not the wedge it started as.
+     A wedge tapers, so the smile ran out through the underside of it — at the
+     mouth's widest the banner was only 5 units deep and the curve dipped 7. -->
 <g class="a plane">
-<g transform="translate(0 50) scale(1.8)">
+<g transform="translate(0 280) scale(2.2)">
 <path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
 <path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
+<path d="M1,1.5 L-5,0" stroke="#2E2235" stroke-width="1.1" opacity="0.8"/>
 <g class="a pennant">
-<path d="M0,1 L-46,-5 L-46,8 Z" class="trc pennant-fill"/>
-<circle class="trc pennant-face" cx="-30" cy="1.5" r="1.5"/>
-<circle class="trc pennant-face" cx="-22" cy="1.5" r="1.5"/>
-<path class="trc mouth-happy" d="M-32,5 Q-26,9.5 -20,5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
-<path class="trc mouth-sad" d="M-32,7.5 Q-26,3 -20,7.5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
-</g>
-</g>
-</g>
-
-<rect x="0" y="${HORIZON}" width="${VB_W}" height="${844 - HORIZON}" fill="url(#bsea)"/>
-<rect class="trc waterline" x="0" y="${HORIZON - 1}" width="${VB_W}" height="1.6" opacity="0.6"/>
-<g class="trc reflect">${reflect}</g>
-<g fill="none" stroke-linecap="round">${waves}</g>
-
-<path d="M0,${SHORE} C130,${SHORE - 8} 250,${SHORE + 8} 390,${SHORE - 2} L390,844 L0,844 Z"/></clipPath>
-</defs>
-<rect width="${VB_W}" height="${VB_H}" fill="url(#bsky)"/>
-<g class="trc beach-stars">${stars}</g>
-<g class="trc cloud-col" opacity="0.62">
-<g class="a drift"><ellipse cx="120" cy="112" rx="84" ry="6"/><ellipse cx="150" cy="104" rx="46" ry="5"/></g>
-<g class="a drift" style="animation-duration:120s;animation-delay:-40s"><ellipse cx="300" cy="178" rx="76" ry="5"/><ellipse cx="270" cy="171" rx="40" ry="4"/></g>
-<g class="a drift" style="animation-duration:105s;animation-delay:-70s"><ellipse cx="96" cy="236" rx="70" ry="4"/></g>
-</g>
-<g clip-path="url(#bclip)">
-<circle class="a glow trc sun-glow" cx="290" r="120" fill="url(#bglow)"/>
-<circle class="trc sun" cx="290" r="30" fill="url(#bsun)"/>
-</g>
-
-<!-- The plane tows a pennant, not a slogan: the status is the chip's job. -->
-<g class="a plane">
-<g transform="translate(0 50) scale(1.8)">
-<path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
-<path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
-<g class="a pennant">
-<path d="M0,1 L-46,-5 L-46,8 Z" class="trc pennant-fill"/>
-<circle class="trc pennant-face" cx="-30" cy="1.5" r="1.5"/>
-<circle class="trc pennant-face" cx="-22" cy="1.5" r="1.5"/>
-<path class="trc mouth-happy" d="M-32,5 Q-26,9.5 -20,5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
-<path class="trc mouth-sad" d="M-32,7.5 Q-26,3 -20,7.5" fill="none" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M-5,-9 L-55,-9 L-62,0 L-55,9 L-5,9 Z" class="trc pennant-fill"/>
+<circle class="trc pennant-face" cx="-40" cy="-2" r="2"/>
+<circle class="trc pennant-face" cx="-26" cy="-2" r="2"/>
+<path class="trc mouth-happy" d="M-43,3 Q-33,8.5 -23,3" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+<path class="trc mouth-sad" d="M-43,7 Q-33,1.5 -23,7" fill="none" stroke-width="1.8" stroke-linecap="round"/>
 </g>
 </g>
 </g>
