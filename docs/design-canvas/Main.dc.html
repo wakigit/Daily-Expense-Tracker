@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live wallpaper prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.mainb p,.mainb h1,.mainb h2,.mainb h3{margin:0}
+.mainb button{font-family:inherit;cursor:pointer}
+.mainb .num{font-variant-numeric:tabular-nums}
+.mainb input[type=range]{accent-color:#1B1D22}
+a{color:#7A4A1E}a:hover{color:#4F2E10}
+</style>
+</helmet>
+<div class="mainb" style="width: 1240px; height: 940px; box-sizing: border-box; padding: 48px; display: flex; gap: 56px; background: #EFECE6; color: #1B1D22; font-family: 'Figtree', -apple-system, 'Segoe UI', sans-serif">
+
+<div style="flex-shrink: 0; width: 410px; height: 864px; padding: 10px; border-radius: 54px; background: #07090E; box-shadow: 0 30px 60px -24px rgba(20,20,30,0.45); box-sizing: border-box">
+<div style="width: 390px; height: 844px; border-radius: 44px; overflow: hidden">
+<dc-import name="Phone" theme="{{theme}}" pct="{{pct}}" still="{{still}}" empty="{{empty}}" uid="main" screen="home" hint-size="390px,844px"></dc-import>
+</div>
+</div>
+
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 26px">
+<div>
+<p style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6B6458">Interactive prototype</p>
+<h1 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 38px; line-height: 1.1; margin-top: 8px">Wanli Wallet, live wallpapers</h1>
+<p style="font-size: 16px; line-height: 1.5; color: #4A453D; margin-top: 10px; max-width: 600px">One app, three scenes. Move the budget and watch the wallpaper respond, while the number and label stay the source of truth. Tap the phone's tab bar to move between screens.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="font-size: 14px; font-weight: 700">Wallpaper</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="3">
+<button aria-pressed="{{t.sel}}" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 14px; border-radius: 16px; border: 2px solid {{t.border}}; background: #FFFFFF; color: #1B1D22; text-align: left">
+<span style="width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; background: {{t.swatch}}"></span>
+<span style="font-size: 15px; font-weight: 700">{{t.label}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="pct-range" style="font-size: 14px; font-weight: 700">Budget used this month</label>
+<span class="num" style="font-size: 14px; color: #4A453D">{{spentS}} of S$800.00</span>
+</div>
+<div style="display: flex; align-items: center; gap: 18px">
+<input id="pct-range" type="range" min="0" max="130" step="1" value="{{pct}}" onChange="{{onPct}}" onInput="{{onPct}}" style="flex-grow: 1; height: 32px">
+<span class="num" style="font-family: 'Caprasimo', Georgia, serif; font-size: 30px; width: 86px; text-align: right">{{pct}}%</span>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{presets}}" as="p" hint-placeholder-count="4">
+<button onClick="{{p.go}}" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #CFC8BC; background: {{p.bg}}; color: #1B1D22; font-size: 14px; font-weight: 600">{{p.label}}</button>
+</sc-for>
+</div>
+<p style="font-size: 15px; font-weight: 700; margin-top: 4px">Status shown in app: <span style="color: {{statusInk}}">{{statusLabel}}</span></p>
+</div>
+
+<div style="display: flex; gap: 12px">
+<label style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; padding: 0 18px; border-radius: 16px; background: #FFFFFF; font-size: 15px; font-weight: 600">Reduced motion
+<input type="checkbox" checked="{{still}}" onChange="{{toggleStill}}" style="width: 22px; height: 22px; accent-color: #1B1D22">
+</label>
+<label style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; padding: 0 18px; border-radius: 16px; background: #FFFFFF; font-size: 15px; font-weight: 600">Empty month
+<input type="checkbox" checked="{{empty}}" onChange="{{toggleEmpty}}" style="width: 22px; height: 22px; accent-color: #1B1D22">
+</label>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 0; padding: 6px 20px; border-radius: 20px; background: #FFFFFF">
+<p style="font-size: 14px; font-weight: 700; padding: 12px 0 8px">What the wallpaper is doing now</p>
+<sc-for list="{{readout}}" as="r" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr) 96px; gap: 12px; align-items: center; min-height: 40px; border-top: 1px solid #ECE7DF; font-size: 14px">
+<span style="font-weight: 600">{{r.el}}</span>
+<span style="color: #4A453D">{{r.now}}</span>
+<span style="justify-self: end; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: {{r.tagBg}}; color: {{r.tagFg}}">{{r.role}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1240,"height":940}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: 'forest', pct: 62, still: false, empty: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const pct = s.empty ? 0 : s.pct;
+    const spent = Math.round(800 * pct) / 100;
+    const label = spent > 800 ? 'Over budget' : spent === 800 ? 'Budget reached' : spent >= 600 ? 'Close to limit' : 'On track';
+    const ink = spent > 800 ? '#A3322A' : spent >= 600 ? '#8A560B' : '#2E7A57';
+    const T = [
+      ['forest', 'Moonlit Forest', 'linear-gradient(160deg,#0C1532,#1A2A4C 60%,#E2B866)'],
+      ['beach', 'Sunset Beach', 'linear-gradient(160deg,#3B2A5C,#E07A5F 60%,#F9B97F)'],
+      ['city', 'Rainy City', 'linear-gradient(160deg,#0E1424,#202A45 60%,#F6C27A)'],
+    ];
+    const themes = T.map((t) => ({ label: t[1], swatch: t[2], sel: s.theme === t[0] ? 'true' : 'false', border: s.theme === t[0] ? '#1B1D22' : 'transparent', pick: () => this.setState({ theme: t[0] }) }));
+    const presets = [[45, '45% on track'], [85, '85% close'], [100, '100% reached, scene unchanged'], [112, '112% over']].map((p) => ({ label: p[1], bg: s.pct === p[0] ? '#F3E6D2' : '#FFFFFF', go: () => this.setState({ pct: p[0], empty: false }) }));
+    const over = !s.empty && spent > 800;
+    const motion = s.still ? ' (static)' : '';
+    const ST = ['State', '#1B1D22', '#FFFFFF'];
+    const DE = ['Decorative', '#ECE7DF', '#4A453D'];
+    const row = (el, now, r) => ({ el, now, role: r[0], tagBg: r[1], tagFg: r[2] });
+    let readout;
+    if (s.theme === 'forest') {
+      readout = [
+        row('Deer', over ? 'Has left the clearing' : (s.still ? 'Standing by the river' : 'Walks, lowers its head to graze'), ST),
+        row('Moon', over ? 'Crescent, glow dimmed' : 'Full, bright glow', ST),
+        row('River', over ? 'Still, no fish' : 'Flowing, fish jump now and then' + motion, ST),
+        row('Trees and leaves', s.still ? 'Static silhouettes' : 'Gentle sway, leaves rustle', DE),
+        row('Stars', s.still ? 'Static' : 'Slow twinkle', DE),
+      ];
+    } else if (s.theme === 'beach') {
+      readout = [
+        row('Sky and sun', over ? 'Twilight, sun on the horizon' : 'Golden sunset, sun above the sea', ST),
+        row('Stars', over ? 'Out' : 'Hidden', ST),
+        row('Water', s.still ? 'Static waves' : 'Slow rolling waves', DE),
+        row('Clouds', s.still ? 'Static' : 'Distant drift', DE),
+        row('Reflections', s.still ? 'Static' : 'Soft shimmer', DE),
+      ];
+    } else {
+      readout = [
+        row('Window lights', over ? 'Cool blue white' : 'Warm amber', ST),
+        row('Rain', over ? 'Heavy, clearly visible' : 'Light drizzle', ST),
+        row('Train and bus', s.still ? 'Parked silhouettes' : 'Pass every 20 to 26 s', DE),
+        row('Puddle ripples', s.still ? 'Static' : 'Rings on the pavement', DE),
+        row('Window flicker', s.still ? 'Off' : 'A few lights switch', DE),
+      ];
+    }
+    return {
+      theme: s.theme, pct, still: s.still, empty: s.empty, themes, presets,
+      spentS: 'S$' + spent.toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      statusLabel: (s.empty ? 'On track, nothing logged' : label + ', ' + pct + '% used'), statusInk: ink,
+      onPct: (e) => this.setState({ pct: Number(e.target.value), empty: false }),
+      toggleStill: () => this.setState({ still: !s.still }),
+      toggleEmpty: () => this.setState({ empty: !s.empty }),
+      readout,
+    };
+  }
+}
+</script>
+</body>
+</html>

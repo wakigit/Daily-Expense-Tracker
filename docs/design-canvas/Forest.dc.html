@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Theme board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.tb p,.tb h1,.tb h2,.tb h3{margin:0}
+.tb .num{font-variant-numeric:tabular-nums}
+.tb button{font-family:inherit}
+</style>
+</helmet>
+<div class="tb" style="width: 2222px; min-height: 3820px; box-sizing: border-box; padding: 64px 56px; display: flex; flex-direction: column; gap: 56px; background: #EFECE6; color: #1B1D22; font-family: 'Figtree', -apple-system, 'Segoe UI', sans-serif">
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; align-items: end">
+<div>
+<p style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6B6458">{{kicker}}</p>
+<h1 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1.05; margin-top: 10px">{{name}}</h1>
+</div>
+<p style="font-size: 18px; line-height: 1.5; color: #3E3A33">{{concept}}</p>
+<div style="padding: 20px 22px; border-radius: 18px; background: #1B1D22; color: #F4F1EA">
+<p style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #C9C2B5">Budget signal in one line</p>
+<p style="font-size: 17px; line-height: 1.45; margin-top: 8px">{{signal}}</p>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; align-items: start">
+
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Colour tokens</h2>
+<p style="font-size: 14px; color: #5A544A; margin-top: 6px; line-height: 1.45">Same token names in every theme. Contrast is calculated against the card composited over the brightest scene colour that can sit behind it.</p>
+<p style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6458; margin-top: 22px">Scene</p>
+<sc-for list="{{sceneTokens}}" as="t" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 96px; gap: 12px; align-items: center; min-height: 46px; border-bottom: 1px solid #EFEAE2">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: {{t.swatch}}; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08)"></span>
+<div><p style="font-size: 14px; font-weight: 700">{{t.name}}</p><p style="font-size: 13px; color: #5A544A">{{t.use}}</p></div>
+<p class="num" style="font-size: 13px; color: #3E3A33; text-align: right">{{t.val}}</p>
+</div>
+</sc-for>
+<p style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6458; margin-top: 22px">Interface</p>
+<sc-for list="{{uiTokens}}" as="t" hint-placeholder-count="10">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 132px; gap: 12px; align-items: center; min-height: 46px; border-bottom: 1px solid #EFEAE2">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: {{t.swatch}}; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08)"></span>
+<div><p style="font-size: 14px; font-weight: 700">{{t.name}}</p><p style="font-size: 13px; color: #5A544A">{{t.use}}</p></div>
+<div style="text-align: right"><p class="num" style="font-size: 13px; color: #3E3A33">{{t.val}}</p><p class="num" style="font-size: 12px; font-weight: 700; color: {{t.ratioInk}}">{{t.ratio}}</p></div>
+</div>
+</sc-for>
+</section>
+
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 18px">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Typography</h2>
+<p style="font-size: 14px; color: #5A544A; line-height: 1.45">Type does not change between themes. Switching wallpapers should never change how a number reads. Caprasimo carries over from the current app for money and titles; Figtree replaces the system stack for UI text. Every amount uses tabular figures so digits do not jump while counting up.</p>
+<div style="padding: 24px; border-radius: 22px; background: {{specBg}}; color: {{specTx}}; display: flex; flex-direction: column; gap: 14px">
+<div><p style="font-size: 12px; opacity: 0.75">Hero amount · Caprasimo 46 / 1.05</p><p class="num" style="font-family: 'Caprasimo', Georgia, serif; font-size: 46px; line-height: 1.05">S$496.00</p></div>
+<div><p style="font-size: 12px; opacity: 0.75">Screen title · Caprasimo 24</p><p style="font-family: 'Caprasimo', Georgia, serif; font-size: 24px">Budget</p></div>
+<div><p style="font-size: 12px; opacity: 0.75">Card title · Caprasimo 16 to 20</p><p style="font-family: 'Caprasimo', Georgia, serif; font-size: 18px">Where it went</p></div>
+<div><p style="font-size: 12px; opacity: 0.75">Body · Figtree 15 / 1.45, 400</p><p style="font-size: 15px; line-height: 1.45">Spending up to S$21.71 a day keeps you within it.</p></div>
+<div><p style="font-size: 12px; opacity: 0.75">Status and labels · Figtree 14, 700</p><p style="font-size: 14px; font-weight: 700; color: {{specAccent}}">Close to limit · 88% used</p></div>
+<div><p style="font-size: 12px; opacity: 0.75">Caption · Figtree 13 · Tab label · Figtree 11, 700</p><p style="font-size: 13px; opacity: 0.85">Private hire · 17 Oct</p></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 14px; line-height: 1.45; color: #3E3A33">
+<p><strong>Minimum sizes.</strong> 13 px for anything a user must read, 11 px only for tab labels under an icon.</p>
+<p><strong>Over the scene.</strong> Only the hero block sits on the wallpaper, always on the top scrim, left column only, never over the focal band.</p>
+</div>
+</section>
+
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 18px">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Surfaces and navigation</h2>
+<div style="padding: 22px; border-radius: 22px; background: {{sceneBg}}; display: flex; flex-direction: column; gap: 14px">
+<div style="padding: 18px; border-radius: 22px; background: {{cardSolid}}; border: 1px solid {{cardLine}}; color: {{specTx}}">
+<p style="font-family: 'Caprasimo', Georgia, serif; font-size: 16px">Card</p>
+<p style="font-size: 13px; opacity: 0.85; margin-top: 4px">{{cardSpec}}</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 999px; background: {{cardSolid}}; border: 1px solid {{cardLine}}; font-size: 14px; font-weight: 700; color: {{c.ink}}">
+<span style="font-size: 13px; width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; border: 2px solid {{c.ink}}; box-sizing: border-box">{{c.glyph}}</span>{{c.label}}</span>
+</sc-for>
+</div>
+<div style="display: flex; gap: 10px">
+<span style="height: 48px; padding: 0 20px; border-radius: 14px; background: {{accent}}; color: {{onAccent}}; display: inline-flex; align-items: center; font-size: 15px; font-weight: 700">Primary action</span>
+<span style="height: 48px; padding: 0 18px; border-radius: 14px; border: 1.5px solid {{cardLine}}; background: {{cardSolid}}; color: {{specTx}}; display: inline-flex; align-items: center; font-size: 15px; font-weight: 700">Secondary</span>
+</div>
+<div style="height: 64px; border-radius: 18px; background: {{navSolid}}; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; font-size: 11px; font-weight: 700; color: {{navMuted}}; text-align: center">
+<span style="color: {{accent}}">Home</span><span>History</span><span style="justify-self: center; width: 40px; height: 40px; border-radius: 999px; background: {{accent}}; color: {{onAccent}}; display: grid; place-items: center; font-size: 22px; font-weight: 400">+</span><span>Ask</span><span>Budget</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.45; color: #3E3A33">
+<p><strong>Radii and depth</strong> copied from the current tokens: card 22, control 14, pill 999, sheet 28. Two layer shadow kept.</p>
+<p><strong>Navigation.</strong> Home, History, Add, Ask, Budget. Add is the raised centre action. Settings moves to the header gear, so budgets stop living inside Settings.</p>
+<p><strong>Status chips</strong> pair a shape with a word: check for on track, half circle for close, triangle for over. Colour is the third cue, never the only one.</p>
+</div>
+</section>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 32px">Core screens at 58% of budget</h2>
+<p style="font-size: 15px; color: #5A544A">390 × 844. Each phone is live: tap its tab bar.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, 390px); gap: 40px">
+<sc-for list="{{coreScreens}}" as="s" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p style="font-size: 16px; font-weight: 700">{{s.label}}</p>
+<div style="width: 390px; height: 844px; border-radius: 40px; overflow: hidden; box-shadow: 0 24px 50px -24px rgba(20,20,30,0.45)">
+<dc-import name="Phone" theme="{{theme}}" pct="{{s.pct}}" screen="{{s.screen}}" still="{{s.still}}" empty="{{s.empty}}" uid="{{s.uid}}" hint-size="390px,844px"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 32px">Budget states, reduced motion, empty month</h2>
+<p style="font-size: 15px; color: #5A544A">Same layout in every state. Only the scene and the status words change.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, 390px); gap: 40px">
+<sc-for list="{{stateScreens}}" as="s" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p style="font-size: 16px; font-weight: 700">{{s.label}}</p>
+<div style="width: 390px; height: 844px; border-radius: 40px; overflow: hidden; box-shadow: 0 24px 50px -24px rgba(20,20,30,0.45)">
+<dc-import name="Phone" theme="{{theme}}" pct="{{s.pct}}" screen="{{s.screen}}" still="{{s.still}}" empty="{{s.empty}}" uid="{{s.uid}}" hint-size="390px,844px"></dc-import>
+</div>
+</div>
+</sc-for>
+<div style="padding: 28px; border-radius: 24px; background: #FFFFFF; align-self: start; margin-top: 34px; display: flex; flex-direction: column; gap: 14px">
+<h3 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 22px">Empty state</h3>
+<p style="font-size: 15px; line-height: 1.5; color: #3E3A33"><strong>{{emptyTitle}}.</strong> Nothing logged for October yet. Add what you spend as you go and this page fills in.</p>
+<p style="font-size: 14px; line-height: 1.5; color: #5A544A">The scene shows its calm state, the hero still reads S$0.00 of S$800.00, and one primary button opens Add in Type mode. History, Ask and Budget each get a one line reason and no fake data.</p>
+<h3 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 22px; margin-top: 10px">Reduced motion</h3>
+<p style="font-size: 14px; line-height: 1.5; color: #5A544A">Triggered by the OS setting or an in app switch. Every loop stops on a composed frame. State changes swap in with a 0.25 s opacity fade instead of travel. The scene still shows the state, so nothing is lost.</p>
+</div>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 32px; align-items: start">
+<div style="padding: 28px; border-radius: 24px; background: #FFFFFF">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Scene layers: decorative or state</h2>
+<p style="font-size: 14px; color: #5A544A; margin-top: 6px">State layers repeat what the number and label already say. Decorative layers say nothing about money and may be removed without losing information.</p>
+<div style="display: grid; grid-template-columns: 170px 110px repeat(3, minmax(0, 1fr)); gap: 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6B6458; padding: 18px 0 10px; border-bottom: 2px solid #1B1D22">
+<span>Element</span><span>Role</span><span>Within budget</span><span>Over budget</span><span>Reduced motion</span>
+</div>
+<sc-for list="{{layers}}" as="l" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 170px 110px repeat(3, minmax(0, 1fr)); gap: 16px; font-size: 14px; line-height: 1.45; padding: 14px 0; border-bottom: 1px solid #EFEAE2">
+<span style="font-weight: 700">{{l.el}}</span>
+<span><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: {{l.tagBg}}; color: {{l.tagFg}}">{{l.role}}</span></span>
+<span style="color: #3E3A33">{{l.under}}</span>
+<span style="color: #3E3A33">{{l.over}}</span>
+<span style="color: #3E3A33">{{l.still}}</span>
+</div>
+</sc-for>
+</div>
+<div style="padding: 28px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Motion notes</h2>
+<sc-for list="{{motion}}" as="n" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid #EFEAE2">
+<p style="font-size: 15px; font-weight: 700">{{n.h}}</p>
+<p style="font-size: 14px; line-height: 1.5; color: #3E3A33">{{n.b}}</p>
+</div>
+</sc-for>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["forest","beach","city"],"default":"forest"},"$preview":{"width":2222,"height":3820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = ['forest', 'beach', 'city'].indexOf(this.props.theme) >= 0 ? this.props.theme : 'forest';
+    const hx = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const toHex = (a) => '#' + a.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const mix = (a, b, t) => { const A = hx(a), B = hx(b); return toHex(A.map((v, i) => v + (B[i] - v) * t)); };
+    const comp = (rgb, alpha, bg) => { const B = hx(bg); return toHex(rgb.map((v, i) => v * alpha + B[i] * (1 - alpha))); };
+    const lum = (h) => { const c = hx(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const cr = (a, b) => { const A = lum(a), B = lum(b); return (Math.max(A, B) + 0.05) / (Math.min(A, B) + 0.05); };
+
+    const D = {
+      forest: {
+        kicker: 'Theme 1 of 3', name: 'Moonlit Forest',
+        concept: 'A clearing at night. A full moon lights tall pines, a deer grazes on the bank and the river runs. Dark glass cards, cream text and a moon gold accent keep it the quietest of the three.',
+        signal: 'Under or at budget the deer grazes, fish jump and the river flows. Once spending goes over budget the deer leaves, the moon turns to a crescent and the river goes still.',
+        card: [13, 21, 37], alpha: 0.9, cardLine: 'rgba(176,196,226,0.16)', worstBg: '#1A2A4C',
+        scrim: [5, 9, 20], scrimA: 0.333, heroBg: mix('#0C1532', '#1A2A4C', 0.8),
+        tx: '#F2EEE3', sub: '#BAC4D2', muted: '#93A1B4', onScene: '#F8F3E6', accent: '#E2B866', onAccent: '#1A1405',
+        calm: '#8FD9B0', watch: '#E8B04F', over: '#F07F6E', nav: '#0B1120', sceneBg: 'linear-gradient(180deg,#0C1532,#1A2A4C 55%,#0B1422)',
+        sceneTokens: [['--scene-sky-top', '#050918', 'Upper sky'], ['--scene-sky-horizon', '#1A2A4C', 'Sky at the ridge'], ['--scene-moon', '#F4ECD2', 'Moon and its reflection'], ['--scene-river', '#2C4A6E', 'River surface'], ['--scene-silhouette', '#070D18', 'Pines and deer'], ['--ground', '#0A111F', 'Behind everything']],
+        layers: [
+          ['Deer', 'State', 'Walks a few steps, lowers its head to graze, turns and walks back. 24 s loop.', 'Over budget: it turns and walks out of frame over 3.2 s. It returns only if spending drops back to budget or a new month starts.', 'Stands still by the river. Over budget it is absent, swapped with a 0.25 s fade.'],
+          ['Moon', 'State', 'Full, with a soft glow.', 'Crescent. The glow drops to 35% and its river reflection dims.', 'Same two phases, no sliding shadow.'],
+          ['River and fish', 'State', 'Moonlit ripple lines flow. A fish jumps roughly every 11 s at two spots.', 'Surface goes still, ripple lines dim to 22%, no fish.', 'Static ripple lines, no fish in any state.'],
+          ['Pines', 'Decorative', 'Sway about 0.9° each way on 6.5 to 10.4 s loops, out of phase.', 'Unchanged.', 'Static.'],
+          ['Leaves', 'Decorative', 'Short rustle bursts every 4.2 s, staggered.', 'Unchanged.', 'Static.'],
+          ['Stars', 'Decorative', 'Slow twinkle, 3.5 to 7.5 s.', 'Unchanged.', 'Static.'],
+        ],
+        motion: [
+          ['Going over is one event', 'The deer exit, moon shadow (2.4 s ease out) and river stop all start together the moment spending passes the budget. Getting back to budget, for example after a refund, plays it in reverse. It never repeats while you stay over.'],
+          ['Loops you cannot see restart', 'Every loop ends exactly where it starts: the deer turns and walks back, fish and ripples fade to zero, river dashes move by whole pattern lengths. Each element starts at a different point of its loop, so nothing pulses together.'],
+          ['Built once at app open', 'The SVG is created once when the app opens and is never rebuilt. Logging an expense only changes a few attributes, so loops keep running without a jump. Loops run on Home, pause on other tabs and when the app is hidden.'],
+          ['Cheap to render', 'Only transform and opacity animate, so the browser never recalculates layout for the scene.'],
+        ],
+      },
+      beach: {
+        kicker: 'Theme 2 of 3', name: 'Sunset Beach',
+        concept: 'The current scene, slowed down. Warm sky, a low sun and a calm sea with light on the water. Light, warm cards keep it the most daytime of the three, and the sky does the talking.',
+        signal: 'Golden sunset for the whole month while you are within budget. Once spending goes over budget the sky turns to twilight, the sun settles on the horizon and the first stars come out.',
+        card: [255, 248, 242], alpha: 0.95, cardLine: 'rgba(201,140,120,0.34)', worstBg: '#2A1A2E',
+        scrim: [38, 14, 34], scrimA: 0.283, heroBg: mix('#8E4466', '#E07A5F', 0.83),
+        tx: '#3A1F2B', sub: '#6E4655', muted: '#7E5866', onScene: '#FFF7EE', accent: '#B04419', onAccent: '#FFFFFF',
+        calm: '#276B4C', watch: '#8A560B', over: '#A3322A', nav: '#FFF6EF', sceneBg: 'linear-gradient(180deg,#3B2A5C,#8E4466 40%,#E07A5F 70%,#F9B97F)',
+        sceneTokens: [['--scene-sky-top', '#3B2A5C', 'over budget: #0B1230'], ['--scene-sky-mid', '#E07A5F', 'over budget: #4B3F72'], ['--scene-horizon', '#F9B97F', 'over budget: #8C6A8E'], ['--scene-sun-edge', '#F29A5B', 'over budget: #C9637A'], ['--scene-sea-top', '#E59A72', 'over budget: #4E4A72'], ['--ground', '#2A1A2E', 'Behind everything']],
+        layers: [
+          ['Sky gradient', 'State', 'Golden sunset, unchanged from 0% to 100%.', 'Over budget: eases to twilight blue over 2 s.', 'Same two colour sets, swapped with a 0.25 s fade.'],
+          ['Sun', 'State', 'Above the horizon.', 'Over budget: settles on the horizon and dims to 60%.', 'Same position per state.'],
+          ['Stars', 'State', 'Hidden.', 'Over budget: fade in.', 'Shown static.'],
+          ['Waves', 'Decorative', 'Two wave lines roll on 30 s and 44 s loops.', 'Unchanged.', 'Static lines.'],
+          ['Clouds', 'Decorative', 'Drift about 30 px over 90 to 120 s.', 'Recolour with the sky.', 'Static.'],
+          ['Water light', 'Decorative', 'Reflection dashes shimmer on 3.8 s. Foam laps on 8 s.', 'Cool and dim with the sky.', 'Static.'],
+        ],
+        motion: [
+          ['One switch, then hold', 'The sky changes once, when spending passes the budget, and eases there over 2 s. Close to limit is shown in words only. It does not follow real time of day.'],
+          ['Calmer than today', 'Wave travel is 390 px per 30 s and cloud drift is under 1 px per second. Nothing should catch the eye while reading.'],
+          ['Twilight is not a warning colour', 'The end state is blue and violet, not red. The status chip carries the words Over budget.'],
+          ['Contrast holds at both ends', 'Light cards stay at 95% opacity, so card text is checked against the darkest and lightest sky. Hero text gets a stronger scrim than the dark themes because sunset is bright.'],
+        ],
+      },
+      city: {
+        kicker: 'Theme 3 of 3', name: 'Rainy City',
+        concept: 'An evening street in an HDB estate. Warm windows, a train crossing the viaduct, a bus passing, and wet pavement holding the light. Dark cards and a sodium lamp amber accent.',
+        signal: 'Warm windows and light drizzle while you are within budget. Once spending goes over budget the lights cool to blue white and a heavier rain sets in.',
+        card: [17, 22, 33], alpha: 0.9, cardLine: 'rgba(160,180,210,0.16)', worstBg: '#6A4E62',
+        scrim: [7, 10, 17], scrimA: 0.367, heroBg: mix('#202A45', '#6A4E62', 0.69),
+        tx: '#EEF1F5', sub: '#B5BFCC', muted: '#919DAD', onScene: '#F4F6FA', accent: '#F2A65A', onAccent: '#1B1208',
+        calm: '#7FD8B4', watch: '#E7B85A', over: '#EE8C7A', nav: '#0B0E15', sceneBg: 'linear-gradient(180deg,#0E1424,#202A45 45%,#6A4E62 70%,#111622)',
+        sceneTokens: [['--scene-sky-top', '#0E1424', 'Upper sky'], ['--scene-horizon', '#6A4E62', 'over budget: #334A68'], ['--scene-window', '#F6C27A', 'over budget: #A9C1DE'], ['--scene-lamp', '#F7B65E', 'over budget: #D3E2F4'], ['--scene-rain', '#C9D6E8', 'Opacity 20%, over budget 60%'], ['--ground', '#0D1119', 'Behind everything']],
+        layers: [
+          ['Window light', 'State', 'Warm amber up to and including 100%.', 'Over budget: cools to blue white over 2 s.', 'Same colours per state.'],
+          ['Rain', 'State', 'Light drizzle at 20% opacity.', 'Over budget: main rain rises to 60% and a heavier second layer fades in.', 'Static streaks at the same density.'],
+          ['Street reflections', 'State', 'Warm streaks under lamp and windows.', 'Brighter and cooler.', 'Static.'],
+          ['Train', 'Decorative', 'Crosses the viaduct every 20 s.', 'Unchanged.', 'Parked mid frame.'],
+          ['Bus', 'Decorative', 'Passes along the street every 26 s.', 'Unchanged.', 'Parked.'],
+          ['Ripples and flicker', 'Decorative', 'Puddle rings every 2.6 s. About 8% of windows dim briefly.', 'Ripples follow rain opacity.', 'Static rings, no flicker.'],
+        ],
+        motion: [
+          ['Seamless rain', 'Each raindrop fades in at the top of its path and out at the bottom, so the loop restart is never visible. Start points are scattered so drops never fall in waves.'],
+          ['Atmosphere, not alarm', 'Over budget looks like a heavy rain evening. No red, no lightning, no flashing, no shake.'],
+          ['Vehicles stay out of the way', 'The train runs on the viaduct and the bus along the street, both inside the focal band below the hero text. Neither ever passes behind a number.'],
+          ['Rain cost', 'About 100 short lines, transform only. Drop the heavy layer on low power mode.'],
+        ],
+      },
+    };
+    const d = D[theme];
+    const cardHex = comp(d.card, d.alpha, d.worstBg);
+    const heroHex = comp(d.scrim, d.scrimA, d.heroBg);
+    const ratio = (fg, bg, min) => { const r = cr(fg, bg); return { ratio: r.toFixed(1) + ':1 ' + (r >= min ? 'pass' : 'check'), ratioInk: r >= min ? '#2E6B4E' : '#A3322A' }; };
+    const U = (name, val, swatch, use, fg, bg, min) => Object.assign({ name, val, swatch, use, ratio: '', ratioInk: '#3E3A33' }, fg ? ratio(fg, bg, min) : {});
+    const uiTokens = [
+      U('--card', 'rgb(' + d.card.join(',') + ') ' + Math.round(d.alpha * 100) + '%', 'rgba(' + d.card.join(',') + ',' + d.alpha + ')', 'Card and chip fill'),
+      U('--tx', d.tx, d.tx, 'Primary text on cards', d.tx, cardHex, 4.5),
+      U('--tx-sub', d.sub, d.sub, 'Secondary text', d.sub, cardHex, 4.5),
+      U('--tx-muted', d.muted, d.muted, 'Captions, dates', d.muted, cardHex, 4.5),
+      U('--on-scene', d.onScene, d.onScene, 'Hero text on the scrim', d.onScene, heroHex, 4.5),
+      U('--accent', d.accent, d.accent, 'Actions, active tab', d.accent, cardHex, 3),
+      U('--on-accent', d.onAccent, d.onAccent, 'Text on accent buttons', d.onAccent, d.accent, 4.5),
+      U('--st-calm', d.calm, d.calm, 'On track', d.calm, cardHex, 4.5),
+      U('--st-watch', d.watch, d.watch, 'Close to limit', d.watch, cardHex, 4.5),
+      U('--st-over', d.over, d.over, 'Over budget', d.over, cardHex, 4.5),
+    ];
+    const sceneTokens = d.sceneTokens.map((t) => ({ name: t[0], val: t[1], swatch: t[1], use: t[2] }));
+    const tag = (r) => r === 'State' ? { tagBg: '#1B1D22', tagFg: '#FFFFFF' } : { tagBg: '#ECE7DF', tagFg: '#4A453D' };
+    const layers = d.layers.map((l) => Object.assign({ el: l[0], role: l[1], under: l[2], over: l[3], still: l[4] }, tag(l[1])));
+    const motion = d.motion.map((n) => ({ h: n[0], b: n[1] }));
+    const p = theme.charAt(0);
+    const coreScreens = [['Home', 'home'], ['Ask (assistant)', 'ask'], ['Add, receipt review', 'add'], ['History', 'history'], ['Budget', 'budget']].map((s, i) => ({ label: s[0], screen: s[1], pct: 58, still: false, empty: false, uid: p + 'c' + i }));
+    const stateScreens = [
+      ['Close to limit, 88%, scene stays calm', 88, false, false],
+      ['Over budget, 108%', 108, false, false],
+      ['Reduced motion, 108%', 108, true, false],
+      ['Empty month', 0, false, true],
+    ].map((s, i) => ({ label: s[0], pct: s[1], still: s[2], empty: s[3], screen: 'home', uid: p + 's' + i }));
+    const chips = [['On track', d.calm, '✓'], ['Close to limit', d.watch, '◐'], ['Over budget', d.over, '!']].map((c) => ({ label: c[0], ink: c[1], glyph: c[2] }));
+    return {
+      theme, kicker: d.kicker, name: d.name, concept: d.concept, signal: d.signal,
+      sceneTokens, uiTokens, layers, motion, coreScreens, stateScreens, chips,
+      specBg: toHex(hx(cardHex)), specTx: d.tx, specAccent: d.watch,
+      sceneBg: d.sceneBg, cardSolid: 'rgba(' + d.card.join(',') + ',' + d.alpha + ')', cardLine: d.cardLine,
+      cardSpec: 'Fill ' + Math.round(d.alpha * 100) + '% with 18 px blur, 1 px line, radius 22, padding 18.',
+      accent: d.accent, onAccent: d.onAccent, navSolid: d.nav, navMuted: d.muted,
+      emptyTitle: theme === 'forest' ? 'A quiet clearing' : theme === 'beach' ? 'Calm water' : 'Quiet streets',
+    };
+  }
+}
+</script>
+</body>
+</html>

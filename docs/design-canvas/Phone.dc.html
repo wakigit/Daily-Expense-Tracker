@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wanli Wallet phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.wph{--r-card:22px;--r-ctl:14px;--r-pill:999px;--ease-out:cubic-bezier(0.16,1,0.3,1);font-family:'Figtree',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;box-sizing:border-box}
+.wph *,.wph *::before,.wph *::after{box-sizing:border-box}
+.wph p,.wph h1,.wph h2,.wph h3{margin:0}
+.wph .num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+.wph .disp{font-family:'Caprasimo',Georgia,serif;font-weight:400}
+.wph button{font-family:inherit;cursor:pointer}
+.wph input{font-family:inherit}
+.wph .card{background:var(--card);border:1px solid var(--card-line);border-radius:22px;padding:18px;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);box-shadow:0 1px 2px rgba(0,0,0,0.05),0 10px 30px -12px rgba(0,0,0,0.3)}
+.wph .scroll{scrollbar-width:none}
+.wph .scroll::-webkit-scrollbar{display:none}
+
+.t-forest{--ground:#0A111F;--card:rgba(13,21,37,0.9);--card-line:rgba(176,196,226,0.16);--tx:#F2EEE3;--tx-sub:#BAC4D2;--tx-muted:#93A1B4;--on-scene:#F8F3E6;--on-scene-sub:#D5DCE6;--accent:#E2B866;--on-accent:#1A1405;--st-calm:#8FD9B0;--st-watch:#E8B04F;--st-over:#F07F6E;--hb-calm:#8FD9B0;--hb-watch:#E8B04F;--hb-over:#F07F6E;--track:rgba(255,255,255,0.13);--track-scene:rgba(255,255,255,0.24);--nav-bg:rgba(9,14,26,0.95);--nav-line:rgba(176,196,226,0.14);--chip:rgba(255,255,255,0.07);--field:rgba(255,255,255,0.06);--field-line:rgba(176,196,226,0.24);--scrim-home:linear-gradient(90deg,rgba(5,9,20,0.66) 0%,rgba(5,9,20,0.5) 55%,rgba(5,9,20,0.06) 80%,rgba(5,9,20,0) 100%);--scrim-page:rgba(6,10,20,0.66)}
+.t-beach{--ground:#2A1A2E;--card:rgba(255,248,242,0.95);--card-line:rgba(201,140,120,0.34);--tx:#3A1F2B;--tx-sub:#6E4655;--tx-muted:#7E5866;--on-scene:#FFF7EE;--on-scene-sub:#FBE6D8;--accent:#B04419;--on-accent:#FFFFFF;--st-calm:#276B4C;--st-watch:#8A560B;--st-over:#A3322A;--hb-calm:#BDF0D2;--hb-watch:#FFD58A;--hb-over:#FFB4A4;--track:rgba(58,31,43,0.12);--track-scene:rgba(255,255,255,0.3);--nav-bg:rgba(255,246,239,0.97);--nav-line:rgba(201,140,120,0.3);--chip:rgba(58,31,43,0.06);--field:rgba(255,255,255,0.9);--field-line:rgba(201,140,120,0.5);--scrim-home:linear-gradient(90deg,rgba(38,14,34,0.6) 0%,rgba(38,14,34,0.42) 55%,rgba(38,14,34,0.06) 80%,rgba(38,14,34,0) 100%);--scrim-page:rgba(40,18,34,0.58)}
+.t-city{--ground:#0D1119;--card:rgba(17,22,33,0.9);--card-line:rgba(160,180,210,0.16);--tx:#EEF1F5;--tx-sub:#B5BFCC;--tx-muted:#919DAD;--on-scene:#F4F6FA;--on-scene-sub:#D2D9E3;--accent:#F2A65A;--on-accent:#1B1208;--st-calm:#7FD8B4;--st-watch:#E7B85A;--st-over:#EE8C7A;--hb-calm:#7FD8B4;--hb-watch:#E7B85A;--hb-over:#EE8C7A;--track:rgba(255,255,255,0.12);--track-scene:rgba(255,255,255,0.24);--nav-bg:rgba(11,14,21,0.95);--nav-line:rgba(160,180,210,0.14);--chip:rgba(255,255,255,0.07);--field:rgba(255,255,255,0.06);--field-line:rgba(160,180,210,0.24);--scrim-home:linear-gradient(90deg,rgba(7,10,17,0.7) 0%,rgba(7,10,17,0.5) 55%,rgba(7,10,17,0.2) 80%,rgba(7,10,17,0.14) 100%);--scrim-page:rgba(7,10,17,0.66)}
+
+.wph .k-calm{color:var(--st-calm)}.wph .k-watch{color:var(--st-watch)}.wph .k-over{color:var(--st-over)}
+.wph .f-calm{background:var(--st-calm)}.wph .f-watch{background:var(--st-watch)}.wph .f-over{background:var(--st-over)}
+.wph .h-calm{background:var(--hb-calm)}.wph .h-watch{background:var(--hb-watch)}.wph .h-over{background:var(--hb-over)}
+
+.wph .tw{animation:w-tw 5s ease-in-out infinite}
+@keyframes w-tw{0%,100%{opacity:.9}50%{opacity:.25}}
+.wph .sway{transform-box:fill-box;transform-origin:50% 100%;animation:w-sway 7s ease-in-out infinite}
+@keyframes w-sway{0%,100%{transform:rotate(-0.9deg)}50%{transform:rotate(0.9deg)}}
+.wph .rustle{transform-box:fill-box;transform-origin:50% 50%;animation:w-rustle 4.2s ease-in-out infinite}
+@keyframes w-rustle{0%,68%,100%{transform:rotate(0)}74%{transform:rotate(16deg)}80%{transform:rotate(-12deg)}86%{transform:rotate(6deg)}}
+.wph .flow{animation:w-flow 5s linear infinite}
+@keyframes w-flow{to{stroke-dashoffset:-48}}
+.wph .deerwalk{transform-box:fill-box;transform-origin:50% 50%;animation:w-deer 24s ease-in-out infinite}
+@keyframes w-deer{0%,6%{transform:translateX(0) scaleX(1)}20%{transform:translateX(24px) scaleX(1)}60%{transform:translateX(24px) scaleX(1)}62%{transform:translateX(24px) scaleX(-1)}78%{transform:translateX(0) scaleX(-1)}80%,100%{transform:translateX(0) scaleX(1)}}
+.wph .deerhead{transform-box:fill-box;transform-origin:0% 100%;animation:w-graze 24s ease-in-out infinite}
+@keyframes w-graze{0%,22%{transform:rotate(0)}28%,50%{transform:rotate(70deg)}34%{transform:rotate(64deg)}42%{transform:rotate(72deg)}56%,100%{transform:rotate(0)}}
+.wph .fish{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-fish 11s ease-out infinite}
+@keyframes w-fish{0%,84%{opacity:0;transform:translate(0,0) rotate(-40deg)}86%{opacity:1;transform:translate(-6px,-16px) rotate(-22deg)}90%{opacity:1;transform:translate(-13px,-22px) rotate(12deg)}94%{opacity:1;transform:translate(-20px,-6px) rotate(48deg)}96%,100%{opacity:0;transform:translate(-22px,0) rotate(60deg)}}
+.wph .ripple{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-ripple 11s ease-out infinite}
+@keyframes w-ripple{0%,84%{opacity:0;transform:scale(.4)}85%{opacity:.7;transform:scale(.5)}89%{opacity:0;transform:scale(1.5)}94%{opacity:0;transform:scale(.4)}95%{opacity:.7;transform:scale(.5)}100%{opacity:0;transform:scale(1.7)}}
+.wph .drift{animation:w-drift 90s ease-in-out infinite alternate}
+@keyframes w-drift{from{transform:translateX(-26px)}to{transform:translateX(34px)}}
+.wph .wave{animation:w-wave 30s linear infinite}
+@keyframes w-wave{from{transform:translateX(0)}to{transform:translateX(-390px)}}
+.wph .shim{animation:w-tw 3.8s ease-in-out infinite}
+.wph .lap{animation:w-lap 8s ease-in-out infinite}
+@keyframes w-lap{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.wph .glow{animation:w-glow 9s ease-in-out infinite}
+@keyframes w-glow{0%,100%{opacity:.75}50%{opacity:1}}
+.wph .train{animation:w-train 20s linear infinite}
+@keyframes w-train{0%{transform:translateX(-360px)}42%{transform:translateX(430px)}100%{transform:translateX(430px)}}
+.wph .bus{animation:w-bus 26s linear infinite}
+@keyframes w-bus{0%,30%{transform:translateX(240px)}62%{transform:translateX(-380px)}100%{transform:translateX(-380px)}}
+.wph .flick{animation:w-flick 13s steps(1) infinite}
+@keyframes w-flick{0%,58%{opacity:1}60%,74%{opacity:.15}76%,100%{opacity:1}}
+.wph .rain{animation:w-rain .95s linear infinite}
+@keyframes w-rain{0%{opacity:0;transform:translate(4px,-70px)}12%{opacity:1}88%{opacity:1}100%{opacity:0;transform:translate(-8px,90px)}}
+.wph .drip{transform-box:fill-box;transform-origin:50% 50%;animation:w-drip 2.6s ease-out infinite}
+@keyframes w-drip{0%{opacity:.8;transform:scale(.2)}100%{opacity:0;transform:scale(1.6)}}
+.wph .tr{transition:transform 3.2s cubic-bezier(0.45,0,0.55,1),opacity 1.4s ease 1.8s}
+.wph .trc{transition:cx 2.4s cubic-bezier(0.16,1,0.3,1),opacity 2s ease,fill 2s ease,stop-color 2s ease}
+.wph .bar{transition:width .44s cubic-bezier(0.16,1,0.3,1)}
+
+.wph.paused .a{animation-play-state:paused}
+.wph.still .a{animation:none !important}
+.wph.still .tr,.wph.still .trc{transition:opacity .25s linear !important}
+@media (prefers-reduced-motion: reduce){
+.wph .a{animation:none !important}
+.wph .tr,.wph .trc{transition:opacity .25s linear !important}
+.wph .bar{transition:none}
+}
+</style>
+</helmet>
+
+<div class="wph t-{{theme}} {{rootCls}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--ground); color: var(--tx)">
+
+<div aria-hidden="true" style="position: absolute; inset: 0">
+
+<sc-if value="{{isForest}}" hint-placeholder-val="{{ true }}">
+<svg viewBox="0 0 390 844" width="390" height="844" style="position: absolute; inset: 0; display: block">
+<defs>
+<linearGradient id="fsky{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#050918"></stop>
+<stop offset="0.16" stop-color="#0C1532"></stop>
+<stop offset="0.33" stop-color="#1A2A4C"></stop>
+<stop offset="0.42" stop-color="#16243F"></stop>
+<stop offset="1" stop-color="#070C16"></stop>
+</linearGradient>
+<radialGradient id="fglow{{uid}}">
+<stop offset="0" stop-color="#F6E7B8" stop-opacity="0.5"></stop>
+<stop offset="1" stop-color="#F6E7B8" stop-opacity="0"></stop>
+</radialGradient>
+<linearGradient id="friv{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#2C4A6E"></stop>
+<stop offset="1" stop-color="#132338"></stop>
+</linearGradient>
+<mask id="fmoon{{uid}}">
+<rect x="250" y="40" width="130" height="130" fill="#fff"></rect>
+<circle class="trc" cx="{{moonShadeX}}" cy="94" r="29" fill="#000"></circle>
+</mask>
+</defs>
+<rect width="390" height="844" fill="url(#fsky{{uid}})"></rect>
+<g>
+<sc-for list="{{stars}}" as="s" hint-placeholder-count="12">
+<circle class="a tw" cx="{{s.x}}" cy="{{s.y}}" r="{{s.r}}" fill="#E8ECF5" style="animation-delay: {{s.d}}s; animation-duration: {{s.dur}}s"></circle>
+</sc-for>
+</g>
+<circle class="trc" cx="310" cy="100" r="96" fill="url(#fglow{{uid}})" opacity="{{moonGlowOp}}"></circle>
+<circle cx="310" cy="100" r="28" fill="#F4ECD2" mask="url(#fmoon{{uid}})"></circle>
+<path d="M0,282 C60,262 110,274 160,266 C220,256 280,272 330,262 C360,256 380,262 390,260 L390,340 L0,340 Z" fill="#121D33"></path>
+<g fill="#0F192B">
+<sc-for list="{{ridgePines}}" as="t" hint-placeholder-count="8">
+<polygon points="{{t.pts}}"></polygon>
+</sc-for>
+</g>
+<path d="M0,318 C120,306 260,324 390,312 L390,844 L0,844 Z" fill="#0B1422"></path>
+<path d="M390,330 C320,344 270,362 210,368 C140,375 80,392 0,410 L0,444 C90,424 150,406 214,400 C280,394 330,376 390,362 Z" fill="url(#friv{{uid}})"></path>
+<ellipse class="trc" cx="296" cy="360" rx="16" ry="2.6" fill="#F4ECD2" opacity="{{moonReflectOp}}"></ellipse>
+<g fill="none" stroke="#A9C2E0" stroke-linecap="round" opacity="{{riverLineOp}}">
+<path class="{{flowCls}}" d="M390,346 C320,360 270,378 210,384 C140,391 80,408 0,426" stroke-width="1.3" stroke-dasharray="7 17"></path>
+<path class="{{flowCls}}" d="M390,354 C322,367 272,386 212,392 C142,399 82,416 0,434" stroke-width="1" stroke-dasharray="4 20" style="animation-duration: 7s"></path>
+<path class="{{flowCls}}" d="M390,339 C320,352 270,370 210,376 C140,383 80,400 0,418" stroke-width="0.9" stroke-dasharray="8 16" style="animation-duration: 6s"></path>
+</g>
+<sc-if value="{{riverAlive}}" hint-placeholder-val="{{ true }}">
+<g transform="translate(332 350)">
+<ellipse class="a ripple" cx="0" cy="2" rx="9" ry="2.2" fill="none" stroke="#BFD2EA" stroke-width="0.9"></ellipse>
+<path class="a fish" d="M0,0 C4,-3 9,-3 12,0 C9,3 4,3 0,0 Z M12,0 L16,-3 L16,3 Z" fill="#C9D9EE"></path>
+</g>
+<g transform="translate(228 386)">
+<ellipse class="a ripple" cx="0" cy="2" rx="8" ry="2" fill="none" stroke="#BFD2EA" stroke-width="0.9" style="animation-delay: -5.5s"></ellipse>
+<path class="a fish" d="M0,0 C4,-3 9,-3 12,0 C9,3 4,3 0,0 Z M12,0 L16,-3 L16,3 Z" fill="#C9D9EE" style="animation-delay: -5.5s"></path>
+</g>
+</sc-if>
+<g class="tr" style="transform: translateX({{deerX}}px); opacity: {{deerOp}}">
+<g transform="translate(118 292)">
+<g class="{{deerWalkCls}}" fill="#05090F" stroke="rgba(196,210,232,0.38)" stroke-width="0.6">
+<path d="M0,13 L-4,10 L-1,17 Z"></path>
+<rect x="2" y="21" width="2.6" height="17"></rect>
+<rect x="7" y="21" width="2.6" height="17"></rect>
+<rect x="23" y="21" width="2.6" height="17"></rect>
+<rect x="28" y="21" width="2.6" height="17"></rect>
+<ellipse cx="16" cy="17" rx="16" ry="8"></ellipse>
+<g class="{{deerHeadCls}}">
+<polygon points="26,16 32,12 38,-4 33,-6"></polygon>
+<ellipse cx="39" cy="-7" rx="6.5" ry="3.6" transform="rotate(18 39 -7)"></ellipse>
+<path d="M35,-9 L30,-15 L36,-11 Z"></path>
+<path d="M35,-10 L33,-22 M33.6,-16 L29,-19 M33,-22 L36,-27 M37,-10 L39,-21 M38.4,-16 L42,-19" fill="none" stroke="#05090F" stroke-width="1.2" stroke-linecap="round"></path>
+</g>
+</g>
+</g>
+</g>
+<g fill="#070D18">
+<sc-for list="{{tallPines}}" as="t" hint-placeholder-count="4">
+<polygon class="a sway" points="{{t.pts}}" style="animation-duration: {{t.dur}}s; animation-delay: {{t.d}}s"></polygon>
+</sc-for>
+</g>
+<g fill="#1E3046">
+<sc-for list="{{leaves}}" as="l" hint-placeholder-count="8">
+<ellipse class="a rustle" cx="{{l.x}}" cy="{{l.y}}" rx="3.2" ry="1.5" style="animation-delay: {{l.d}}s"></ellipse>
+</sc-for>
+</g>
+</svg>
+</sc-if>
+
+<sc-if value="{{isBeach}}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 390 844" width="390" height="844" style="position: absolute; inset: 0; display: block">
+<defs>
+<linearGradient id="bsky{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop class="trc" offset="0" stop-color="{{sky0}}"></stop>
+<stop class="trc" offset="0.18" stop-color="{{sky1}}"></stop>
+<stop class="trc" offset="0.32" stop-color="{{sky2}}"></stop>
+<stop class="trc" offset="0.39" stop-color="{{sky3}}"></stop>
+<stop offset="1" stop-color="#1A1426"></stop>
+</linearGradient>
+<radialGradient id="bsun{{uid}}">
+<stop offset="0" stop-color="#FFF4D6"></stop>
+<stop offset="0.6" stop-color="#FFD39A"></stop>
+<stop class="trc" offset="1" stop-color="{{sunEdge}}"></stop>
+</radialGradient>
+<radialGradient id="bglow{{uid}}">
+<stop class="trc" offset="0" stop-color="{{sunEdge}}" stop-opacity="0.55"></stop>
+<stop offset="1" stop-color="#F29A5B" stop-opacity="0"></stop>
+</radialGradient>
+<linearGradient id="bsea{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop class="trc" offset="0" stop-color="{{seaTop}}"></stop>
+<stop offset="0.5" stop-color="#2E5A6E"></stop>
+<stop offset="1" stop-color="#12283A"></stop>
+</linearGradient>
+<linearGradient id="bsand{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop class="trc" offset="0" stop-color="{{sandTop}}"></stop>
+<stop offset="1" stop-color="#4A2E3A"></stop>
+</linearGradient>
+<clipPath id="bclip{{uid}}"><rect x="0" y="0" width="390" height="330"></rect></clipPath>
+</defs>
+<rect width="390" height="844" fill="url(#bsky{{uid}})"></rect>
+<g class="trc" opacity="{{starsOp}}">
+<sc-for list="{{stars}}" as="s" hint-placeholder-count="12">
+<circle class="a tw" cx="{{s.x}}" cy="{{s.y}}" r="{{s.r}}" fill="#F3EEF8" style="animation-delay: {{s.d}}s; animation-duration: {{s.dur}}s"></circle>
+</sc-for>
+</g>
+<g class="trc" fill="{{cloudCol}}" opacity="0.62">
+<g class="a drift"><ellipse cx="120" cy="128" rx="84" ry="6"></ellipse><ellipse cx="150" cy="120" rx="46" ry="5"></ellipse></g>
+<g class="a drift" style="animation-duration: 120s; animation-delay: -40s"><ellipse cx="300" cy="196" rx="76" ry="5"></ellipse><ellipse cx="270" cy="189" rx="40" ry="4"></ellipse></g>
+<g class="a drift" style="animation-duration: 105s; animation-delay: -70s"><ellipse cx="96" cy="246" rx="70" ry="4"></ellipse></g>
+</g>
+<g clip-path="url(#bclip{{uid}})">
+<circle class="a glow" cx="290" cy="{{sunY}}" r="120" fill="url(#bglow{{uid}})"></circle>
+<circle cx="290" cy="{{sunY}}" r="30" fill="url(#bsun{{uid}})" opacity="{{sunOp}}"></circle>
+</g>
+<rect x="0" y="330" width="390" height="514" fill="url(#bsea{{uid}})"></rect>
+<g class="trc" fill="{{reflectCol}}" opacity="{{reflectOp}}">
+<sc-for list="{{reflect}}" as="r" hint-placeholder-count="6">
+<rect class="a shim" x="{{r.x}}" y="{{r.y}}" width="{{r.w}}" height="2" rx="1" style="animation-delay: {{r.d}}s"></rect>
+</sc-for>
+</g>
+<g fill="none" stroke-linecap="round">
+<path class="a wave" d="{{wave1}}" stroke="#F7D2B4" stroke-width="1" opacity="0.32"></path>
+<path class="a wave" d="{{wave2}}" stroke="#F7D2B4" stroke-width="0.8" opacity="0.22" style="animation-duration: 44s"></path>
+</g>
+<path d="M0,372 C130,364 250,380 390,370 L390,844 L0,844 Z" fill="url(#bsand{{uid}})"></path>
+<path class="a lap" d="M0,371 C130,363 250,379 390,369" fill="none" stroke="#FFF1E2" stroke-width="1.6" opacity="0.55"></path>
+</svg>
+</sc-if>
+
+<sc-if value="{{isCity}}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 390 844" width="390" height="844" style="position: absolute; inset: 0; display: block">
+<defs>
+<linearGradient id="csky{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0E1424"></stop>
+<stop offset="0.2" stop-color="#202A45"></stop>
+<stop class="trc" offset="0.34" stop-color="{{horizon}}"></stop>
+<stop offset="0.36" stop-color="#151B29"></stop>
+<stop offset="1" stop-color="#0A0D14"></stop>
+</linearGradient>
+<radialGradient id="clamp{{uid}}">
+<stop class="trc" offset="0" stop-color="{{lampCol}}" stop-opacity="0.6"></stop>
+<stop offset="1" stop-color="#F7B65E" stop-opacity="0"></stop>
+</radialGradient>
+<linearGradient id="cref{{uid}}" x1="0" y1="0" x2="0" y2="1">
+<stop class="trc" offset="0" stop-color="{{winCol}}" stop-opacity="0.55"></stop>
+<stop class="trc" offset="1" stop-color="{{winCol}}" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<rect width="390" height="844" fill="url(#csky{{uid}})"></rect>
+<g fill="#1A2234">
+<rect x="0" y="176" width="38" height="124"></rect>
+<rect x="40" y="208" width="30" height="92"></rect>
+<rect x="150" y="160" width="26" height="140"></rect>
+<rect x="178" y="190" width="40" height="110"></rect>
+<rect x="210" y="132" width="24" height="168"></rect>
+</g>
+<rect x="104" y="150" width="96" height="150" fill="#131928"></rect>
+<rect x="-6" y="200" width="104" height="100" fill="#121826"></rect>
+<rect x="240" y="80" width="150" height="220" fill="#121826"></rect>
+<rect x="240" y="80" width="150" height="4" fill="#1C2436"></rect>
+<g class="trc" fill="{{winCol}}">
+<sc-for list="{{windows}}" as="w" hint-placeholder-count="20">
+<rect class="{{w.cls}}" x="{{w.x}}" y="{{w.y}}" width="7" height="4.5" rx="0.6" opacity="{{w.o}}" style="animation-delay: {{w.d}}s"></rect>
+</sc-for>
+</g>
+<rect x="0" y="300" width="390" height="9" fill="#0B0F18"></rect>
+<g fill="#0B0F18">
+<rect x="56" y="308" width="10" height="24"></rect>
+<rect x="186" y="308" width="10" height="24"></rect>
+<rect x="316" y="308" width="10" height="24"></rect>
+</g>
+<g class="a train">
+<rect x="20" y="280" width="252" height="19" rx="7" fill="#090D15"></rect>
+<rect class="trc" x="30" y="285" width="232" height="5.5" rx="2" fill="{{winCol}}" opacity="0.85"></rect>
+<rect x="88" y="284" width="3" height="8" fill="#090D15"></rect>
+<rect x="150" y="284" width="3" height="8" fill="#090D15"></rect>
+<rect x="212" y="284" width="3" height="8" fill="#090D15"></rect>
+</g>
+<rect x="0" y="330" width="390" height="514" fill="#111622"></rect>
+<line x1="0" y1="331" x2="390" y2="331" stroke="#2A3348" stroke-width="1.4"></line>
+<rect x="108" y="304" width="3" height="28" fill="#0B0F18"></rect>
+<circle cx="110" cy="304" r="40" fill="url(#clamp{{uid}})"></circle>
+<circle class="trc" cx="110" cy="304" r="3.2" fill="{{lampCol}}"></circle>
+<g class="a bus">
+<rect x="210" y="340" width="122" height="24" rx="5" fill="#070A11"></rect>
+<rect class="trc" x="218" y="345" width="100" height="7" rx="2" fill="{{winCol}}" opacity="0.7"></rect>
+<circle cx="232" cy="365" r="5" fill="#05070C"></circle>
+<circle cx="310" cy="365" r="5" fill="#05070C"></circle>
+</g>
+<g>
+<rect x="104" y="334" width="14" height="58" fill="url(#cref{{uid}})" opacity="{{refOp}}"></rect>
+<rect x="252" y="334" width="9" height="58" fill="url(#cref{{uid}})" opacity="{{refOp}}"></rect>
+<rect x="300" y="334" width="7" height="58" fill="url(#cref{{uid}})" opacity="{{refOp}}"></rect>
+<rect x="346" y="334" width="10" height="58" fill="url(#cref{{uid}})" opacity="{{refOp}}"></rect>
+<rect x="30" y="334" width="6" height="58" fill="url(#cref{{uid}})" opacity="{{refOp}}"></rect>
+</g>
+<g fill="none" stroke="#B9C9DE" stroke-width="0.7" opacity="{{rainOp}}">
+<sc-for list="{{drips}}" as="p" hint-placeholder-count="5">
+<ellipse class="a drip" cx="{{p.x}}" cy="{{p.y}}" rx="7" ry="1.8" style="animation-delay: {{p.d}}s"></ellipse>
+</sc-for>
+</g>
+<g stroke="#C9D6E8" stroke-width="0.8" stroke-linecap="round" class="trc" opacity="{{rainOp}}">
+<sc-for list="{{rain}}" as="r" hint-placeholder-count="20">
+<line class="a rain" x1="{{r.x}}" y1="{{r.y}}" x2="{{r.x2}}" y2="{{r.y2}}" style="animation-delay: {{r.d}}s; animation-duration: {{r.dur}}s"></line>
+</sc-for>
+</g>
+<g stroke="#D8E2F0" stroke-width="0.9" stroke-linecap="round" class="trc" opacity="{{heavyOp}}">
+<sc-for list="{{rainHeavy}}" as="r" hint-placeholder-count="20">
+<line class="a rain" x1="{{r.x}}" y1="{{r.y}}" x2="{{r.x2}}" y2="{{r.y2}}" style="animation-delay: {{r.d}}s; animation-duration: {{r.dur}}s"></line>
+</sc-for>
+</g>
+</svg>
+</sc-if>
+
+</div>
+
+<div aria-hidden="true" style="position: absolute; inset: 0; background: {{scrim}}; -webkit-mask-image: {{scrimMask}}; mask-image: {{scrimMask}}"></div>
+
+<div class="scroll" style="position: absolute; inset: 0; overflow-y: auto; padding: 10px 16px 112px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; height: 48px">
+<sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+<button aria-label="Change month, October 2026" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px 0 4px; border: none; background: transparent; color: var(--on-scene); font-size: 16px; font-weight: 600">
+<span>October 2026</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+</sc-if>
+<sc-if value="{{notHome}}" hint-placeholder-val="{{ false }}">
+<h1 class="disp" style="font-size: 24px; color: var(--on-scene); padding-left: 4px">{{pageTitle}}</h1>
+</sc-if>
+<button aria-label="Settings" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; border: none; background: transparent; color: var(--on-scene)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"></path></svg>
+</button>
+</header>
+
+<sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+<section aria-label="October summary" style="height: 334px; padding: 18px 4px 0; display: flex; flex-direction: column">
+<p style="font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--on-scene-sub)">Spent in October</p>
+<p class="disp num" style="font-size: 46px; line-height: 1.05; color: var(--on-scene); margin-top: 6px; text-shadow: 0 1px 12px rgba(0,0,0,0.25)">{{spentS}}</p>
+<p class="num" style="font-size: 15px; color: var(--on-scene-sub); margin-top: 4px">of {{budgetS}} budget</p>
+<div role="status" aria-live="polite" style="display: flex; align-items: center; gap: 8px; align-self: flex-start; margin-top: 14px; height: 32px; padding: 0 14px 0 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--card-line)">
+<span class="k-{{st.key}}" style="display: flex">
+<sc-if value="{{st.c}}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.6 2.5L16 9.5"></path></svg></sc-if>
+<sc-if value="{{st.w}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path></svg></sc-if>
+<sc-if value="{{st.o}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3.5 21.5 20h-19z"></path><path d="M12 10v4.5M12 17.2v.1"></path></svg></sc-if>
+</span>
+<span class="num" style="font-size: 14px; font-weight: 700; color: var(--tx)">{{st.label}}</span>
+<span class="num" style="font-size: 14px; color: var(--tx-sub)">{{pctS}} used</span>
+</div>
+<div style="position: relative; height: 8px; border-radius: 999px; background: var(--track-scene); margin-top: 18px">
+<div class="bar h-{{st.key}}" style="height: 8px; border-radius: 999px; width: {{barW}}%"></div>
+<div style="position: absolute; left: 75%; top: -3px; width: 2px; height: 14px; border-radius: 2px; background: var(--on-scene); opacity: 0.55"></div>
+</div>
+<p class="num" style="font-size: 14px; font-weight: 600; color: var(--on-scene); margin-top: 10px">{{leftLine}}</p>
+<p class="num" style="font-size: 13px; color: var(--on-scene-sub); margin-top: 2px">{{paceLine}}</p>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<section class="card" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 22px 20px">
+<h2 class="disp" style="font-size: 20px; color: var(--tx)">{{emptyTitle}}</h2>
+<p style="font-size: 15px; line-height: 1.45; color: var(--tx-sub)">Nothing logged for October yet. Add what you spend as you go and this page fills in.</p>
+<button onClick="{{goAdd}}" style="margin-top: 6px; height: 48px; padding: 0 20px; border-radius: 14px; border: none; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 700">Add your first expense</button>
+</section>
+</sc-if>
+<sc-if value="{{hasData}}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<h2 class="disp" style="font-size: 16px; color: var(--tx); margin-bottom: 12px">Where it went</h2>
+<div style="display: flex; align-items: center; gap: 16px">
+<svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" style="flex-shrink: 0">
+<circle cx="56" cy="56" r="42" fill="none" stroke="var(--track)" stroke-width="14"></circle>
+<g transform="rotate(-90 56 56)">
+<sc-for list="{{donut}}" as="s" hint-placeholder-count="6">
+<circle cx="56" cy="56" r="42" fill="none" stroke="{{s.color}}" stroke-width="14" stroke-dasharray="{{s.dash}}" stroke-dashoffset="{{s.off}}"></circle>
+</sc-for>
+</g>
+</svg>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{topCats}}" as="c" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0">
+<span style="width: 9px; height: 9px; border-radius: 999px; background: {{c.color}}; flex-shrink: 0"></span>
+<span style="font-size: 14px; color: var(--tx-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.label}}</span>
+</div>
+<span class="num" style="font-size: 14px; font-weight: 700; color: var(--tx)">{{c.spentS}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+<section class="card" style="padding-bottom: 8px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px">
+<h2 class="disp" style="font-size: 16px; color: var(--tx)">Recent</h2>
+<button style="height: 44px; padding: 0 4px; border: none; background: transparent; color: var(--accent); font-size: 14px; font-weight: 600">See all</button>
+</div>
+<sc-for list="{{recent}}" as="t" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; border-top: 1px solid var(--card-line)">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+<span style="width: 10px; height: 10px; border-radius: 999px; background: {{t.color}}; flex-shrink: 0"></span>
+<div style="min-width: 0">
+<p style="font-size: 15px; font-weight: 600; color: var(--tx)">{{t.desc}}</p>
+<p style="font-size: 13px; color: var(--tx-muted); margin-top: 1px">{{t.meta}}</p>
+</div>
+</div>
+<span class="num" style="font-size: 15px; font-weight: 700; color: var(--tx)">{{t.amtS}}</span>
+</div>
+</sc-for>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isAsk}}" hint-placeholder-val="{{ false }}">
+<section class="card" style="margin-top: 10px; display: flex; flex-direction: column; gap: 12px; min-height: 640px">
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 40px 6px">
+<h2 class="disp" style="font-size: 20px; color: var(--tx)">Nothing to ask about yet</h2>
+<p style="font-size: 15px; line-height: 1.45; color: var(--tx-sub)">Add a few expenses first. Then ask things like how much went to food this week, and get the exact figure.</p>
+</div>
+</sc-if>
+<sc-if value="{{hasData}}" hint-placeholder-val="{{ true }}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px">
+<div style="align-self: flex-end; max-width: 80%; padding: 10px 14px; border-radius: 18px 18px 6px 18px; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600">How much did I spend on food this week?</div>
+<div style="align-self: flex-start; max-width: 88%; padding: 12px 14px; border-radius: 18px 18px 18px 6px; background: var(--chip); border: 1px solid var(--card-line)">
+<p class="num" style="font-size: 15px; line-height: 1.4; color: var(--tx)"><strong>S$38.70</strong> on Food this week (12 to 18 Oct), across 7 expenses.</p>
+<p class="num" style="font-size: 13px; color: var(--tx-muted); margin-top: 6px">Biggest: S$9.80, Maxwell lunch on 15 Oct</p>
+</div>
+<div style="align-self: flex-end; max-width: 80%; padding: 10px 14px; border-radius: 18px 18px 6px 18px; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600">Am I on track for October?</div>
+<div style="align-self: flex-start; max-width: 88%; padding: 12px 14px; border-radius: 18px 18px 18px 6px; background: var(--chip); border: 1px solid var(--card-line)">
+<p class="num" style="font-size: 15px; line-height: 1.4; color: var(--tx)">{{askTrack}}</p>
+<p class="num k-{{st.key}}" style="font-size: 13px; font-weight: 700; margin-top: 6px">{{st.label}} · {{pctS}} used</p>
+</div>
+<p style="font-size: 12px; color: var(--tx-muted); text-align: center; margin-top: 4px">Figures are calculated from your 42 logged expenses, not estimated.</p>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--card-line); background: var(--chip); color: var(--tx); font-size: 14px">Which day did I spend the most?</button>
+<button style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--card-line); background: var(--chip); color: var(--tx); font-size: 14px">What do I spend the most on?</button>
+</div>
+<form style="display: flex; gap: 8px">
+<label for="ask-{{uid}}" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0)">Ask a question about your spending</label>
+<input id="ask-{{uid}}" type="text" placeholder="Ask about your spending" style="flex-grow: 1; min-width: 0; height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--field-line); background: var(--field); color: var(--tx); font-size: 15px">
+<button type="button" aria-label="Send" style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; border: none; background: var(--accent); color: var(--on-accent); display: grid; place-items: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+</button>
+</form>
+</section>
+</sc-if>
+
+<sc-if value="{{isAdd}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 10px; display: flex; flex-direction: column; gap: 12px">
+<div role="tablist" aria-label="How to add" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--card); border: 1px solid var(--card-line)">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+<button role="tab" aria-selected="{{m.sel}}" onClick="{{m.pick}}" style="height: 44px; border-radius: 12px; border: none; background: {{m.bg}}; color: {{m.fg}}; font-size: 14px; font-weight: 700">{{m.label}}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{modeReceipt}}" hint-placeholder-val="{{ true }}">
+<section class="card" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 class="disp" style="font-size: 18px; color: var(--tx)">Check this receipt</h2>
+<button style="height: 44px; padding: 0 4px; border: none; background: transparent; color: var(--accent); font-size: 14px; font-weight: 600">Retake</button>
+</div>
+<div style="display: flex; gap: 14px; align-items: center">
+<div aria-label="Receipt photo" style="width: 64px; height: 84px; flex-shrink: 0; border-radius: 8px; background: #F4EFE6; padding: 8px 7px; display: flex; flex-direction: column; gap: 5px; transform: rotate(-3deg); box-shadow: 0 4px 12px rgba(0,0,0,0.25)">
+<span style="height: 4px; width: 70%; background: #B9AFA2; border-radius: 2px"></span>
+<span style="height: 3px; width: 100%; background: #D3CABD; border-radius: 2px"></span>
+<span style="height: 3px; width: 85%; background: #D3CABD; border-radius: 2px"></span>
+<span style="height: 3px; width: 92%; background: #D3CABD; border-radius: 2px"></span>
+<span style="height: 4px; width: 55%; background: #8E8478; border-radius: 2px; align-self: flex-end; margin-top: auto"></span>
+</div>
+<div>
+<p style="font-size: 13px; color: var(--tx-muted)">We read</p>
+<p class="disp num" style="font-size: 34px; line-height: 1.1; color: var(--tx)">S$18.60</p>
+<p style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600" class="k-calm">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.6 2.5L16 9.5"></path></svg>Total read clearly</p>
+</div>
+</div>
+<div>
+<label for="rm-{{uid}}" style="display: block; font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">Merchant</label>
+<input id="rm-{{uid}}" type="text" value="Minimart, Clementi" style="width: 100%; height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--st-watch); background: var(--field); color: var(--tx); font-size: 15px">
+<p class="k-watch" style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-top: 6px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path></svg>Partly blurry, please check</p>
+</div>
+<div>
+<p style="font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">Category</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{catChips}}" as="c" hint-placeholder-count="6">
+<button aria-pressed="{{c.sel}}" style="display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid {{c.border}}; background: {{c.bg}}; color: var(--tx); font-size: 14px; font-weight: 600">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: {{c.color}}"></span>{{c.label}}</button>
+</sc-for>
+</div>
+<p style="font-size: 12px; color: var(--tx-muted); margin-top: 6px">Suggested from the items on this receipt. Tap to change.</p>
+</div>
+<div style="border-top: 1px solid var(--card-line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--tx-sub)"><span>Detergent 1.5L</span><span class="num">S$8.95</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--tx-sub)"><span>Rice 2kg</span><span class="num">S$5.20</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--tx-sub)"><span>Eggs, 10 pack</span><span class="num">S$4.45</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--tx-muted)"><span>18 Oct 2026, 7:42 pm</span><span>3 items</span></div>
+</div>
+<button style="height: 52px; border-radius: 14px; border: none; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 700">Add S$18.60</button>
+</section>
+</sc-if>
+
+<sc-if value="{{modeManual}}" hint-placeholder-val="{{ false }}">
+<section class="card" style="display: flex; flex-direction: column; gap: 14px">
+<div>
+<label for="ma-{{uid}}" style="display: block; font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">Amount (SGD)</label>
+<input id="ma-{{uid}}" class="disp num" type="text" inputmode="decimal" placeholder="0.00" value="4.50" style="width: 100%; height: 64px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--accent); background: var(--field); color: var(--tx); font-size: 32px">
+</div>
+<div>
+<label for="md-{{uid}}" style="display: block; font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">What was it?</label>
+<input id="md-{{uid}}" type="text" placeholder="e.g. Grab to Orchard" value="Chicken rice" style="width: 100%; height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--field-line); background: var(--field); color: var(--tx); font-size: 15px">
+</div>
+<div>
+<p style="font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">Category</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{catChipsFood}}" as="c" hint-placeholder-count="6">
+<button aria-pressed="{{c.sel}}" style="display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid {{c.border}}; background: {{c.bg}}; color: var(--tx); font-size: 14px; font-weight: 600">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: {{c.color}}"></span>{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+<div>
+<label for="mt-{{uid}}" style="display: block; font-size: 13px; font-weight: 600; color: var(--tx-sub); margin-bottom: 6px">Date</label>
+<input id="mt-{{uid}}" type="text" value="Today, 18 Oct" style="width: 100%; height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--field-line); background: var(--field); color: var(--tx); font-size: 15px">
+</div>
+<button style="height: 52px; border-radius: 14px; border: none; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 700">Add S$4.50</button>
+</section>
+</sc-if>
+
+<sc-if value="{{modeVoice}}" hint-placeholder-val="{{ false }}">
+<section class="card" style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px 18px">
+<button aria-label="Start speaking" style="width: 96px; height: 96px; border-radius: 999px; border: none; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: 0 0 0 10px var(--chip)">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg>
+</button>
+<p style="font-size: 15px; color: var(--tx-sub); text-align: center">Say it the way you would text it, like “add 4.50 chicken rice”.</p>
+<div style="align-self: stretch; padding: 14px; border-radius: 14px; background: var(--chip); border: 1px solid var(--card-line)">
+<p style="font-size: 13px; color: var(--tx-muted)">Heard</p>
+<p style="font-size: 15px; color: var(--tx); margin-top: 2px">“add four fifty chicken rice”</p>
+<p class="num" style="font-size: 15px; font-weight: 700; color: var(--tx); margin-top: 10px">S$4.50 · Chicken rice · Food · Today</p>
+</div>
+<button style="align-self: stretch; height: 52px; border-radius: 14px; border: none; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 700">Add S$4.50</button>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isHistory}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 10px; display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<section class="card" style="padding: 22px 20px">
+<h2 class="disp" style="font-size: 20px; color: var(--tx)">No months yet</h2>
+<p style="font-size: 15px; line-height: 1.45; color: var(--tx-sub); margin-top: 8px">Each month you log appears here with its total and how it compared with your budget.</p>
+</section>
+</sc-if>
+<sc-if value="{{hasData}}" hint-placeholder-val="{{ true }}">
+<section class="card" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div>
+<p style="font-size: 13px; color: var(--tx-muted)">Average month</p>
+<p class="disp num" style="font-size: 22px; color: var(--tx); margin-top: 2px">{{avgS}}</p>
+</div>
+<div>
+<p style="font-size: 13px; color: var(--tx-muted)">Months over budget</p>
+<p class="disp num" style="font-size: 22px; color: var(--tx); margin-top: 2px">{{overCount}} of 5</p>
+</div>
+</section>
+<section class="card" style="padding-top: 8px; padding-bottom: 8px">
+<sc-for list="{{months}}" as="m" hint-placeholder-count="5">
+<button style="width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border: none; border-top: {{m.line}}; background: transparent; color: var(--tx); text-align: left">
+<div style="width: 100%; display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 16px; font-weight: 700">{{m.label}}</span>
+<span class="disp num" style="font-size: 18px">{{m.spentS}}</span>
+</div>
+<div style="width: 100%; height: 6px; border-radius: 999px; background: var(--track)">
+<div class="f-{{m.key}}" style="height: 6px; border-radius: 999px; width: {{m.barW}}%"></div>
+</div>
+<div style="width: 100%; display: flex; justify-content: space-between; font-size: 13px">
+<span class="k-{{m.key}}" style="font-weight: 700">{{m.stLabel}}</span>
+<span class="num" style="color: var(--tx-muted)">{{m.detail}}</span>
+</div>
+</button>
+</sc-for>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isBudget}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 10px; display: flex; flex-direction: column; gap: 12px">
+<section class="card" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: flex-start">
+<div>
+<p style="font-size: 13px; color: var(--tx-muted)">Monthly budget</p>
+<p class="disp num" style="font-size: 30px; color: var(--tx); margin-top: 2px">{{budgetS}}</p>
+</div>
+<button style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1.5px solid var(--field-line); background: transparent; color: var(--tx); font-size: 14px; font-weight: 700">Edit</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div><p style="font-size: 12px; color: var(--tx-muted)">Spent</p><p class="num" style="font-size: 16px; font-weight: 700; color: var(--tx)">{{spentS}}</p></div>
+<div><p style="font-size: 12px; color: var(--tx-muted)">{{leftLabel}}</p><p class="num" style="font-size: 16px; font-weight: 700; color: var(--tx)">{{leftS}}</p></div>
+<div><p style="font-size: 12px; color: var(--tx-muted)">Per day, 14 days</p><p class="num" style="font-size: 16px; font-weight: 700; color: var(--tx)">{{perDayS}}</p></div>
+</div>
+<p class="k-{{st.key}}" style="font-size: 14px; font-weight: 700">{{st.label}} · {{pctS}} used</p>
+<label style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-top: 1px solid var(--card-line); padding-top: 10px; font-size: 14px; color: var(--tx)">
+<span>Wallpaper reflects my budget<br><span style="font-size: 12px; color: var(--tx-muted)">Off keeps the calm scene all month</span></span>
+<input type="checkbox" checked="{{reacts}}" onChange="{{toggleReacts}}" style="width: 22px; height: 22px; accent-color: var(--accent)">
+</label>
+</section>
+<section class="card">
+<h2 class="disp" style="font-size: 16px; color: var(--tx); margin-bottom: 4px">By category</h2>
+<sc-for list="{{catRows}}" as="c" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 12px 0; border-top: 1px solid var(--card-line)">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0">
+<span style="width: 10px; height: 10px; border-radius: 999px; background: {{c.color}}; flex-shrink: 0"></span>
+<span style="font-size: 15px; font-weight: 600; color: var(--tx)">{{c.label}}</span>
+</div>
+<span class="num" style="font-size: 14px; color: var(--tx-sub)">{{c.spentS}} / {{c.budS}}</span>
+</div>
+<div style="height: 6px; border-radius: 999px; background: var(--track)">
+<div class="bar f-{{c.key}}" style="height: 6px; border-radius: 999px; width: {{c.barW}}%"></div>
+</div>
+<span class="k-{{c.key}}" style="font-size: 13px; font-weight: 700">{{c.stLabel}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+</div>
+
+<nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 6px 6px 20px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--nav-bg); border-top: 1px solid var(--nav-line); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+<button onClick="{{t.go}}" aria-current="{{t.cur}}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: transparent; color: {{t.fg}}; font-size: 11px; font-weight: 700; min-height: 56px">
+<span style="display: grid; place-items: center; width: {{t.dot}}px; height: {{t.dot}}px; border-radius: 999px; background: {{t.bg}}; color: {{t.ifg}}; margin-top: {{t.lift}}px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{t.icon}}"></path></svg>
+</span>
+<span>{{t.label}}</span>
+</button>
+</sc-for>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["forest","beach","city"],"default":"forest"},"pct":{"editor":"range","min":0,"max":130,"step":1,"default":62,"unit":"%"},"screen":{"editor":"enum","options":["home","ask","add","history","budget"],"default":"home"},"still":{"editor":"boolean","default":false},"empty":{"editor":"boolean","default":false},"uid":{"editor":null,"default":"p0"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: null, mode: null, reacts: true };
+  }
+  renderVals() {
+    const P = this.props;
+    const theme = ['forest', 'beach', 'city'].indexOf(P.theme) >= 0 ? P.theme : 'forest';
+    const empty = !!P.empty;
+    const still = !!P.still;
+    const uid = String(P.uid || 'p0');
+    const tab = this.state.tab || P.screen || 'home';
+    const mode = this.state.mode || P.addMode || 'receipt';
+    const reacts = this.state.reacts !== false;
+    const BUDGET = 800;
+    const DAYS_LEFT = 14;
+    const rawPct = Math.max(0, Math.min(150, Number(P.pct == null ? 62 : P.pct)));
+    const spent = empty ? 0 : Math.round(BUDGET * rawPct) / 100;
+    const pct = Math.round((spent / BUDGET) * 100);
+    const clamp = (n) => Math.max(0, Math.min(1, n));
+    const lerp = (a, b, t) => a + (b - a) * clamp(t);
+    const hx = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const mix = (a, b, t) => { const A = hx(a), B = hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * clamp(t)).toString(16).padStart(2, '0')).join(''); };
+    const rnd = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
+    const m = (n) => 'S$' + Number(n).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const status = (sp, bud) => {
+      if (bud <= 0) return { key: 'calm', label: 'No budget set', c: true, w: false, o: false };
+      if (sp > bud) return { key: 'over', label: 'Over budget', c: false, w: false, o: true };
+      if (sp === bud) return { key: 'watch', label: 'Budget reached', c: false, w: true, o: false };
+      if (sp >= bud * 0.75) return { key: 'watch', label: 'Close to limit', c: false, w: true, o: false };
+      return { key: 'calm', label: 'On track', c: true, w: false, o: false };
+    };
+    const st = status(spent, BUDGET);
+    const left = BUDGET - spent;
+    // The scene has two states only: calm, and over budget (spent strictly above budget).
+    const over = reacts && !empty && spent > BUDGET;
+
+    // ── Forest
+    const pine = (x, base, h, w) => {
+      const T = 5, top = base - h, tt = base - h * 0.1, L = [[x, top]];
+      for (let i = 1; i <= T; i++) { const y = top + (tt - top) * i / T; const wi = w * (0.22 + 0.78 * i / T); L.push([x - wi, y]); if (i < T) L.push([x - wi * 0.42, y - h * 0.035]); }
+      const pts = L.slice(); pts.push([x - 3, tt], [x - 3, base], [x + 3, base], [x + 3, tt]);
+      for (let i = L.length - 1; i >= 1; i--) pts.push([2 * x - L[i][0], L[i][1]]);
+      return pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    };
+    const tallDefs = [[20, 560, 400, 30], [76, 520, 300, 25], [370, 560, 420, 32], [336, 500, 250, 23]];
+    const tallPines = tallDefs.map((d, i) => ({ pts: pine(d[0], d[1], d[2], d[3]), dur: (6.5 + i * 1.3).toFixed(1), d: (-i * 1.7).toFixed(1) }));
+    const ridgePines = [];
+    for (let i = 0; i < 13; i++) { const x = 118 + i * 15 + rnd(i, 3) * 6; ridgePines.push({ pts: pine(x, 292 + rnd(i, 4) * 10, 34 + rnd(i, 5) * 30, 9 + rnd(i, 6) * 5) }); }
+    const leaves = [[34, 300], [8, 330], [50, 360], [88, 312], [64, 380], [356, 330], [384, 300], [322, 352], [350, 392], [384, 420]].map((p, i) => ({ x: p[0], y: p[1], d: (-i * 0.9).toFixed(1) }));
+    const stars = [];
+    for (let i = 0; i < 22; i++) { const x = Math.round(rnd(i, 1) * 380 + 5), y = Math.round(rnd(i, 2) * 230 + 10); if (x > 270 && y < 140) continue; stars.push({ x, y, r: (0.6 + rnd(i, 7) * 0.9).toFixed(2), d: (-rnd(i, 8) * 5).toFixed(1), dur: (3.5 + rnd(i, 9) * 4).toFixed(1) }); }
+
+    // ── Beach
+    const tb = over ? 1 : 0;
+    const wavePath = (y, a) => { let s = 'M0,' + y; for (let x = 0; x < 780; x += 30) s += ' Q' + (x + 15) + ',' + (y - a) + ' ' + (x + 30) + ',' + y; return s; };
+    const reflect = [];
+    for (let i = 0; i < 9; i++) { const w = 46 - i * 4; reflect.push({ x: 290 - w / 2 + (rnd(i, 11) - 0.5) * 6, y: 334 + i * 4, w, d: (-i * 0.4).toFixed(1) }); }
+
+    // ── City
+    const tc = over ? 1 : 0;
+    const windows = [];
+    const grid = (x0, y0, cols, rows, dx, dy, base, salt) => {
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const k = r * cols + c + salt * 100;
+        if (rnd(k, salt) < 0.4) continue;
+        const fl = rnd(k, salt + 7) > 0.92;
+        windows.push({ x: x0 + c * dx, y: y0 + r * dy, o: (base * (0.6 + rnd(k, salt + 3) * 0.4)).toFixed(2), cls: fl ? 'a flick' : '', d: (-rnd(k, salt + 5) * 12).toFixed(1) });
+      }
+    };
+    grid(250, 92, 8, 16, 17, 12.5, 0.95, 1);
+    grid(112, 160, 5, 10, 17, 13, 0.6, 2);
+    grid(4, 210, 5, 6, 18, 13, 0.45, 3);
+    const rain = [], rainHeavy = [];
+    for (let i = 0; i < 60; i++) { const x = rnd(i, 21) * 400, y = rnd(i, 22) * 820; rain.push({ x: x.toFixed(1), y: y.toFixed(1), x2: (x - 3).toFixed(1), y2: (y + 13).toFixed(1), d: (-rnd(i, 23)).toFixed(2), dur: (0.8 + rnd(i, 24) * 0.4).toFixed(2) }); }
+    for (let i = 0; i < 46; i++) { const x = rnd(i, 31) * 400, y = rnd(i, 32) * 820; rainHeavy.push({ x: x.toFixed(1), y: y.toFixed(1), x2: (x - 4).toFixed(1), y2: (y + 18).toFixed(1), d: (-rnd(i, 33)).toFixed(2), dur: (0.6 + rnd(i, 34) * 0.3).toFixed(2) }); }
+    const drips = [[60, 350], [150, 376], [232, 384], [318, 372], [368, 356], [96, 386]].map((p, i) => ({ x: p[0], y: p[1], d: (-i * 0.45).toFixed(2) }));
+
+    // ── Data
+    const CATS = [
+      { id: 'food', label: 'Food', color: '#D85A30', share: 0.42, bud: 300 },
+      { id: 'hire', label: 'Private hire', color: '#1D9E75', share: 0.22, bud: 140 },
+      { id: 'shop', label: 'Shopping', color: '#7F77DD', share: 0.16, bud: 150 },
+      { id: 'needs', label: 'Needs', color: '#BA7517', share: 0.09, bud: 90 },
+      { id: 'pub', label: 'Public transport', color: '#378ADD', share: 0.08, bud: 90 },
+      { id: 'misc', label: 'Miscellaneous', color: '#888780', share: 0.03, bud: 30 },
+    ];
+    const C = 2 * Math.PI * 42;
+    let acc = 0;
+    const donut = [];
+    const catRows = CATS.map((c) => {
+      const s = Math.round(spent * c.share * 100) / 100;
+      const cs = status(s, c.bud);
+      const len = spent > 0 ? (s / spent) * C : 0;
+      if (len > 0) { donut.push({ color: c.color, dash: Math.max(0, len - 1.5).toFixed(2) + ' ' + C.toFixed(2), off: (-acc).toFixed(2) }); acc += len; }
+      const extra = s > c.bud ? ', ' + m(s - c.bud) + ' over' : (s >= c.bud * 0.75 ? ', ' + m(c.bud - s) + ' left' : '');
+      return { label: c.label, color: c.color, spentS: m(s), budS: m(c.bud), key: cs.key, stLabel: cs.label + extra, barW: Math.min(100, (s / c.bud) * 100).toFixed(1) };
+    });
+    const topCats = CATS.slice(0, 4).map((c) => ({ label: c.label, color: c.color, spentS: m(Math.round(spent * c.share * 100) / 100) }));
+    const catById = {}; CATS.forEach((c) => { catById[c.id] = c; });
+    const recent = [
+      ['Chicken rice', 'food', 'Today', 4.5], ['Grab to Orchard', 'hire', '17 Oct', 14.8],
+      ['EZ-Link top-up', 'pub', '17 Oct', 20], ['Kopi C', 'food', '17 Oct', 1.4],
+    ].map((r) => ({ desc: r[0], color: catById[r[1]].color, meta: catById[r[1]].label + ' · ' + r[2], amtS: m(r[3]) }));
+
+    const hist = [['September 2026', 842.10], ['August 2026', 705.30], ['July 2026', 566.90], ['June 2026', 790.00], ['May 2026', 612.45]];
+    const avg = hist.reduce((a, h) => a + h[1], 0) / hist.length;
+    const months = [['October 2026, so far', spent]].concat(hist).map((h, i) => {
+      const s = status(h[1], BUDGET);
+      const p = Math.round((h[1] / BUDGET) * 100);
+      const detail = h[1] > BUDGET ? m(h[1] - BUDGET) + ' over' : p + '% of ' + m(BUDGET);
+      return { label: h[0], spentS: m(h[1]), key: s.key, stLabel: s.label, detail, barW: Math.min(100, p), line: i === 0 ? 'none' : '1px solid var(--card-line)' };
+    });
+
+    const chip = (c, sel) => ({ label: c.label, color: c.color, sel: sel ? 'true' : 'false', bg: sel ? 'var(--chip)' : 'transparent', border: sel ? 'var(--accent)' : 'var(--field-line)' });
+    const catChips = CATS.map((c) => chip(c, c.id === 'needs'));
+    const catChipsFood = CATS.map((c) => chip(c, c.id === 'food'));
+
+    const modes = [['manual', 'Type'], ['voice', 'Speak'], ['receipt', 'Receipt']].map((x) => ({
+      label: x[1], sel: mode === x[0] ? 'true' : 'false', bg: mode === x[0] ? 'var(--accent)' : 'transparent', fg: mode === x[0] ? 'var(--on-accent)' : 'var(--tx-sub)',
+      pick: () => this.setState({ mode: x[0] }),
+    }));
+
+    const ICON = {
+      home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+      history: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3.2 2',
+      add: 'M12 5v14M5 12h14',
+      ask: 'M4 5h16v11H9.5L4 20z',
+      budget: 'M12 3a9 9 0 1 0 9 9h-9zM15 2.6a9 9 0 0 1 6.4 6.4H15z',
+    };
+    const tabs = [['home', 'Home'], ['history', 'History'], ['add', 'Add'], ['ask', 'Ask'], ['budget', 'Budget']].map((x) => {
+      const cur = tab === x[0], isAdd = x[0] === 'add';
+      return {
+        label: x[1], icon: ICON[x[0]], cur: cur ? 'page' : 'false',
+        fg: cur ? 'var(--accent)' : 'var(--tx-muted)',
+        bg: isAdd ? 'var(--accent)' : 'transparent', ifg: isAdd ? 'var(--on-accent)' : 'currentColor',
+        dot: isAdd ? 46 : 28, lift: isAdd ? -14 : 0,
+        go: () => this.setState({ tab: x[0] }),
+      };
+    });
+
+    const titles = { ask: 'Ask', add: 'Add expense', history: 'History', budget: 'Budget' };
+    const askTrack = spent > BUDGET
+      ? 'You are ' + m(spent - BUDGET) + ' over your ' + m(BUDGET) + ' budget, with 14 days left in October.'
+      : 'You have used ' + pct + '% of your ' + m(BUDGET) + ' budget with 14 days left. Spending up to ' + m(left / DAYS_LEFT) + ' a day keeps you within it.';
+
+    const rootCls = [still ? 'still' : '', tab !== 'home' ? 'paused' : ''].join(' ');
+    return {
+      theme, uid, rootCls, empty, hasData: !empty,
+      isForest: theme === 'forest', isBeach: theme === 'beach', isCity: theme === 'city',
+      isHome: tab === 'home', notHome: tab !== 'home', isAsk: tab === 'ask', isAdd: tab === 'add', isHistory: tab === 'history', isBudget: tab === 'budget',
+      pageTitle: titles[tab] || '',
+      scrim: tab === 'home' ? 'var(--scrim-home)' : 'var(--scrim-page)',
+      scrimMask: tab === 'home' ? 'linear-gradient(180deg,#000 0%,#000 30%,transparent 46%)' : 'none',
+      // forest
+      stars, tallPines, ridgePines, leaves,
+      moonShadeX: over ? 322 : 392, moonGlowOp: over ? 0.35 : 1, moonReflectOp: over ? 0.12 : 0.4,
+      riverAlive: !over, flowCls: over ? '' : 'a flow', riverLineOp: over ? 0.22 : 0.55,
+      deerX: over ? -170 : 0, deerOp: over ? 0 : 1, deerWalkCls: over ? '' : 'a deerwalk', deerHeadCls: over ? '' : 'a deerhead',
+      // beach
+      sky0: mix('#3B2A5C', '#0B1230', tb), sky1: mix('#8E4466', '#23295A', tb), sky2: mix('#E07A5F', '#4B3F72', tb), sky3: mix('#F9B97F', '#8C6A8E', tb),
+      sunY: lerp(280, 324, tb).toFixed(1), sunOp: lerp(1, 0.6, tb).toFixed(2), sunEdge: mix('#F29A5B', '#C9637A', tb),
+      seaTop: mix('#E59A72', '#4E4A72', tb), sandTop: mix('#D9A184', '#6E5470', tb), cloudCol: mix('#F4B49A', '#5D5884', tb),
+      reflect, reflectCol: mix('#FFD7A1', '#B79BC4', tb), reflectOp: lerp(0.9, 0.4, tb).toFixed(2),
+      starsOp: clamp((tb - 0.55) / 0.45).toFixed(2), wave1: wavePath(346, 2.5), wave2: wavePath(358, 2),
+      // city
+      windows, rain, rainHeavy, drips,
+      winCol: mix('#F6C27A', '#A9C1DE', tc), lampCol: mix('#F7B65E', '#D3E2F4', tc), horizon: mix('#6A4E62', '#334A68', tc),
+      rainOp: lerp(0.2, 0.6, tc).toFixed(2), heavyOp: (clamp((tc - 0.5) / 0.5) * 0.6).toFixed(2), refOp: lerp(0.5, 0.9, tc).toFixed(2),
+      // data
+      st, spentS: m(spent), budgetS: m(BUDGET), pctS: pct + '%', barW: Math.min(100, pct),
+      leftLine: left >= 0 ? m(left) + ' left this month' : m(-left) + ' over budget',
+      paceLine: left > 0 ? 'About ' + m(left / DAYS_LEFT) + ' a day for the last 14 days' : 'Nothing left for the last 14 days',
+      leftLabel: left >= 0 ? 'Left' : 'Over by', leftS: m(Math.abs(left)), perDayS: left > 0 ? m(left / DAYS_LEFT) : m(0),
+      emptyTitle: theme === 'forest' ? 'A quiet clearing' : theme === 'beach' ? 'Calm water' : 'Quiet streets',
+      goAdd: () => this.setState({ tab: 'add', mode: 'manual' }),
+      donut, topCats, recent, catRows, months, avgS: m(avg), overCount: hist.filter((h) => h[1] > BUDGET).length,
+      catChips, catChipsFood, modes,
+      modeReceipt: mode === 'receipt', modeManual: mode === 'manual', modeVoice: mode === 'voice',
+      askTrack, reacts, toggleReacts: () => this.setState({ reacts: !reacts }),
+      tabs,
+    };
+  }
+}
+</script>
+</body>
+</html>

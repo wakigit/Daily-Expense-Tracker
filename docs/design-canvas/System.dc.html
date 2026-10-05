@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shared system rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.sys p,.sys h1,.sys h2,.sys h3{margin:0}
+</style>
+</helmet>
+<div class="sys" style="width: 1240px; min-height: 1760px; box-sizing: border-box; padding: 56px; display: flex; flex-direction: column; gap: 32px; background: #EFECE6; color: #1B1D22; font-family: 'Figtree', -apple-system, 'Segoe UI', sans-serif">
+
+<div>
+<p style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6B6458">Shared by all three themes</p>
+<h1 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 44px; margin-top: 8px">One app, three wallpapers</h1>
+<p style="font-size: 17px; line-height: 1.5; color: #3E3A33; margin-top: 10px; max-width: 900px">The wallpaper is a second reading of the budget, never the first. The number and the status words are always on screen, and they are what a screen reader announces.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; align-items: start">
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Budget state model</h2>
+<p style="font-size: 14px; color: #5A544A; margin-top: 6px; line-height: 1.45">Computed from spent and budget. Used by the hero chip, Budget, every category row, History and Ask.</p>
+<div style="display: grid; grid-template-columns: 120px 150px 70px minmax(0, 1fr); gap: 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6B6458; padding: 18px 0 10px; border-bottom: 2px solid #1B1D22">
+<span>Spent</span><span>Label</span><span>Shape</span><span>Extra text and scene</span>
+</div>
+<sc-for list="{{states}}" as="s" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 120px 150px 70px minmax(0, 1fr); gap: 14px; align-items: center; font-size: 14px; line-height: 1.45; padding: 12px 0; border-bottom: 1px solid #EFEAE2">
+<span style="font-weight: 700">{{s.range}}</span>
+<span style="font-weight: 700; color: {{s.ink}}">{{s.label}}</span>
+<span style="font-size: 18px; color: {{s.ink}}">{{s.shape}}</span>
+<span style="color: #3E3A33">{{s.note}}</span>
+</div>
+</sc-for>
+<p style="font-size: 14px; line-height: 1.5; color: #3E3A33; margin-top: 14px">The hero chip has role status with aria-live polite, so crossing a threshold is announced in words. The scene layer is aria-hidden.</p>
+</section>
+
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF; display: flex; gap: 24px">
+<div style="width: 195px; height: 422px; flex-shrink: 0; border-radius: 26px; overflow: hidden; position: relative; background: #1A2A4C">
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 29px; background: rgba(255,255,255,0.18); border-bottom: 1px dashed rgba(255,255,255,0.5)"></div>
+<div style="position: absolute; left: 8px; width: 122px; top: 34px; height: 96px; border-radius: 8px; background: rgba(248,243,230,0.85)"></div>
+<div style="position: absolute; left: 0; right: 0; top: 130px; height: 66px; background: repeating-linear-gradient(45deg, rgba(226,184,102,0.55) 0 6px, rgba(226,184,102,0.2) 6px 12px)"></div>
+<div style="position: absolute; right: 10px; top: 30px; width: 26px; height: 26px; border-radius: 999px; background: #F4ECD2"></div>
+<div style="position: absolute; left: 8px; right: 8px; top: 202px; height: 70px; border-radius: 11px; background: #F2EEE3"></div>
+<div style="position: absolute; left: 8px; right: 8px; top: 278px; height: 92px; border-radius: 11px; background: #F2EEE3"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 42px; background: #0B1120"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.45; color: #3E3A33">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px; color: #1B1D22">Layout zones</h2>
+<p><strong>0 to 58</strong> Header. Month picker or screen title, settings gear.</p>
+<p><strong>58 to 260, left 65%</strong> Hero text on the top scrim. Spent, budget, status chip, bar, left and per day.</p>
+<p><strong>Top right corner</strong> Reserved for the moon or sky detail.</p>
+<p><strong>260 to 392</strong> Focal band. Deer, river, sun on the horizon, train and street. No text here, ever.</p>
+<p><strong>392 down</strong> Opaque cards. Other tabs start cards at 70 and dim the scene behind a 58 to 66% scrim.</p>
+<p><strong>Bottom 84</strong> Tab bar, 95% opaque.</p>
+</div>
+</section>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px">
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">May change per theme</h2>
+<sc-for list="{{mayChange}}" as="x" hint-placeholder-count="5">
+<p style="font-size: 15px; line-height: 1.5; padding: 10px 0; border-bottom: 1px solid #EFEAE2">{{x}}</p>
+</sc-for>
+</section>
+<section style="padding: 28px; border-radius: 24px; background: #1B1D22; color: #F4F1EA">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Never changes</h2>
+<sc-for list="{{neverChange}}" as="x" hint-placeholder-count="6">
+<p style="font-size: 15px; line-height: 1.5; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.12)">{{x}}</p>
+</sc-for>
+</section>
+</div>
+
+<section style="padding: 28px; border-radius: 24px; background: #FFFFFF">
+<h2 style="font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 26px">Changes this asks of the current codebase</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; margin-top: 8px">
+<sc-for list="{{codeNotes}}" as="n" hint-placeholder-count="6">
+<div style="padding: 14px 0; border-bottom: 1px solid #EFEAE2">
+<p style="font-size: 15px; font-weight: 700">{{n.h}}</p>
+<p style="font-size: 14px; line-height: 1.5; color: #3E3A33; margin-top: 4px">{{n.b}}</p>
+</div>
+</sc-for>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1240,"height":1760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const states = [
+      ['No budget', 'No budget set', '✓', 'No bar. Scene stays in its calm state, matching how the app behaves today.', '#3E3A33'],
+      ['0 to 74%', 'On track', '✓', 'Left this month and an even daily amount. Scene calm.', '#276B4C'],
+      ['75 to 99%', 'Close to limit', '◐', 'Adds what is left. Words only, the scene stays calm.', '#8A560B'],
+      ['Exactly 100%', 'Budget reached', '◐', 'Full bar. Scene unchanged, it is not over yet.', '#8A560B'],
+      ['Above 100%', 'Over budget', '▲', 'Shows the amount over, e.g. S$64.00 over. The only state that switches the scene.', '#A3322A'],
+    ].map((s) => ({ range: s[0], label: s[1], shape: s[2], note: s[3], ink: s[4] }));
+    const mayChange = [
+      'The scene illustration and its animated layers',
+      'Colour tokens: card fill, text, accent, status colours, scrim strength',
+      'Card opacity, chosen per scene so contrast passes at both ends of the budget range',
+      'The two word empty state title (A quiet clearing, Calm water, Quiet streets)',
+      'Which scene elements carry budget state',
+    ];
+    const neverChange = [
+      'Layout, zones and the order of content on every screen',
+      'Typefaces, sizes and tabular figures',
+      'Status words, thresholds and shapes',
+      'Tab order, icons and the raised Add action',
+      'Component shapes, radii and spacing',
+      'Motion curves and the rule that state changes play once',
+    ];
+    const codeNotes = [
+      { h: 'Pass over or not, not health', b: 'useTheme gets a capped 0 to 1 health today, which cannot tell 100% from S$200 over. Pass a single boolean, spent greater than budget, and let each scene switch on it.' },
+      { h: 'Render the scene once at app open', b: 'paintBackground rebuilds innerHTML whenever health changes, which restarts every loop. Build the SVG once on first load, keep it mounted, and flip a data-over attribute on its root. CSS handles the switch.' },
+      { h: 'Move budgets into their own tab', b: 'Budgets currently sit inside Settings. US4 is a core story, so Budget earns a tab and Settings moves to the header gear.' },
+      { h: 'Drop emoji from UI copy', b: 'Strings like under budget with a flower, or the bow in empty states, read as decoration next to money. The status words do that job now.' },
+      { h: 'OCR receipts: keep the key off the client', b: 'The app is a static GitHub Pages PWA. A cloud OCR key in the bundle is public to anyone. Either run OCR on the device (Tesseract.js) or call a cloud receipt API through a small serverless function. Update the PRD non-goals to match.' },
+      { h: 'Respect the opt out', b: 'Add the Wallpaper reflects my budget switch on Budget. Off keeps the calm scene all month for people who find any visual signal stressful.' },
+    ];
+    return { states, mayChange, neverChange, codeNotes };
+  }
+}
+</script>
+</body>
+</html>
