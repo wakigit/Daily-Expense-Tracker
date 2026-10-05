@@ -1,0 +1,20 @@
+{
+  "name": "daily-expense-tracker-backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Server-side companion to the Daily Expense Tracker: health check and the assistant intent endpoint.",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "verify": "node --env-file-if-exists=.env src/verify.js",
+    "verify:live": "node --env-file-if-exists=.env src/live-check.js",
+    "test": "node src/provider.test.mjs"
+  },
+  "dependencies": {
+    "openai": "^7.28.0"
+  }
+}
