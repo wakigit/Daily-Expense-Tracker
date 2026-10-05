@@ -1,3 +1,5 @@
+import { today } from './format';
+
 /**
  * Turns a spoken sentence into expense form fields.
  *
@@ -113,13 +115,20 @@ function matchCategory(words, cats = []) {
   return undefined;
 }
 
-const shiftDays = (n) => {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+/**
+ * "yesterday" relative to the Singapore day, not UTC. Said at 1am, UTC is still
+ * two days back from the speaker's "yesterday"; this was producing the wrong
+ * date on exactly the expenses people dictate late at night.
+ *
+ * The shift itself is done in UTC on a bare calendar date, which has no DST and
+ * no local-offset surprises.
+ */
+const shiftDays = (n, now = new Date()) => {
+  const [y, m, d] = today(now).split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 };
 
-export function parseUtterance(transcript, cats = []) {
+export function parseUtterance(transcript, cats = [], now = new Date()) {
   if (!transcript || typeof transcript !== 'string') return {};
 
   const raw = transcript.toLowerCase().replace(/[^\w\s.$-]/g, ' ');
@@ -150,6 +159,6 @@ export function parseUtterance(transcript, cats = []) {
   if (found && found.amount > 0) out.amount = found.amount.toFixed(2);
   if (description) out.description = description.replace(/\b\w/, (m) => m.toUpperCase());
   if (category) out.category = category;
-  if (hasYesterday) out.date = shiftDays(-1);
+  if (hasYesterday) out.date = shiftDays(-1, now);
   return out;
 }

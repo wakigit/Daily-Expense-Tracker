@@ -1046,6 +1046,69 @@ button:active { transform: scale(0.96); }
 
 /* ═══ Ask ══════════════════════════════════════════════════════ */
 
+/* Quieter than the answer, loud enough to catch a wrong reading. */
+.bubble-interp {
+  font-size: 12px;
+  color: var(--tx-muted);
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--card-line);
+}
+
+.bubble-interp strong { color: var(--tx-sub); font-weight: 700; }
+
+/* A proposal is deliberately not a bubble: it is a thing to act on, and it
+   should not read as the assistant having already done something. */
+.proposal {
+  border: 1px solid var(--accent);
+  background: rgba(var(--accent-rgb), 0.09);
+  border-radius: var(--r-ctl);
+  padding: 12px 14px;
+  margin: 4px 0 2px;
+}
+
+.proposal-cap {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx-sub);
+  margin-bottom: 6px;
+}
+
+.proposal-row { font-size: 15px; color: var(--tx); font-weight: 600; }
+
+.proposal-warn {
+  font-size: 13px;
+  color: var(--st-watch);
+  margin-top: 6px;
+}
+
+.proposal-pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 6px;
+  font-size: 14px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.proposal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.proposal-actions button { font-size: 14px; padding: 9px 16px; min-height: 44px; }
+
+.bubble-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.chip-option {
+  font-size: 13px;
+  padding: 7px 12px;
+  min-height: 38px;
+  border-radius: var(--r-pill);
+}
+
 .ask-card { display: flex; flex-direction: column; }
 
 .ask-intro { text-align: center; padding: 1.5rem 1rem 1.25rem; }

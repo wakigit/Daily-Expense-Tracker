@@ -21,6 +21,15 @@ import * as St from '../src/lib/stats';
 import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../src/themes/scenes';
 import { THEMES, isKnownTheme, themeById, DEFAULT_THEME } from '../src/themes/themes';
 import { budgetStatus } from '../src/lib/status';
+import {
+  newExpenseId, parseAmount, parseDate, validateExpense, findDuplicate,
+  addExpense, deleteExpenseById, revert, undoLast, pushAction, sameExpense, ERR, LOG_LIMIT,
+} from '../src/lib/actions';
+import { toCents, fromCents, sumAmounts } from '../src/lib/money';
+import { today, curYm, money } from '../src/lib/format';
+import { validateIntent, buildContext, INTENT_ERR } from '../src/lib/intent';
+import { planFromIntent } from '../src/lib/assistant';
+import { requestIntent as requestIntentFromBackend } from '../src/lib/assistantClient';
 
 const cats = DEF_CATS;
 const catById = (id) => cats.find((c) => c.id === id);
@@ -220,6 +229,517 @@ logic('filterAndSort: empty result',
   filterAndSort(manyExpenses, 'nothinghere', 'date', catById), []);
 logic('filterAndSort: works without catById',
   filterAndSort(expenses, 'kopi', 'date', undefined), []);
+
+/* ── Shared expense actions (lib/actions.js) ───────────────────── */
+
+const AC_CATS = [{ id: 'food', label: 'Food' }, { id: 'shop', label: 'Shopping' }];
+const AC_TODAY = '2026-10-05';
+const acOpts = { cats: AC_CATS, today: AC_TODAY };
+const base = [
+  { id: 'a1', date: '2026-10-01', category: 'food', description: 'Chicken rice', amount: 4.5, notes: '' },
+  { id: 'a2', date: '2026-10-02', category: 'shop', description: 'Tee', amount: 29.9, notes: '' },
+];
+
+/* Ids must be unique even when two adds land in the same millisecond — the
+   old Date.now() scheme could not promise that, and an assistant filing a
+   receipt does exactly that. */
+const idsSameMs = Array.from({ length: 50 }, () => newExpenseId(1760000000000));
+logic('id: unique within one millisecond', new Set(idsSameMs).size, 50);
+logic('id: a string, so it never collides with a legacy numeric id',
+  typeof newExpenseId(1), 'string');
+
+/* ── Amounts ── */
+logic('amount: plain decimal', parseAmount('4.50').value, 4.5);
+logic('amount: number input', parseAmount(4.5).value, 4.5);
+logic('amount: strips S$ and commas', parseAmount('S$1,234.50').value, 1234.5);
+logic('amount: rounds to cents', parseAmount('4.567').value, 4.57);
+logic('amount: empty is "required", not "invalid"', parseAmount('').error.code, ERR.AMOUNT_REQUIRED);
+logic('amount: letters rejected', parseAmount('abc').error.code, ERR.AMOUNT_INVALID);
+logic('amount: two decimal points rejected', parseAmount('12.3.4').error.code, ERR.AMOUNT_INVALID);
+logic('amount: exponent rejected', parseAmount('1e5').error.code, ERR.AMOUNT_INVALID);
+logic('amount: zero rejected', parseAmount('0').error.code, ERR.AMOUNT_NOT_POSITIVE);
+logic('amount: negative rejected', parseAmount('-5').error.code, ERR.AMOUNT_NOT_POSITIVE);
+logic('amount: NaN rejected', parseAmount(NaN).error.code, ERR.AMOUNT_INVALID);
+logic('amount: Infinity rejected', parseAmount(Infinity).error.code, ERR.AMOUNT_INVALID);
+logic('amount: above the ceiling rejected', parseAmount('2000000').error.code, ERR.AMOUNT_TOO_LARGE);
+logic('amount: the error names the field', parseAmount('abc').error.field, 'amount');
+
+/* ── Dates and categories ── */
+logic('date: defaults to today when omitted', parseDate('', AC_TODAY).value, AC_TODAY);
+logic('date: 31 February rejected', parseDate('2026-02-31', AC_TODAY).error.code, ERR.DATE_INVALID);
+logic('date: wrong format rejected', parseDate('5/10/2026', AC_TODAY).error.code, ERR.DATE_INVALID);
+logic('date: a real date passes', parseDate('2026-02-28', AC_TODAY).value, '2026-02-28');
+logic('category: unknown is an error, not a silent default',
+  validateExpense({ description: 'x', amount: '1', category: 'nope' }, acOpts).error.code,
+  ERR.CATEGORY_UNKNOWN);
+logic('category: omitted falls back to the first',
+  validateExpense({ description: 'x', amount: '1' }, acOpts).value.category, 'food');
+logic('description: required', validateExpense({ amount: '1' }, acOpts).error.code, ERR.DESCRIPTION_REQUIRED);
+logic('description: whitespace only is still missing',
+  validateExpense({ description: '   ', amount: '1' }, acOpts).error.code, ERR.DESCRIPTION_REQUIRED);
+logic('description: inner whitespace collapses',
+  validateExpense({ description: 'chicken   rice', amount: '1' }, acOpts).value.description, 'chicken rice');
+logic('description: over the limit rejected',
+  validateExpense({ description: 'x'.repeat(200), amount: '1' }, acOpts).error.code, ERR.DESCRIPTION_TOO_LONG);
+
+/* ── Duplicates ── */
+const dupCandidate = { description: 'chicken RICE', amount: 4.5, date: '2026-10-01' };
+logic('duplicate: matches ignoring case and spacing', findDuplicate(base, dupCandidate)?.id, 'a1');
+logic('duplicate: a different day is not a duplicate',
+  findDuplicate(base, { ...dupCandidate, date: '2026-10-03' }), null);
+logic('duplicate: a different amount is not a duplicate',
+  findDuplicate(base, { ...dupCandidate, amount: 5 }), null);
+
+// The form allows repeats — two kopis in a day are real and you can see the list.
+const dupAllowed = addExpense(base, { description: 'Chicken rice', amount: '4.50', category: 'food', date: '2026-10-01' }, { ...acOpts });
+logic('duplicate: manual add is allowed', dupAllowed.ok, true);
+logic('duplicate: but it is reported as a warning', dupAllowed.warnings[0].code, ERR.DUPLICATE);
+logic('duplicate: warning points at the row it matched', dupAllowed.warnings[0].existingId, 'a1');
+
+// The assistant has to ask rather than quietly double-charge.
+const dupBlocked = addExpense(base, { description: 'Chicken rice', amount: '4.50', category: 'food', date: '2026-10-01' }, { ...acOpts, rejectDuplicate: true });
+logic('duplicate: assistant add is blocked', dupBlocked.ok, false);
+logic('duplicate: blocked with the duplicate code', dupBlocked.error.code, ERR.DUPLICATE);
+logic('duplicate: tells the caller which row already exists', dupBlocked.error.existingId, 'a1');
+
+/* ── Add ── */
+const added = addExpense(base, { description: 'Kopi', amount: 'S$1.40', category: 'food' }, { ...acOpts, id: 'new1', source: 'assistant' });
+logic('add: succeeds', added.ok, true);
+logic('add: leaves the input array alone', base.length, 2);
+logic('add: appends one row', added.expenses.length, 3);
+logic('add: normalises the amount', added.expenses[2].amount, 1.4);
+logic('add: dates it today when unsaid', added.expenses[2].date, AC_TODAY);
+logic('add: records a reversible action', [added.action.type, added.action.source, added.action.id],
+  ['add', 'assistant', 'new1']);
+logic('add: a bad amount stops the whole thing',
+  addExpense(base, { description: 'x', amount: 'abc' }, acOpts).ok, false);
+logic('add: a rejected add changes nothing',
+  addExpense(base, { description: 'x', amount: 'abc' }, acOpts).expenses, undefined);
+
+/* ── Delete by id ── */
+const deleted = deleteExpenseById(base, 'a1', { source: 'assistant' });
+logic('delete: succeeds by id', deleted.ok, true);
+logic('delete: removes exactly one row', deleted.expenses.length, 1);
+logic('delete: removes the right row', deleted.expenses[0].id, 'a2');
+logic('delete: leaves the input array alone', base.length, 2);
+logic('delete: remembers where it was', deleted.action.index, 0);
+logic('delete: unknown id is an error, not a no-op', deleteExpenseById(base, 'nope').error.code, ERR.NOT_FOUND);
+// Legacy rows have numeric ids; a model will hand back the string form.
+logic('delete: matches a numeric legacy id given as a string',
+  deleteExpenseById([{ id: 1760000000000, description: 'old', amount: 1, date: AC_TODAY, category: 'food' }], '1760000000000').ok,
+  true);
+
+/* ── Undo after add ── */
+const undoneAdd = revert(added.expenses, added.action);
+logic('undo add: succeeds', undoneAdd.ok, true);
+logic('undo add: returns the list to where it started', undoneAdd.expenses.length, 2);
+logic('undo add: removes the row it added',
+  undoneAdd.expenses.some((e) => e.id === 'new1'), false);
+logic('undo add: refuses when the row is already gone',
+  revert(base, added.action).error.code, ERR.ALREADY_REMOVED);
+
+/* ── Undo after delete ── */
+const undoneDel = revert(deleted.expenses, deleted.action);
+logic('undo delete: succeeds', undoneDel.ok, true);
+logic('undo delete: puts the row back', undoneDel.expenses.length, 2);
+// Position matters: appending would silently reorder the list on every undo.
+logic('undo delete: puts it back where it was', undoneDel.expenses[0].id, 'a1');
+logic('undo delete: refuses when the row is already there',
+  revert(base, deleted.action).error.code, ERR.ALREADY_RESTORED);
+logic('undo: nothing to undo is an error, not a crash', revert(base, null).error.code, ERR.NOTHING_TO_UNDO);
+
+/* ── Undo the last ASSISTANT action specifically ── */
+const mixedAdd = addExpense(base, { description: 'Bot row', amount: '2', category: 'food' }, { ...acOpts, id: 'bot1', source: 'assistant' });
+const mixedThenManual = addExpense(mixedAdd.expenses, { description: 'My row', amount: '3', category: 'food' }, { ...acOpts, id: 'me1', source: 'manual' });
+const log = [mixedAdd.action, mixedThenManual.action];
+
+const undoBot = undoLast(mixedThenManual.expenses, log, { source: 'assistant' });
+logic('undo assistant: succeeds past a later manual action', undoBot.ok, true);
+logic('undo assistant: removes the assistant row', undoBot.expenses.some((e) => e.id === 'bot1'), false);
+logic('undo assistant: leaves the manual row alone', undoBot.expenses.some((e) => e.id === 'me1'), true);
+logic('undo assistant: drops that entry from the log', undoBot.log.length, 1);
+logic('undo assistant: nothing of its own to undo',
+  undoLast(base, [mixedThenManual.action], { source: 'assistant' }).error.code, ERR.NOTHING_TO_UNDO);
+logic('undo last: with no source, takes the most recent',
+  undoLast(mixedThenManual.expenses, log).undone.id, 'me1');
+logic('undo last: an empty log is an error', undoLast(base, []).error.code, ERR.NOTHING_TO_UNDO);
+// A revert that cannot apply still drops its entry, or undo would retry it forever.
+logic('undo last: a stale entry is dropped even when it fails',
+  undoLast(base, [mixedAdd.action]).log.length, 0);
+
+/* ── The log is bounded ── */
+let bigLog = [];
+for (let i = 0; i < 120; i++) bigLog = pushAction(bigLog, { type: 'add', id: `x${i}`, source: 'manual' });
+logic('log: capped', bigLog.length, LOG_LIMIT);
+logic('log: keeps the newest', bigLog[bigLog.length - 1].id, 'x119');
+
+/* ── Foundation: the Singapore calendar day ────────────────────── */
+
+/* Singapore is UTC+8 with no DST, so for the eight hours after local midnight
+   the UTC date is still yesterday. toISOString().slice(0,10) — what today()
+   used to be — dated every one of those expenses to the wrong day. */
+const atUtc = (iso) => new Date(iso);
+
+logic('today: 00:30 in Singapore is already the new day',
+  today(atUtc('2026-10-05T16:30:00Z')), '2026-10-06');
+logic('today: and UTC still says yesterday then',
+  atUtc('2026-10-05T16:30:00Z').toISOString().slice(0, 10), '2026-10-05');
+logic('today: 03:00 Singapore, mid-window',
+  today(atUtc('2026-10-05T19:00:00Z')), '2026-10-06');
+logic('today: 07:59 Singapore, last minute of the window',
+  today(atUtc('2026-10-05T23:59:00Z')), '2026-10-06');
+logic('today: 08:00 Singapore, where UTC catches up',
+  today(atUtc('2026-10-06T00:00:00Z')), '2026-10-06');
+logic('today: midday agrees with UTC', today(atUtc('2026-10-06T04:00:00Z')), '2026-10-06');
+logic('today: rolls the month', today(atUtc('2026-10-31T17:00:00Z')), '2026-11-01');
+logic('today: rolls the year', today(atUtc('2026-12-31T17:00:00Z')), '2027-01-01');
+logic('curYm: follows the Singapore day across a year boundary',
+  curYm(atUtc('2026-12-31T17:00:00Z')), '2027-01');
+
+// An expense logged at 1am with no date given lands on the day it felt like.
+const lateNight = addExpense([], { description: 'Supper', amount: '6.50', category: 'food' },
+  { cats: AC_CATS, today: today(atUtc('2026-10-05T17:00:00Z')) });
+logic('add: a 1am expense is dated today in Singapore, not yesterday in UTC',
+  lateNight.expenses[0].date, '2026-10-06');
+
+/* The voice path dates expenses too: "yesterday" said at 1am must mean
+   yesterday in Singapore, not two days back in UTC. */
+// 2026-10-05T17:00Z is 01:00 on the 6th in Singapore, so "yesterday" is the
+// 5th. Computed from UTC it would have been the 4th — a day adrift.
+logic('voice: "yesterday" at 1am follows the Singapore day',
+  parseUtterance('spent 5 dollars on coffee yesterday', AC_CATS, atUtc('2026-10-05T17:00:00Z')).date,
+  '2026-10-05');
+logic('voice: and from midday, where UTC and Singapore agree on the day',
+  parseUtterance('spent 5 dollars on coffee yesterday', AC_CATS, atUtc('2026-10-06T04:00:00Z')).date,
+  '2026-10-05');
+
+/* ── Foundation: undo must not clobber a later edit ────────────── */
+
+/* The sequence that matters: the assistant adds a row, you correct it by hand,
+   then you undo the assistant. Removing the row would throw away your edit,
+   and it would do it silently — the row simply disappears. */
+const botAdd = addExpense(base, { description: 'Grab', amount: '12.00', category: 'shop' },
+  { ...acOpts, id: 'bot9', source: 'assistant' });
+const editedByHand = botAdd.expenses.map((e) =>
+  e.id === 'bot9' ? { ...e, amount: 18.5, description: 'Grab to airport' } : e);
+
+const refused = revert(editedByHand, botAdd.action);
+logic('undo after edit: refuses', refused.ok, false);
+logic('undo after edit: says why', refused.error.code, ERR.EXPENSE_MODIFIED);
+logic('undo after edit: the edited row is still there',
+  editedByHand.some((e) => e.id === 'bot9'), true);
+logic('undo after edit: reports both versions so a caller can explain',
+  [refused.error.original.amount, refused.error.current.amount], [12, 18.5]);
+
+// Untouched, it still undoes cleanly — the guard is not just refusing always.
+logic('undo without an edit: still works', revert(botAdd.expenses, botAdd.action).ok, true);
+// A note added by hand counts as an edit too.
+const notedByHand = botAdd.expenses.map((e) => (e.id === 'bot9' ? { ...e, notes: 'work trip' } : e));
+logic('undo after only a note was added: refuses',
+  revert(notedByHand, botAdd.action).error.code, ERR.EXPENSE_MODIFIED);
+logic('sameExpense: 4.50 and 4.5 are the same row',
+  sameExpense({ date: 'd', category: 'c', description: 'x', amount: 4.5, notes: '' },
+              { date: 'd', category: 'c', description: 'x', amount: 4.50, notes: '' }), true);
+logic('sameExpense: a changed amount is a different row',
+  sameExpense({ date: 'd', category: 'c', description: 'x', amount: 4.5 },
+              { date: 'd', category: 'c', description: 'x', amount: 4.6 }), false);
+
+// 4.50 and 4.5 are the same expense, not an edit.
+const reformatted = botAdd.expenses.map((e) => (e.id === 'bot9' ? { ...e, amount: 12.0 } : e));
+logic('undo: a cosmetically different amount is not an edit',
+  revert(reformatted, botAdd.action).ok, true);
+
+// undoLast surfaces the same refusal rather than pretending it worked.
+const editLog = [botAdd.action];
+const undoEdited = undoLast(editedByHand, editLog, { source: 'assistant' });
+logic('undoLast: reports the refusal', undoEdited.error.code, ERR.EXPENSE_MODIFIED);
+logic('undoLast: leaves the edited row alone', undoEdited.expenses, undefined);
+
+/* ── Foundation: money in integer cents ────────────────────────── */
+
+/* The claim "rounding to 2dp makes sums exact" is false; these are the cases
+   that disprove it, and the cases cents get right. */
+logic('float addition really is inexact (0.1 + 0.2)', 0.1 + 0.2 === 0.3, false);
+logic('cents: 0.1 + 0.2 sums to exactly 0.3',
+  sumAmounts([{ amount: 0.1 }, { amount: 0.2 }]), 0.3);
+logic('cents: 4.35 three times is exactly 13.05',
+  sumAmounts([{ amount: 4.35 }, { amount: 4.35 }, { amount: 4.35 }]), 13.05);
+logic('float version of the same sum is not 13.05',
+  [4.35, 4.35, 4.35].reduce((a, b) => a + b, 0) === 13.05, false);
+logic('cents: a hundred 0.07s sum to exactly 7',
+  sumAmounts(Array.from({ length: 100 }, () => ({ amount: 0.07 }))), 7);
+
+logic('toCents: 4.565 does not lose a cent', toCents(4.565), 457);
+logic('toCents: plain values', [toCents(4.5), toCents(0.07), toCents(1234.5)], [450, 7, 123450]);
+logic('toCents: non-numeric is zero, not NaN', toCents('abc'), 0);
+logic('fromCents: round trip', fromCents(toCents(19.99)), 19.99);
+
+// Stored rows are still decimals — nothing migrated, old data sums the same.
+logic('storage shape unchanged: amounts stay decimal',
+  addExpense([], { description: 'x', amount: '4.50', category: 'food' }, acOpts).expenses[0].amount,
+  4.5);
+
+// A breakdown must add back up to the total it is a breakdown of.
+const centsCases = [
+  { id: 'c1', date: '2026-10-01', category: 'food', description: 'a', amount: 0.1 },
+  { id: 'c2', date: '2026-10-01', category: 'food', description: 'b', amount: 0.2 },
+  { id: 'c3', date: '2026-10-02', category: 'shop', description: 'c', amount: 4.35 },
+  { id: 'c4', date: '2026-10-02', category: 'shop', description: 'd', amount: 4.35 },
+];
+logic('stats: total is exact', St.sum(centsCases), 9);
+logic('stats: per-category totals are exact',
+  St.byCategory(centsCases), { food: 0.3, shop: 8.7 });
+logic('stats: the breakdown adds back up to the total',
+  Object.values(St.byCategory(centsCases)).reduce((a, b) => a + b, 0) === St.sum(centsCases), true);
+logic('stats: per-day totals are exact', St.byDay(centsCases)['2026-10-01'], 0.3);
+
+/* ── Foundation: the assistant must name a category ────────────── */
+
+const noCat = { description: 'Taxi', amount: '12.00' };
+logic('assistant: an omitted category is refused',
+  addExpense(base, noCat, { ...acOpts, source: 'assistant' }).error.code, ERR.CATEGORY_REQUIRED);
+logic('assistant: the refusal lists what it could have chosen',
+  addExpense(base, noCat, { ...acOpts, source: 'assistant' }).error.known, ['food', 'shop']);
+logic('assistant: an unknown category is refused too',
+  addExpense(base, { ...noCat, category: 'taxi' }, { ...acOpts, source: 'assistant' }).error.code,
+  ERR.CATEGORY_UNKNOWN);
+logic('assistant: naming a real category works',
+  addExpense(base, { ...noCat, category: 'shop' }, { ...acOpts, source: 'assistant', id: 'z1' }).ok, true);
+logic('assistant: and files it where it said',
+  addExpense(base, { ...noCat, category: 'shop' }, { ...acOpts, source: 'assistant', id: 'z1' })
+    .expenses.at(-1).category, 'shop');
+
+// A reviewed decision can still go through without a category, because at that
+// point a person has seen it — that is the "visible review decision" path.
+logic('assistant: an explicit opt-out still allows the fallback',
+  addExpense(base, noCat, { ...acOpts, source: 'assistant', requireCategory: false }).ok, true);
+
+// The form is unaffected: its select always has a value, and omitting one
+// still falls back, exactly as before.
+logic('manual: an omitted category still falls back to the first',
+  addExpense(base, noCat, acOpts).expenses.at(-1).category, 'food');
+logic('manual: an unknown category is still refused',
+  addExpense(base, { ...noCat, category: 'nope' }, acOpts).error.code, ERR.CATEGORY_UNKNOWN);
+
+/* ── Assistant: typed intents ──────────────────────────────────── */
+
+const AI_CATS = [
+  { id: 'food', label: 'Food' },
+  { id: 'hire', label: 'Private hire' },
+];
+const AI_TODAY = '2026-10-15';
+const AI_ROWS = [
+  { id: 'r1', date: '2026-10-14', category: 'food', description: 'Chicken rice', amount: 4.5, notes: '' },
+  { id: 'r2', date: '2026-10-15', category: 'food', description: 'Kopi', amount: 1.4, notes: '' },
+  { id: 'r3', date: '2026-10-15', category: 'hire', description: 'Grab home', amount: 14.8, notes: '' },
+  { id: 'r4', date: '2026-09-02', category: 'food', description: 'Laksa', amount: 7.2, notes: '' },
+];
+const vi = (raw) => validateIntent(raw, { cats: AI_CATS });
+const plan = (intent, over = {}) =>
+  planFromIntent(intent, { expenses: AI_ROWS, cats: AI_CATS, today: AI_TODAY, actionLog: [], ...over });
+
+/* The model is never trusted: a figure it supplies is dropped, not used. */
+const sneaky = vi({ type: 'answer', query: { metric: 'total', period: 'month' }, total: 9999, say: 'Here' });
+logic('intent: a figure invented by the model is stripped', 'total' in sneaky.intent, false);
+logic('intent: unknown type refused', vi({ type: 'transfer_money' }).error.code, INTENT_ERR.UNKNOWN_TYPE);
+logic('intent: a non-object refused', vi('delete everything').error.code, INTENT_ERR.NOT_OBJECT);
+logic('context: the expense rows are never sent',
+  Object.keys(buildContext({ cats: AI_CATS, today: AI_TODAY, expenses: AI_ROWS })).includes('expenses'),
+  false);
+logic('context: only vocabulary and the date go out',
+  Object.keys(buildContext({ cats: AI_CATS, today: AI_TODAY, expenses: AI_ROWS })).sort(),
+  ['categories', 'expenseCount', 'hasData', 'today']);
+
+/* ── 1. answer ── */
+const ansOk = vi({ type: 'answer', query: { metric: 'total', period: 'month', category: null } });
+logic('answer/ok: validates', ansOk.ok, true);
+const ansPlan = plan(ansOk.intent);
+// 4.50 + 1.40 + 14.80 = 20.70, computed here from the rows, not by the model.
+logic('answer/ok: the figure is computed from the rows', ansPlan.text, 'You spent S$20.70 this month.');
+logic('answer/ok: it matches a direct sum', ansPlan.text.includes(money(St.sum(St.inRange(AI_ROWS, '2026-10-01', AI_TODAY)))), true);
+logic('answer/ok: scoped by category',
+  plan(vi({ type: 'answer', query: { metric: 'total', period: 'month', category: 'hire' } }).intent).text,
+  'You spent S$14.80 private hire this month.');
+logic('answer/ok: a period with no rows says so',
+  plan(vi({ type: 'answer', query: { metric: 'total', period: 'yesterday', category: 'hire' } }).intent).text,
+  "I don't have any expenses recorded for private hire yesterday yet.");
+
+// Ambiguous: the model names a metric or category that does not exist.
+logic('answer/ambiguous: unknown metric refused',
+  vi({ type: 'answer', query: { metric: 'vibes', period: 'month' } }).error.code, INTENT_ERR.UNKNOWN_METRIC);
+logic('answer/ambiguous: hallucinated category refused',
+  vi({ type: 'answer', query: { metric: 'total', period: 'month', category: 'groceries' } }).error.code,
+  INTENT_ERR.UNKNOWN_CATEGORY);
+logic('answer/ambiguous: the refusal lists the real categories',
+  vi({ type: 'answer', query: { metric: 'total', period: 'month', category: 'groceries' } }).error.known,
+  ['food', 'hire']);
+
+/* ── 2. propose_add ── */
+const addOk = vi({ type: 'propose_add', expense: { description: 'Nasi lemak', amount: '5.80', category: 'food' } });
+const addPlan = plan(addOk.intent);
+logic('add/ok: becomes a confirmation, not a change', addPlan.kind, 'confirm_add');
+logic('add/ok: it is explicit about needing confirmation', addPlan.needsConfirmation, true);
+logic('add/ok: the exact figures are shown first',
+  addPlan.summary, 'Nasi lemak · S$5.80 · Food · 15 Oct');
+logic('add/ok: planning does not touch the list', AI_ROWS.length, 4);
+// A repeat is surfaced on the card rather than silently filed.
+const addDup = plan(vi({ type: 'propose_add', expense: { description: 'Kopi', amount: '1.40', category: 'food', date: '2026-10-15' } }).intent);
+logic('add/ok: an existing match is flagged on the card', addDup.duplicate?.id, 'r2');
+
+// Ambiguous: no category named. The model must not pick one.
+const addNoCat = vi({ type: 'propose_add', expense: { description: 'Taxi', amount: '12.00' } });
+logic('add/ambiguous: validates as an intent', addNoCat.ok, true);
+logic('add/ambiguous: but the plan refuses to guess a category', plan(addNoCat.intent).kind, 'clarify');
+logic('add/ambiguous: and asks, naming the real options',
+  plan(addNoCat.intent).question, 'Which category should that go in? Food, Private hire');
+logic('add/ambiguous: a missing amount asks rather than inventing one',
+  plan(vi({ type: 'propose_add', expense: { description: 'Lunch', category: 'food' } }).intent).question,
+  'How much was it?');
+logic('add/ambiguous: an unreadable amount is not stored',
+  plan(vi({ type: 'propose_add', expense: { description: 'Lunch', amount: 'a few dollars', category: 'food' } }).intent).kind,
+  'clarify');
+
+/* ── 3. find_delete_candidates ── */
+const delOk = vi({ type: 'find_delete_candidates', filter: { description: 'grab' } });
+const delPlan = plan(delOk.intent);
+logic('delete/ok: one match still needs confirmation', delPlan.kind, 'confirm_delete');
+logic('delete/ok: never deletes on its own', delPlan.needsConfirmation, true);
+logic('delete/ok: resolves to a real id from the real rows', delPlan.candidates[0].id, 'r3');
+logic('delete/ok: shows what would go', delPlan.candidates[0].summary, 'Grab home · S$14.80 · Private hire · 15 Oct');
+logic('delete/ok: planning does not remove anything', AI_ROWS.length, 4);
+
+// Ambiguous: a filter matching several rows offers a choice instead of picking.
+const delMany = plan(vi({ type: 'find_delete_candidates', filter: { category: 'food' } }).intent);
+logic('delete/ambiguous: all matches are offered', delMany.candidates.length, 3);
+logic('delete/ambiguous: it asks which one', delMany.text, 'I found 3 that match. Which one?');
+logic('delete/ambiguous: an empty filter is refused outright',
+  vi({ type: 'find_delete_candidates', filter: {} }).error.code, INTENT_ERR.MISSING_FIELD);
+logic('delete/ambiguous: no match deletes nothing and says so',
+  plan(vi({ type: 'find_delete_candidates', filter: { description: 'yacht' } }).intent).kind, 'answer');
+// An id the model made up is not a deletion path at all — ids are resolved here.
+logic('delete: a model-supplied id is not part of the schema',
+  'id' in vi({ type: 'find_delete_candidates', filter: { description: 'grab' } }).intent.filter, false);
+
+/* ── 4. undo ── */
+const botAction = { type: 'add', source: 'assistant', id: 'bot7', expense: AI_ROWS[1] };
+logic('undo/ok: offered when the assistant has changed something',
+  plan(vi({ type: 'undo' }).intent, { actionLog: [botAction] }).kind, 'undo');
+logic('undo/ambiguous: nothing of its own to undo',
+  plan(vi({ type: 'undo' }).intent, { actionLog: [] }).kind, 'answer');
+logic('undo/ambiguous: says so plainly',
+  plan(vi({ type: 'undo' }).intent, { actionLog: [{ type: 'add', source: 'manual', id: 'x' }] }).text,
+  "I haven't changed anything yet, so there's nothing to undo.");
+logic('undo: a wider scope is refused', vi({ type: 'undo', scope: 'everything' }).error.code, INTENT_ERR.BAD_FIELD);
+
+/* ── 5. clarify ── */
+const clarOk = vi({ type: 'clarify', question: 'Which category?', options: ['Food', 'Private hire'] });
+logic('clarify/ok: validates', clarOk.ok, true);
+logic('clarify/ok: reaches the user as a question', plan(clarOk.intent).kind, 'clarify');
+logic('clarify/ok: options are carried through', plan(clarOk.intent).options, ['Food', 'Private hire']);
+logic('clarify/ambiguous: a clarify with no question is refused',
+  vi({ type: 'clarify', options: ['a'] }).error.code, INTENT_ERR.MISSING_FIELD);
+logic('clarify: option lists are capped',
+  vi({ type: 'clarify', question: 'q', options: Array.from({ length: 20 }, (_, i) => `o${i}`) }).intent.options.length, 6);
+
+/* ── The fallback stays usable when the model does not ─────────── */
+
+const failingFetch = async () => { throw new Error('ECONNREFUSED'); };
+logic('fallback: an unreachable backend is reported, not thrown',
+  (await requestIntentFromBackend('how much this month', { cats: AI_CATS, today: AI_TODAY, expenses: AI_ROWS, fetchImpl: failingFetch })).reason,
+  'unreachable');
+const notConfigured = async () => ({ ok: false, status: 503, json: async () => ({ error: 'provider_not_configured' }) });
+logic('fallback: an unconfigured provider is reported',
+  (await requestIntentFromBackend('x', { cats: AI_CATS, fetchImpl: notConfigured })).reason,
+  'provider_not_configured');
+const liar = async () => ({ ok: true, status: 200, json: async () => ({ intent: { type: 'answer', query: { metric: 'vibes' } } }) });
+logic('fallback: a malformed intent from the backend is rejected client-side',
+  (await requestIntentFromBackend('x', { cats: AI_CATS, fetchImpl: liar })).reason,
+  INTENT_ERR.UNKNOWN_METRIC);
+const good = async () => ({ ok: true, status: 200, json: async () => ({ intent: { type: 'answer', query: { metric: 'total', period: 'month' } } }) });
+logic('fallback: a valid intent comes through',
+  (await requestIntentFromBackend('x', { cats: AI_CATS, fetchImpl: good })).intent.query.metric, 'total');
+// And the offline matcher still answers on its own, with the same arithmetic.
+logic('fallback: lib/ask.js still answers without any backend',
+  answer('how much did I spend this month', { expenses: AI_ROWS, cats: AI_CATS, today: AI_TODAY }).text.includes('S$20.70'),
+  true);
+
+
+/* ── Regression: a question must never be silently narrowed ─────
+ *
+ * Found in a live request. With only Food defined, "how much did I spend on
+ * groceries and entertainment this month" came back as category: food. The
+ * figure would have been correct and the sentence would have read correctly,
+ * and it would have answered a question nobody asked.
+ */
+
+const ONE_CAT = [{ id: 'food', label: 'Food' }];
+const vi1 = (raw) => validateIntent(raw, { cats: ONE_CAT });
+const plan1 = (intent) => planFromIntent(intent, { expenses: AI_ROWS, cats: ONE_CAT, today: AI_TODAY });
+const askFor = (terms, category = null, cats = ONE_CAT) =>
+  validateIntent({ type: 'answer', query: { metric: 'total', period: 'month', category, category_terms: terms } }, { cats });
+
+// The exact live failure.
+const narrowed = askFor(['groceries', 'entertainment'], 'food');
+logic('narrowing: the intent still validates', narrowed.ok, true);
+logic('narrowing: both terms survive validation', narrowed.intent.query.categoryTerms, ['groceries', 'entertainment']);
+logic('narrowing: two categories are not answered, they are queried', plan1(narrowed.intent).kind, 'clarify');
+logic('narrowing: the question names what it saw',
+  plan1(narrowed.intent).question.includes('groceries, entertainment'), true);
+logic('narrowing: and offers the real categories', plan1(narrowed.intent).options, ['Food']);
+
+// Even when the mapping is dropped, two terms is still two questions.
+logic('narrowing: two terms with no mapping also clarifies',
+  plan1(askFor(['groceries', 'entertainment'], null).intent).kind, 'clarify');
+
+// One term that maps to nothing: answering across all categories would be a
+// different question, and answering with the only category a narrower one.
+const unmapped = askFor(['entertainment'], null);
+logic('narrowing: an unmappable term clarifies', plan1(unmapped.intent).kind, 'clarify');
+logic('narrowing: it quotes the term back', plan1(unmapped.intent).question.includes('"entertainment"'), true);
+
+// The legitimate paths must stay open.
+logic('narrowing: one term that maps is answered normally',
+  plan1(askFor(['food'], 'food').intent).kind, 'answer');
+logic('narrowing: no category mentioned is answered across everything',
+  plan1(askFor([], null).intent).kind, 'answer');
+logic('narrowing: and that answer is the real figure',
+  plan1(askFor([], null).intent).text, 'You spent S$20.70 this month.');
+// Two real categories named with two real categories defined: still one at a time.
+logic('narrowing: two terms clarify even when both exist',
+  planFromIntent(askFor(['food', 'private hire'], 'food', AI_CATS).intent,
+    { expenses: AI_ROWS, cats: AI_CATS, today: AI_TODAY }).kind,
+  'clarify');
+// This validator runs on the server AND again on the client, over its own
+// output. If it is not idempotent the guard quietly stops working.
+const firstPass = askFor(['groceries', 'entertainment'], null);
+const secondPass = validateIntent({ type: 'answer', query: firstPass.intent.query }, { cats: ONE_CAT });
+logic('narrowing: validating twice keeps the terms',
+  secondPass.intent.query.categoryTerms, ['groceries', 'entertainment']);
+logic('narrowing: and still clarifies after the second pass',
+  plan1(secondPass.intent).kind, 'clarify');
+
+/* Every answer states how it was read. The terms check is a mitigation — the
+   model could omit a term and this would see nothing wrong — so the
+   interpretation is put in front of the reader rather than assumed correct. */
+logic('interpretation: a category answer says which category',
+  plan1(askFor(['food'], 'food').intent).interpretation,
+  { category: 'Food', period: 'this month' });
+logic('interpretation: an all-category answer says so',
+  plan1(askFor([], null).intent).interpretation,
+  { category: 'All categories', period: 'this month' });
+logic('interpretation: the period is carried too',
+  planFromIntent(validateIntent({ type: 'answer', query: { metric: 'total', period: 'lastweek', category: null, category_terms: [] } }, { cats: ONE_CAT }).intent,
+    { expenses: AI_ROWS, cats: ONE_CAT, today: AI_TODAY }).interpretation.period,
+  'last week');
+logic('interpretation: present even when there is nothing to report',
+  planFromIntent(validateIntent({ type: 'answer', query: { metric: 'total', period: 'yesterday', category: 'food', category_terms: ['food'] } }, { cats: ONE_CAT }).intent,
+    { expenses: [], cats: ONE_CAT, today: AI_TODAY }).interpretation,
+  { category: 'Food', period: 'yesterday' });
+
+// Older intents without the field must not start clarifying.
+logic('narrowing: a missing category_terms field is not treated as trouble',
+  plan1(vi1({ type: 'answer', query: { metric: 'total', period: 'month', category: 'food' } }).intent).kind,
+  'answer');
 
 /* ── Budget status model (§2) ──────────────────────────────────── */
 

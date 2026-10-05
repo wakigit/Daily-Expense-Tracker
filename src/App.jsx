@@ -3,6 +3,12 @@ import { useAppData } from './hooks/useAppData';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
 import { answer } from './lib/ask';
+import {
+  addExpense, deleteExpenseById, validateExpense, revert, undoLast, pushAction,
+} from './lib/actions';
+import { sumAmounts, fromCents, toCents } from './lib/money';
+import { planFromIntent } from './lib/assistant';
+import { requestIntent } from './lib/assistantClient';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -64,8 +70,13 @@ export default function App() {
   // Conversation lives here rather than in the view so switching tabs and
   // coming back doesn't wipe the thread.
   const [chat, setChat] = useState([]);
-  // Holds the last deleted expense so the toast can put it back.
-  const [undoExp, setUndoExp] = useState(null);
+  // Every change to `expenses` is recorded here so it can be reversed. Session
+  // state on purpose: undo that outlived a reload would be a surprise.
+  const [actionLog, setActionLog] = useState([]);
+  // A proposal waiting on Confirm. Nothing in `expenses` moves until it is
+  // accepted, so the model can never change data on its own.
+  const [pending, setPending] = useState(null);
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => { setBudDraft(toDraft(budgets)); }, [budgets]);
 
@@ -87,7 +98,7 @@ export default function App() {
   // them, decide, and reach the button.
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => { setToast(null); setUndoExp(null); }, toast.kind ? 4600 : 1900);
+    const t = setTimeout(() => setToast(null), toast.kind ? 4600 : 1900);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -103,15 +114,12 @@ export default function App() {
     const dated = expenses.filter((e) => typeof e?.date === 'string');
     if (!dated.length) return [cur];
     const earliest = dated.map((e) => e.date.slice(0, 7)).sort()[0];
-    const [ey, em] = earliest.split('-').map(Number);
+    // Walk months as strings against the Singapore month, so the list does not
+    // gain or lose a month depending on the device's timezone.
     const list = [];
-    let d = new Date(ey, em - 1);
-    const now = new Date();
-    const end = new Date(now.getFullYear(), now.getMonth());
-    while (d <= end) {
-      list.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-      d = new Date(d.getFullYear(), d.getMonth() + 1);
-    }
+    const end = curYm();
+    let month = earliest;
+    while (month <= end) { list.push(month); month = shiftYm(month, 1); }
     return list.reverse();
   }, [expenses]);
 
@@ -126,7 +134,7 @@ export default function App() {
 
   const monthTotals = (m) => {
     const ex = expenses.filter((e) => e.date.startsWith(m));
-    return { spent: ex.reduce((s, e) => s + Number(e.amount), 0), count: ex.length };
+    return { spent: sumAmounts(ex), count: ex.length };
   };
 
   /* ── Derived: category drill-down ────────────────────────────── */
@@ -138,7 +146,7 @@ export default function App() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [catFilter, expenses]);
 
-  const catTotal = useMemo(() => catItems.reduce((s, e) => s + Number(e.amount), 0), [catItems]);
+  const catTotal = useMemo(() => sumAmounts(catItems), [catItems]);
 
   const catByMonth = useMemo(() => {
     const g = {};
@@ -156,18 +164,26 @@ export default function App() {
     [expenses, ym]
   );
 
-  const spending = useMemo(
+  /* Totals accumulate in integer cents and convert back once, so the
+     per-category figures always add up to the headline total exactly. Views
+     consume dollars, as they always have. */
+  const spendingCents = useMemo(
     () => cats.reduce((acc, c) => {
       acc[c.id] = monthExp
         .filter((e) => e.category === c.id)
-        .reduce((s, e) => s + Number(e.amount), 0);
+        .reduce((cents, e) => cents + toCents(e.amount), 0);
       return acc;
     }, {}),
     [cats, monthExp]
   );
 
-  const totalSpent = Object.values(spending).reduce((a, b) => a + b, 0);
-  const totalBudget = cats.reduce((s, c) => s + (budgets[c.id] || 0), 0);
+  const spending = useMemo(
+    () => Object.fromEntries(Object.entries(spendingCents).map(([id, c]) => [id, fromCents(c)])),
+    [spendingCents]
+  );
+
+  const totalSpent = fromCents(Object.values(spendingCents).reduce((a, b) => a + b, 0));
+  const totalBudget = fromCents(cats.reduce((cents, c) => cents + toCents(budgets[c.id] || 0), 0));
   const remaining = totalBudget - totalSpent;
   const budPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
   const isOver = totalSpent > totalBudget && totalBudget > 0;
@@ -191,20 +207,28 @@ export default function App() {
     setErrors((e) => ({ ...e, [key]: false }));
   };
 
+  /**
+   * Add and edit both run through lib/actions.js, so the rules the assistant
+   * will be held to are the same ones the form is held to.
+   *
+   * Duplicates are allowed here and only here: someone looking at their own
+   * list who types the same kopi twice meant it. The assistant passes
+   * rejectDuplicate so it has to ask instead of quietly double-charging.
+   */
   const submit = () => {
-    const errs = {};
-    if (!form.description.trim()) errs.description = true;
-    if (!form.amount) errs.amount = true;
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setErrors({});
-
-    const entry = { ...form, amount: parseFloat(form.amount) };
     if (editId !== null) {
-      setExpenses((p) => p.map((e) => (e.id === editId ? { ...entry, id: editId } : e)));
+      const checked = validateExpense(form, { cats, today: today() });
+      if (!checked.ok) { setErrors({ [checked.error.field ?? 'description']: true }); return; }
+      setErrors({});
+      setExpenses((p) => p.map((e) => (e.id === editId ? { ...checked.value, id: editId } : e)));
       setEditId(null);
       setToast({ message: 'Changes saved' });
     } else {
-      setExpenses((p) => [...p, { ...entry, id: Date.now() }]);
+      const res = addExpense(expenses, form, { cats, today: today(), source: 'manual' });
+      if (!res.ok) { setErrors({ [res.error.field ?? 'description']: true }); return; }
+      setErrors({});
+      setExpenses(res.expenses);
+      setActionLog((l) => pushAction(l, res.action));
       setToast({ message: 'Added' });
     }
     setForm(blankForm(cats[0]?.id));
@@ -242,28 +266,110 @@ export default function App() {
 
   /** Delete now, offer Undo. No confirm dialog — see TxnList for why. */
   const deleteExp = (exp) => {
-    setExpenses((p) => p.filter((e) => e.id !== exp.id));
-    setUndoExp(exp);
-    setToast({ message: 'Entry deleted', kind: 'undo' });
+    const res = deleteExpenseById(expenses, exp.id, { source: 'manual' });
+    if (!res.ok) return;
+    setExpenses(res.expenses);
+    setActionLog((l) => pushAction(l, res.action));
+    // The toast carries the id of the action it undoes, so tapping Undo
+    // reverses that delete even if something else happened in the 4.6s since.
+    setToast({ message: 'Entry deleted', kind: 'undo', actionId: res.action.id });
   };
 
   /**
    * Answer a question about the data. Every number comes from lib/stats.js —
    * the arithmetic is exact and matches what the rest of the app shows.
    */
-  const askQuestion = (text) => {
+  const say = (msg) => setChat((c) => [...c, msg]);
+
+  /** The offline path: regex intent matching over lib/stats.js. Always works. */
+  const answerLocally = (text, note) => {
     const reply = answer(text, { expenses, cats });
-    setChat((c) => [
-      ...c,
-      { from: 'me', text },
-      { from: 'bot', text: reply.text, detail: reply.detail },
-    ]);
+    say({ from: 'bot', text: reply.text, detail: note ?? reply.detail });
+  };
+
+  /**
+   * Ask the model what the sentence means, then do the work here.
+   *
+   * The model returns an intent and nothing else — no figures, no ids. Every
+   * number comes from lib/stats.js over the real rows, and anything that would
+   * change data is parked in `pending` until confirmed.
+   *
+   * If the backend is unreachable or has no provider configured, this falls
+   * through to the offline matcher and the user still gets an answer.
+   */
+  const askQuestion = async (text) => {
+    say({ from: 'me', text });
+    setPending(null);
+    setAsking(true);
+
+    const res = await requestIntent(text, { cats, today: today(), expenses });
+    if (!res.ok) {
+      answerLocally(text, res.reason === 'provider_not_configured'
+        ? 'Answered offline — no model is connected.'
+        : 'Answered offline — the assistant is unreachable.');
+      setAsking(false);
+      return;
+    }
+
+    const plan = planFromIntent(res.intent, { expenses, cats, today: today(), actionLog });
+    setAsking(false);
+
+    if (plan.kind === 'answer') {
+      return say({ from: 'bot', text: plan.text, detail: plan.detail, interpretation: plan.interpretation });
+    }
+    if (plan.kind === 'clarify') return say({ from: 'bot', text: plan.question, options: plan.options });
+
+    if (plan.kind === 'undo') {
+      const undone = undoLast(expenses, actionLog, { source: 'assistant' });
+      setActionLog(undone.log ?? actionLog);
+      if (!undone.ok) {
+        return say({ from: 'bot', text: undone.error.code === 'expense_modified'
+          ? "I can't undo that — you've edited it since, and I'd be throwing your change away."
+          : "There's nothing of mine left to undo." });
+      }
+      setExpenses(undone.expenses);
+      return say({ from: 'bot', text: 'Undone.' });
+    }
+
+    // confirm_add / confirm_delete — shown, not applied.
+    say({ from: 'bot', text: plan.text, plan });
+    setPending(plan);
+  };
+
+  /** Applies a parked proposal. The only path from a model to the data. */
+  const confirmPending = (choiceId) => {
+    if (!pending) return;
+
+    if (pending.kind === 'confirm_add') {
+      const res = addExpense(expenses, pending.expense, {
+        cats, today: today(), source: 'assistant', requireCategory: true,
+      });
+      setPending(null);
+      if (!res.ok) return say({ from: 'bot', text: "That didn't go through — nothing was added." });
+      setExpenses(res.expenses);
+      setActionLog((l) => pushAction(l, res.action));
+      return say({ from: 'bot', text: 'Added.' });
+    }
+
+    const res = deleteExpenseById(expenses, choiceId, { source: 'assistant' });
+    setPending(null);
+    if (!res.ok) return say({ from: 'bot', text: "I couldn't find that one any more — nothing was deleted." });
+    setExpenses(res.expenses);
+    setActionLog((l) => pushAction(l, res.action));
+    say({ from: 'bot', text: 'Deleted.' });
+  };
+
+  const cancelPending = () => {
+    setPending(null);
+    say({ from: 'bot', text: 'Left as it was.' });
   };
 
   const undoDelete = () => {
-    if (!undoExp) return;
-    setExpenses((p) => [...p, undoExp]);
-    setUndoExp(null);
+    const action = actionLog.find((a) => a.id === toast?.actionId);
+    const res = revert(expenses, action);
+    setActionLog((l) => l.filter((a) => a !== action));
+    if (!res.ok) { setToast({ message: 'Nothing to undo' }); return; }
+    setExpenses(res.expenses);
     setToast({ message: 'Restored' });
   };
 
@@ -407,7 +513,15 @@ export default function App() {
         )}
 
         {tab === 'ask' && (
-          <AskView messages={chat} onSend={askQuestion} hasData={expenses.length > 0} />
+          <AskView
+            messages={chat}
+            onSend={askQuestion}
+            hasData={expenses.length > 0}
+            busy={asking}
+            pending={pending}
+            onConfirm={confirmPending}
+            onCancel={cancelPending}
+          />
         )}
 
         {tab === 'settings' && (

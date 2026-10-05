@@ -2,7 +2,7 @@ import Donut from '../components/Donut';
 import TxnList from '../components/TxnList';
 import SearchBar from '../components/SearchBar';
 import StatusChip from '../components/StatusChip';
-import { money, ymLabel } from '../lib/format';
+import { money, ymLabel, today } from '../lib/format';
 import { budgetStatus } from '../lib/status';
 import { useCountUp } from '../hooks/useCountUp';
 import { useTxnFilter } from '../hooks/useTxnFilter';
@@ -14,11 +14,12 @@ const SEARCH_THRESHOLD = 6;
  * Days still to come in the selected month. A past month has none, so the
  * per-day pace line is suppressed rather than dividing by zero.
  */
-function daysLeftIn(ym) {
-  const [y, m] = ym.split('-').map(Number);
-  const now = new Date();
-  if (y !== now.getFullYear() || m !== now.getMonth() + 1) return 0;
-  return new Date(y, m, 0).getDate() - now.getDate() + 1;
+function daysLeftIn(ym, now = new Date()) {
+  const ymd = today(now);
+  if (ym !== ymd.slice(0, 7)) return 0;
+  const [y, m, d] = ymd.split('-').map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return daysInMonth - d + 1;
 }
 
 export default function HomeView({

@@ -9,6 +9,8 @@
  * silent.
  */
 
+import { sumAmounts, totalsBy } from './money';
+
 const asDate = (ymd) => new Date(`${ymd}T00:00:00`);
 const toYmd = (d) => {
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -43,38 +45,17 @@ export function inRange(expenses, start, end) {
   });
 }
 
-export const sum = (expenses) => expenses.reduce((s, e) => s + amount(e), 0);
+/** Exact: accumulates in integer cents, converts back once. See lib/money.js. */
+export const sum = (expenses) => sumAmounts(expenses, amount);
+
+/* Each of these groups and totals in integer cents, so a breakdown always adds
+   back up to the grand total instead of drifting a cent apart from it. */
 
 /** Totals keyed by day, e.g. { '2026-09-28': 12.5 }. */
-export function byDay(expenses) {
-  const out = {};
-  for (const e of expenses) out[e.date] = (out[e.date] || 0) + amount(e);
-  return out;
-}
-
-export function byWeek(expenses) {
-  const out = {};
-  for (const e of expenses) {
-    const k = weekStart(e.date);
-    out[k] = (out[k] || 0) + amount(e);
-  }
-  return out;
-}
-
-export function byMonth(expenses) {
-  const out = {};
-  for (const e of expenses) {
-    const k = monthOf(e.date);
-    out[k] = (out[k] || 0) + amount(e);
-  }
-  return out;
-}
-
-export function byCategory(expenses) {
-  const out = {};
-  for (const e of expenses) out[e.category] = (out[e.category] || 0) + amount(e);
-  return out;
-}
+export const byDay = (expenses) => totalsBy(expenses, (e) => e.date, amount);
+export const byWeek = (expenses) => totalsBy(expenses, (e) => weekStart(e.date), amount);
+export const byMonth = (expenses) => totalsBy(expenses, (e) => monthOf(e.date), amount);
+export const byCategory = (expenses) => totalsBy(expenses, (e) => e.category, amount);
 
 /** The single biggest entry in a totals map, or null when empty. */
 function peak(totals) {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { filterAndSort } from '../lib/search';
+import { sumAmounts } from '../lib/money';
 
 /**
  * Search + sort state for a list of expenses.
@@ -17,7 +18,7 @@ export function useTxnFilter(items, catById) {
   );
 
   const total = useMemo(
-    () => filtered.reduce((s, e) => s + Number(e.amount), 0),
+    () => sumAmounts(filtered),
     [filtered]
   );
 
