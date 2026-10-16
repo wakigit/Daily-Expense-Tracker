@@ -43,11 +43,11 @@ seconds-to-log and for answering questions in sentences.
 - **A backend exists**: `backend/`, Node ≥20.12, `node:http`, one dependency
   (`openai`). **Three routes**: `GET /health`, `POST /assistant/intent`,
   `POST /assistant/receipt`. Model `gpt-4.1-mini`.
-- Tests: **518** frontend checks (`npm run smoke`) of which **517 pass** — see
-  §8 — and **27** backend checks (`npm test`). No framework: a bespoke
-  SSR-render-and-assert script. **No CI.**
-- Deployed: GitHub Pages from `gh-pages`, with **no backend deployed** — see
-  §3.1, which is the single most important thing to understand about what a
+- Tests: **518** frontend checks (`npm run smoke`), **all passing**, and **27**
+  backend checks (`npm test`). No framework: a bespoke SSR-render-and-assert
+  script. **No CI.**
+- Deployed: GitHub Pages from `gh-pages`, **current as of 2026-10-17** and
+  verified in a browser, with **no backend deployed** — see §3.1, which is the single most important thing to understand about what a
   stranger can actually reach.
 
 ## 3. What is built and working
@@ -205,16 +205,18 @@ hand-computed sum.
 
 ## 8. Known weak points
 
-- **One smoke check fails right now**, and it is a test bug, not a product bug:
-  `scripts/smoke.jsx:1196` computes the expected "yesterday" from UTC while the
-  parser correctly uses the Asia/Singapore day, so the suite reads 517/518
-  between 00:00 and 08:00 SGT. Unfixed. A suite expected to fail by one hides
-  the next real failure.
-- **The deployed build is 31 commits behind** the working branch and predates
-  the Assistant and the receipt scanner entirely. `main` is 23 commits behind
-  and still holds the pre-Vite single-file build.
-- **Nothing is committed.** 21 modified tracked files and 10 untracked files
-  sit on `wallpaper-redesign`, ~2,180 insertions of it application code.
+- **The work is committed but never pushed.** Six commits sit on
+  `wallpaper-redesign` locally; `origin` has no copy, so a disk failure still
+  loses all of it. `main` is 23 commits behind, still holds the pre-Vite
+  single-file build, and was deliberately left alone.
+- **Three cosmetic defects seen on screen** and deferred to Stage 2: the
+  "avg S$x" label on the 7-day chart overlaps a tall first bar; an Assistant
+  answer reads "S$115.30 food this month" with the preposition missing; and a
+  deprecated `apple-mobile-web-app-capable` meta tag logs a console warning on
+  every load.
+- **A documented bug that would not reproduce:** native number spinners in the
+  Amount field. Chrome 153 renders none and `appearance: none` is in effect.
+  Unverified on Safari and real iOS — do not "fix" it before checking there.
 - **Nothing has been tested on real iPhone hardware.** Every "works on phone"
   claim means a 390×844 viewport in desktop Chrome.
 - `src/App.jsx` owns most state and every handler. It is the natural place for
@@ -248,14 +250,12 @@ explanations · charts inside answers · a qualified arithmetic budget forecast 
 an opt-in roaster · product-string rename · deploy and rehearse. The current
 plan and its cut line are in `docs/ROADMAP.md`.
 
-0. **The decision I actually have open: host a backend, or not.** Option A
-   converges the two paths in §3.1 but adds an internet-facing service holding a
-   paid API key, needs HTTPS, a frontend rebuild, and rate limiting that does not
-   exist yet. Option B costs nothing and makes the public URL a tracker demo with
-   one honest sentence in the presentation. My lean is **B for the hackathon, A
-   afterwards**. Argue the other side if it is the better call — but do not
-   propose CORS, a bundled token, or an obscure URL as the abuse control; none of
-   them stops a direct caller.
+0. **Backend hosting: settled as Option B for this build** — no hosted
+   backend, the public URL is Path A, the presentation is Path B from my
+   laptop. Do not re-litigate it for the hackathon. If you think it is wrong
+   for *after* the hackathon, say so in a line — but do not propose CORS, a
+   bundled token, or an obscure URL as the abuse control; none of them stops a
+   direct caller, and a provider spend *alert* is not a cap.
 1. **Challenge the ordering next.** My position is that Stage 0 (commit, fix the
    failing smoke expectation, redeploy) outranks every feature, because the live
    URL today has no Assistant — and that source-row explanations beat comparisons

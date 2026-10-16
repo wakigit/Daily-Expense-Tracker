@@ -62,10 +62,9 @@ URL on a machine that happens to have the backend running: an HTTPS page calling
 `http://127.0.0.1` is a mixed-content request and that combination has never
 been tested.
 
-> `npm run smoke` currently reports **517/518**. One check expects "yesterday"
-> computed from UTC while the parser correctly uses the Asia/Singapore day, so it
-> fails between 00:00 and 08:00 SGT. The product is right; the test's
-> expectation is wrong, and it is not yet fixed.
+All 518 checks pass, at any time of day — one of them used to derive
+"yesterday" from UTC while the parser correctly uses the Asia/Singapore day,
+and it now uses a fixed clock.
 
 ---
 
@@ -123,12 +122,13 @@ so a 1 a.m. supper is dated today, not yesterday.
 
 ### Three caveats worth reading before you judge it
 
-**The deployed build is 31 commits behind the working branch** and predates both
-the Assistant and the receipt scanner. Fixing that is the first item on the
-roadmap.
+**The deployed build is current** as of 2026-10-17 and was checked in a
+browser. It runs with no backend, which is deliberate: see the table above for
+exactly what that does and does not include.
 
-**Whether to host a backend for the public URL is undecided** — no provider has
-been chosen and nothing is deployed. See the decision in
+**No backend is hosted, by choice.** The public URL is the tracker with the
+offline assistant; live model answers and receipt scanning run from a laptop
+with the local server. The reasoning, and what hosting one would require, is in
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Nothing has been tested on real iPhone hardware.** Every "works on phone"

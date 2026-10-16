@@ -1,28 +1,34 @@
-# Where I left off — 2026-10-17
+# Where I left off — 2026-10-17 (after Stage 0)
 
-Open this first. It is the state of the working tree, what is finished, what is
-half-done, and what to say to pick the thread back up.
+Open this first. It is the state of the repository, what is finished, what is
+deliberately not done, and what to pick up next.
 
-**Branch:** `wallpaper-redesign` · **Nothing is committed.** Everything below is
-uncommitted working-tree changes: 21 modified tracked files and 10 untracked
-files — roughly 2,180 insertions of application code, plus the documentation.
+**Branch:** `wallpaper-redesign` · **Everything is committed.** Stage 0 landed
+the tree as six commits and redeployed the live site.
 
-**Verification, re-run 2026-10-17:**
+| | |
+|---|---|
+| Commits | `0b4c8db` assistant fix · `144adbe` wallpaper + laptop · `fc3e83e` receipt scanning · `2ad4329` browser regressions · `2d9f376` deterministic test · `717d6f2` docs |
+| Deployed | `gh-pages` = `29fc463`, built from `717d6f2`, verified in a browser |
+| **Not pushed** | `wallpaper-redesign` is **local only.** `origin` has no copy of any of it — the one remaining way to lose this work |
+| `main` | Untouched at `74b00e6`, still 23 commits behind. The decision was deferred, not taken |
+| Hosting | **Option B.** No backend hosted; the public URL is Path A |
+
+**Verification, after Stage 0:**
 
 | | |
 |---|---|
 | `npm run build` | clean |
-| `npm run smoke` | **517/518** — one failure, in the test, not the product; see below |
+| `npm run smoke` | **518/518** — no accepted failure, at any hour |
 | `cd backend && npm test` | 27/27 |
+| `git diff --check` | clean |
 
-> **The one smoke failure.** `scripts/smoke.jsx:1196` computes the expected
-> "yesterday" from UTC (`new Date()` → `toISOString()`), while `parseUtterance`
-> correctly resolves it on the **Asia/Singapore** day. Between 00:00 and 08:00
-> SGT the two disagree by a day and the check fails — it was run at 01:24 SGT.
-> **The product is right and the test's expectation is wrong. It is not fixed,
-> and no code was changed to fix it** — the session that found it was docs-only.
-> Fix it before Stage 3 adds metrics; a suite expected to fail by one is a suite
-> that hides the next real failure.
+> **The time-dependent check is fixed.** `scripts/smoke.jsx` used to derive the
+> expected "yesterday" from UTC while `parseUtterance` correctly resolves it on
+> the Asia/Singapore day, so the suite failed between 00:00 and 08:00 SGT. It
+> now injects the fixed clock the parser already accepts and asserts a literal
+> date. **The parser was not touched — it was right.** Verified identical under
+> `TZ=UTC`, `Asia/Singapore`, `America/Los_Angeles` and `Pacific/Kiritimati`.
 
 ---
 
@@ -153,42 +159,64 @@ section references in it. **Still no application code changed.**
 
 ---
 
+## Stage 0 — done 2026-10-17
+
+Committed in six commits (not two: the tree held six units of work — two logic
+bug fixes that predate both features, the two features, the test fix, and the
+docs). Each commit was checked to reproduce the working tree exactly and was
+run on its own. The live site was rebuilt and verified in a browser.
+
+**Verified on the live public URL (Path A):** assets load and match the local
+build byte-for-byte; all five tabs navigate; expense entry works; the Assistant
+answers **from the offline matcher and says so** — *"Answered offline — the
+assistant is unreachable"*; receipt scanning reports *"Scanning is unavailable
+— the assistant is offline."*; no horizontal scroll at 390px; the 390-wide
+scene composition is used; no uncaught exceptions.
+
+**Verified locally with the backend running (Path B):** add, edit, delete and
+undo — including undo of a row added in the same session, which is the exact
+bug `2ad4329` fixes; voice with permission denied shows *"Microphone permission
+denied"* and writes nothing; a receipt scan filled the form with **19.90, the
+total after service charge and GST — not the 16.60 subtotal** — and wrote **no
+row** until Save was pressed; the model-backed Assistant answered
+*"S$115.30 · 11 entries · Read as: Food · this month"*, matching a hand count.
+
+**Seen at both viewports, all three wallpapers, strained and over-budget:**
+laptop shows the left rail with per-view grids (Home 760+380 ledger, Overview
+and Settings two equal columns, Add and Ask one measure); phone is a single
+column with the bottom bar; decay flips 1→2 with the budget on every tab; no
+horizontal scroll anywhere; one console warning in total.
+
+### What Stage 0 deliberately did not do
+
+- **`main` was not merged, rebased or pushed.** It sits at `74b00e6`. The
+  roadmap's cut condition allows exactly this — deploy from the working branch,
+  leave `main` alone — so the decision is still yours.
+- **`wallpaper-redesign` was not pushed.** Nobody asked, and pushing a branch
+  to a public repo is not a thing to do unasked. It does mean `origin` holds no
+  copy of the work.
+- **No backend was hosted** (Option B), no API key left the machine, and no
+  application code was changed beyond the one test fix Stage 0 called for.
+
 ## The next thing to do
 
-**Stage 0 in `docs/ROADMAP.md`, and it is not a feature.** The uncommitted tree
+**Stage 1 (sample demo data) or Stage 2 (UI polish)** — see `docs/ROADMAP.md`.
+Stage 2 depends on nothing and is the shorter of the two. Before either: The uncommitted tree
 is the largest risk on the board and the deployed build has no Assistant at all.
 Specifically:
 
-1. **Commit this work** — 31 files spanning two separate pieces of work (the
-   wallpaper/laptop redesign, and the receipt scanner), plus the documentation
-   pass. **Worth two commits, not one.**
-2. **Fix the Singapore "yesterday" smoke expectation** at
-   `scripts/smoke.jsx:1196` — the expectation, never the parser — so the suite is
-   a clean 518/518 gate rather than "517 with a known exception". This is the one
-   piece of **code** work in Stage 0 and it is still **not done**; both
-   documentation passes were docs-only. Do it before Stages 3–5 add metrics that
-   the suite is the only check on.
-3. **Decide what to do about `main`**, which is 23 commits behind: merge, or
-   abandon it as a branch and point the deploy at the working branch. Do not
-   merge or force-push without deciding deliberately.
-4. **Rebuild and redeploy `gh-pages`**, which is 31 commits behind and predates
-   the Assistant and the receipt scanner, and then load the live URL in a
-   browser rather than localhost — checking it against **Path A**, where a
-   falling-back Assistant and an unavailable receipt button are both correct.
+1. **Decide whether to push `wallpaper-redesign`.** Until you do, one disk
+   failure loses six commits of work.
+2. **Decide what to do about `main`**, 23 commits behind: merge it, or declare
+   it abandoned and let the deploy keep pointing at the working branch.
 
 Then Stage 1 (sample demo data) and Stage 2 (the three UI issues), which are
 cheap and are what a judge meets first.
 
 ### Judgement calls still open
 
-0. **Host a backend for the public URL, or not** — the live decision, and the one
-   that changes Stage 0 and Stage 8 acceptance. Option A converges the two paths
-   but needs HTTPS, the key in a host secret store, a frontend rebuild, and
-   **rate limiting that does not exist in the code yet**; CORS does not stop a
-   direct caller, so an unprotected hosted endpoint is a free OCR service billed
-   to you. Option B costs nothing and makes the public URL a tracker demo plus
-   one honest sentence in the presentation. Recommendation on file: **B for the
-   hackathon, A afterwards.** Not decided, no provider chosen, nothing deployed.
+0. **Push `wallpaper-redesign`, or not.** Six commits exist only on this
+   machine.
 1. **The 7-day chart shows on phone too.** It was asked for as a laptop detail.
    It is one component in one place in the DOM; to make it laptop-only, wrap it
    in `.col--main` with `display:none` below 1024px. Say the word.
@@ -196,9 +224,24 @@ cheap and are what a judge meets first.
    in the roadmap and cutting it costs the demo nothing.
 3. **Whether to rename the product strings** (Stage 7) before judging, or leave
    "Expense Tracker" in the UI.
-4. **The actual deadline.** Unconfirmed, so the roadmap now gives sizes and a
+4. **The actual deadline.** Unconfirmed, so the roadmap gives sizes and a
    dependency order rather than a day-by-day plan. Reconfirm it before trusting
    any schedule.
+5. **The number-spinner bug could not be reproduced.** Chrome 153 renders no
+   spin arrows and `appearance: none` is in effect. Check Safari and real iOS
+   before writing a `::-webkit-inner-spin-button` rule that may do nothing.
+
+### Found on screen during Stage 0, parked for Stage 2
+
+- The **"avg S$x" label on the 7-day chart overlaps the first bar** when that
+  bar is tall — both viewports, all three themes.
+- An Assistant answer reads **"You spent S$115.30 food this month"** — the
+  preposition before the category label is missing.
+- `<meta name="apple-mobile-web-app-capable">` is **deprecated** and logs a
+  console warning on every load. It is the only console output the app makes.
+- The **Assistant screen is very sparse at laptop width** — a small card at the
+  top and roughly 650px of empty wallpaper below it. Already Stage 2; it is
+  more obvious on a laptop than the note suggested.
 
 ## Still not started
 

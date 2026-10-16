@@ -16,7 +16,7 @@ The server-side half of **TallyAI** — the half that holds the API key.
 | Accounts, sessions, database | **Not built.** See `docs/PRD.md` §6 — a solo-built account system holding real financial data, shipped in a week, would be irresponsible |
 | Statement (CSV / PDF) ingestion endpoints | **Removed from the product**, not deferred. See `docs/PRD.md` §7 |
 | Roaster endpoint | **Not built.** Planned as Stage 6 in `docs/ROADMAP.md`, which is also that roadmap's cut line |
-| A hosted deployment of this server | **Not built, and undecided.** No provider has been chosen and nothing is deployed. See *If this is ever hosted* below, and the backend hosting decision in `docs/ROADMAP.md` |
+| A hosted deployment of this server | **Not built, and deliberately not planned for this build.** Option B is in force as of 2026-10-17: the public site runs with no backend, and live AI and OCR come from this server running locally. See *If this is ever hosted* below |
 
 The frontend works without this server **with one exception**: the Assistant
 falls back to a local matcher, and receipt scanning has no fallback at all. The
@@ -186,8 +186,9 @@ don't, until there is a reason to.
 
 ## If this is ever hosted
 
-**It is not hosted, and whether to host it is undecided.** No provider has been
-chosen and nothing has been deployed. `docs/ROADMAP.md` carries the decision with
+**It is not hosted. For this build that is a decision, not an omission**
+(Option B, taken in Stage 0 on 2026-10-17); whether to host it later is still
+open. No provider has been chosen and nothing has been deployed. `docs/ROADMAP.md` carries the decision with
 both options; this section is the part that belongs with the server.
 
 Binding this to a public address changes the threat model completely. Today the
@@ -200,8 +201,17 @@ here. Hosted, the following are **prerequisites, not follow-ups**:
 3. **`ALLOWED_ORIGINS` narrowed to the Pages origin**, `HOST=0.0.0.0`, and the
    platform's injected `PORT`. All three are already configurable; no code
    change needed.
-4. **A hard spend cap at the provider.** Set this before the first request. It is
-   the only control that still holds when something else here has a bug.
+4. **A hard spend cap at the provider.** Set this before the first request. It
+   is the only control that still holds when something else here has a bug —
+   but be precise about what it is:
+   - It has to be **turned on deliberately**. The default state of an account
+     is not a useful cap.
+   - **A spend alert is not a limit.** A notification threshold emails you and
+     lets the spending carry on. Only the hard limit refuses requests.
+   - **Even a hard limit can overshoot a little.** Usage is metered and
+     enforced with a lag, so the final bill can land slightly above the figure
+     you set. Treat it as "stops runaway spend", not "cannot exceed this by a
+     cent", and pick a number whose overshoot you can afford.
 5. **Per-IP rate limits on both routes and a global ceiling**, with
    `/assistant/receipt` limited far more tightly than `/assistant/intent` — it
    forwards an image to a paid vision model and is the expensive one.

@@ -1,7 +1,8 @@
 # TallyAI — hackathon roadmap
 
 **Rewritten:** 2026-10-17, against the code and the git state, not against the
-previous draft. **Read with:** `docs/PRD.md` for what each stage means and
+previous draft. **Stage 0 was executed and verified on 2026-10-17** — see its
+entry below; everything from Stage 1 on is still unstarted. **Read with:** `docs/PRD.md` for what each stage means and
 `docs/RESUME.md` for the state of the working tree.
 
 > **This document replaces the 2026-10-05 roadmap.** That plan was built around
@@ -19,14 +20,15 @@ Verified 2026-10-17 by running the suites and reading the source.
 | | |
 |---|---|
 | **Built and verified** | Tracker core · three live wallpapers with three-step decay in two compositions each · laptop layout · typed AI Assistant (5 intents, 9 metrics, 7 periods) with offline fallback · voice entry into the Add form · receipt scanning · backend with server-side key handling |
-| **Checks** | 518 frontend (`npm run smoke`), **517 passing** — see R1 below · 27 backend (`cd backend && npm test`) · `npm run build` clean |
-| **Not committed** | 21 modified tracked files and 10 untracked files on `wallpaper-redesign`. ~2,180 of those insertions are application code; the rest is documentation |
-| **Not deployed** | `gh-pages` is **31 commits behind** the working branch and predates the Assistant entirely. `main` is **23 commits behind** and still holds the pre-Vite single-file build |
+| **Checks** | 518 frontend (`npm run smoke`) **all passing** since Stage 0 · 27 backend (`cd backend && npm test`) · `npm run build` clean |
+| **Committed** | Stage 0 landed the tree as six commits on `wallpaper-redesign` (`311f94f`…`717d6f2`, re-cut as `0b4c8db`…`717d6f2`). The branch is **local only — not pushed** |
+| **Deployed** | `gh-pages` was rebuilt and pushed in Stage 0 (`29fc463`) and the live URL serves the current build. `main` is still **23 commits behind** and untouched by decision |
 
 The base is further along than a typical hackathon week-one project. **The
-remaining work is depth on what exists, not new pillars.** The honest risk is
-no longer "can this be built" — it is "is the thing judges open the current
-build", which is Stage 0 and Stage 8.
+remaining work is depth on what exists, not new pillars.** The risk that used
+to top this list — "is the thing judges open the current build" — was closed by
+Stage 0 on 2026-10-17. What remains is depth, and keeping the deploy current
+(Stage 8).
 
 ---
 
@@ -139,7 +141,20 @@ instead.
 
 ---
 
-### Stage 0 — Clear the decks · 1–3h · MUST · DO FIRST
+### Stage 0 — Clear the decks · 1–3h · MUST · ✅ DONE 2026-10-17
+
+> **Outcome.** Six commits on `wallpaper-redesign` (`0b4c8db` assistant fix ·
+> `144adbe` wallpaper/laptop · `fc3e83e` receipt scanning · `2ad4329` browser
+> regressions · `2d9f376` deterministic test · `717d6f2` docs). The smoke suite
+> is **518/518** and no longer time-dependent. `gh-pages` was rebuilt and
+> pushed as `29fc463`; the live URL serves it and was checked in a browser
+> against Path A. **`main` was left untouched** — see the decision below.
+> **Option B** is in force: no backend is hosted.
+>
+> Two things this stage did **not** do, both deliberate: the
+> `wallpaper-redesign` branch was **not pushed** (nobody asked, and it is the
+> only off-machine backup question still open), and `main` was neither merged
+> nor rewritten.
 
 **User benefit.** Indirect but the largest on this list: right now a judge who
 opens the public URL sees a build with **no Assistant and no receipt scanner**.
@@ -193,6 +208,25 @@ everything after it. If the `main` question cannot be settled, deploy from
 matters today. The hosting decision may stay open; Path A shipping correctly
 must not wait on it.
 
+**What actually happened (2026-10-17).**
+
+- The smoke expectation was fixed first, by injecting the fixed clock
+  `parseUtterance` already accepts and writing the expected Singapore date out
+  in full. The parser was not touched. Verified identical under `TZ=UTC`,
+  `Asia/Singapore`, `America/Los_Angeles` and `Pacific/Kiritimati`.
+- The tree became **six** commits rather than two, because it held more than
+  two units of work: two logic bug fixes that predate both features, the two
+  features, the test fix, and the documentation pass. Each commit was checked
+  to reproduce the working tree exactly, and each was run on its own.
+- **The `main` decision was deferred, not taken.** `main` is untouched and the
+  deploy points at the working branch, which the cut condition above already
+  allows. It remains open.
+- Live URL verified in a browser: tracker, navigation and expense entry work;
+  the Assistant answers from the offline matcher and **says so**
+  ("Answered offline — the assistant is unreachable"); receipt scanning reports
+  *"Scanning is unavailable — the assistant is offline."* All three are Path A
+  behaving correctly.
+
 ---
 
 ### Stage 1 — Sample demo data · 3–5h · MUST
@@ -236,10 +270,17 @@ all currently real and all verified in the source on 2026-10-17.
 
 **Frontend work.**
 
-1. **Native number spinners in the Amount field.** `src/styles/app.css` sets
-   `-webkit-appearance: none` on inputs, which does *not* remove the spin
-   buttons — that needs `::-webkit-inner-spin-button` and the unprefixed
-   `appearance: none`. Affects `AddView.jsx:84` and `SettingsView.jsx:106`.
+1. **Native number spinners in the Amount field — NOT REPRODUCED; verify
+   before "fixing".** Checked in Chrome 153 on 2026-10-17 at 390px and at
+   laptop width: the computed `appearance` and `-webkit-appearance` on the
+   input both resolve to `none`, no `::-webkit-inner-spin-button` rule exists
+   or is needed, and **no spin arrows render** in either screenshot. Modern
+   Chrome suppresses the spinner from `appearance: none` on the input alone.
+   The original report may predate that, or may have come from Safari, which
+   is untested here. **Confirm on Safari and on real iOS first** — adding a
+   `::-webkit-inner-spin-button` rule for a spinner that is not there is a
+   change with no observable effect. Fields are `AddView.jsx:84` and
+   `SettingsView.jsx:106`.
 2. **Long category names truncate on the phone donut legend.** `.legend-row`
    already ellipsises deliberately; the fix is to give the name more room at
    phone width rather than to remove the truncation, since removing it makes the
@@ -252,10 +293,23 @@ all currently real and all verified in the source on 2026-10-17.
 While in here: **budget inputs display raw floats** (e.g.
 `166.66666666666666`). Same file, same pass, and it looks like a bug on screen.
 
+Three more cosmetic defects, all seen on screen during the Stage 0 browser
+pass (2026-10-17) and none of them blocking:
+
+4. **The "avg S$x" label on the 7-day chart overlaps the first bar** when the
+   first bar is tall. Visible on both phone and laptop, on every theme.
+5. **An Assistant answer reads "You spent S$115.30 food this month"** — the
+   preposition is missing before the category label. One template string.
+6. **`<meta name="apple-mobile-web-app-capable">` is deprecated**, and Chrome
+   logs a console warning on every load asking for `mobile-web-app-capable`.
+   It is the only console output the app produces.
+
 **Backend work.** None.
 
 **Acceptance.**
-- No spinner arrows in either number field, in Chrome and in Safari.
+- The spinner question is **settled by observation on Safari and real iOS**,
+  not assumed: either arrows are shown (then fix them) or they are not (then
+  delete the claim from the docs rather than writing a no-op rule).
 - A 20-character category name is readable in the phone donut legend at 390px.
 - The Assistant screen before any question offers at least three example
   questions, each of which **actually resolves** — no example that maps to an
@@ -584,8 +638,8 @@ Each will feel tempting at 1 a.m.
 
 | # | Risk | Likelihood | Impact | Mitigation | Trigger to act |
 |---|---|---|---|---|---|
-| R1 | **A smoke check fails and gets normalised.** `scripts/smoke.jsx:1196` computes the expected "yesterday" from UTC, while the parser correctly uses the Asia/Singapore day — so the suite reads 517/518 between 00:00 and 08:00 SGT. **The product is right and the test is wrong**, but a suite that is "expected to fail by one" is a suite that hides the next real failure | **Happening now** | Medium | Fix the test's expectation to the Singapore day; it is a test bug, not a product bug, and it is **not yet fixed** | Already triggered — fix before Stage 3 adds metrics |
-| R2 | **Deployed build is stale at judging.** It is 31 commits behind *today* and has no Assistant | **High** | **Fatal to the demo** | Stage 0 and Stage 8; deploy early, deploy again on the last day; verify the live URL in a browser, never localhost | Already triggered |
+| ~~R1~~ | **CLOSED 2026-10-17 (Stage 0).** Was: a smoke check fails and gets normalised. `scripts/smoke.jsx:1196` computes the expected "yesterday" from UTC, while the parser correctly uses the Asia/Singapore day — so the suite reads 517/518 between 00:00 and 08:00 SGT. **The product is right and the test is wrong**, but a suite that is "expected to fail by one" is a suite that hides the next real failure | Closed | — | Fixed in `2d9f376` by injecting a fixed clock and a literal Singapore date; the parser was untouched. The suite is 518/518 and verified under four timezones | Reopen if any new date-sensitive check derives its expectation from `new Date()` |
+| R2 | **Deployed build is stale at judging.** Was 31 commits behind with no Assistant; **rebuilt and verified in a browser on 2026-10-17 (`29fc463`)** | Low until the next change lands | **Fatal to the demo** | Stage 0 closed the gap; Stage 8 must redeploy from the final tip. Verify the live URL in a browser, never localhost | Any commit after `717d6f2` that is not followed by a redeploy |
 | R2b | **A judge opens the public URL expecting what the presentation showed.** Path A has no model-backed Assistant and no receipt scanning; the presentation is Path B | **High** if unaddressed | Medium — reads as a broken feature rather than a scoped one | One honest sentence in the presentation naming the path; the receipt button already says scanning is unavailable rather than failing silently; or resolve it by hosting a backend (Option A) | Any demo claim that does not distinguish the two paths |
 | R3 | **Nothing has been tested on real iPhone hardware.** Every "works on phone" claim means a 390×844 viewport in desktop Chrome | High | Medium–High | Open the live URL on a real phone during Stage 8; treat the phone layout as **unverified on device** until then | Any phone claim made to a judge before this is done |
 | R4 | **Assistant reports a wrong figure** | Low | Fatal to the story | Every figure from `stats.js` over real rows; model output discarded; new metrics asserted against hand-computed values. `money(undefined)` renders `S$0.00` rather than throwing — this has already produced a confident wrong figure once | Any metric added without a hand-computed test |
@@ -596,7 +650,7 @@ Each will feel tempting at 1 a.m.
 | R8 | **Roaster says something cruel** | Low | High reputational | Bounded tiers capped at 2; de-escalation when over budget; prohibited-topic list; post-filter for invented financial claims; off by default | Any output touching identity, family, academics, poverty, body or health |
 | R9 | **Scope creep past the cut line**, or a removed feature creeping back | **High** | High | The cut line in *The order*; per-stage cut conditions; the stop-list above; §7 of the PRD is a cut list, not a backlog | Starting anything new in the last fifth of the available time, or any work on import/mascot/accounts |
 | R10 | **Model cost runs away** | Low | Medium | Small payloads; roast cached per transaction id; no call on interim speech or per keystroke; `max_output_tokens` capped; offline fallback always available | Any per-keystroke or per-render model call |
-| R11 | **The uncommitted tree is lost.** 21 modified tracked files plus 10 untracked files, none of it committed | Medium | **Severe, irreversible** | Stage 0, first thing, two commits | Already triggered |
+| R11 | **The work is lost.** The tree is now committed (six commits), but the branch is **local only — never pushed**, so a disk failure still loses all of it | Low–Medium | **Severe, irreversible** | Stage 0 committed it. The remaining exposure is the un-pushed branch; pushing `wallpaper-redesign` to `origin` closes it and is an open decision | Any hardware trouble, or more work landing on top of an un-pushed branch |
 
 Note what has **left** this register. The old plan's R2 (import corrupts the
 ledger) and R4 (account isolation leaks another user's data) are gone because
@@ -607,8 +661,11 @@ the strongest argument for the cuts in `docs/PRD.md` §7.
 
 ## The backend hosting decision
 
-**Undecided. No provider has been chosen and nothing has been deployed.** Both
-options below are viable; they trade money and attack surface against what the
+**Option B is in force as of Stage 0 (2026-10-17), for this build.** No
+provider has been chosen and nothing is hosted; the public URL is Path A and
+the presentation runs Path B from the laptop. This is a decision for the
+hackathon, not a permanent one — Option A stays available and the requirements
+below are what it would cost. Both options remain viable; they trade money and attack surface against what the
 public URL can show. The requirements and risks are stated so the choice can be
 made on facts rather than on optimism.
 
@@ -641,7 +698,16 @@ controls, it is a free OCR service with the owner's billing attached.
 The minimum control set, in order of how much they actually protect:
 
 - **A hard spend cap at the provider** (OpenAI usage limits). The only control
-  that still holds when my own rate limiter has a bug. Set this first.
+  that still holds when my own rate limiter has a bug. Set this first — and
+  understand precisely what it is:
+  - It must be **explicitly configured**. An account does not come with a
+    useful one, and the default state is not a cap.
+  - **A spend alert / notification threshold is not a limit.** It emails you
+    and then lets the spending continue. Only the hard limit refuses requests.
+  - **Even the hard limit can overshoot slightly.** Usage is metered and
+    enforced with a lag, so billing can land a little above the number you
+    set. Treat it as "stops runaway spend", not "cannot exceed this figure by
+    one cent", and set it low enough that the overshoot is affordable.
 - **Per-IP rate limits on both routes, plus a global ceiling**, with the receipt
   route limited far more tightly than the intent route — it is the expensive one.
   **Neither exists today; this is new code.**
@@ -685,6 +751,7 @@ questions with the same arithmetic, so the gap is narrower than it sounds.
 ### Recommendation
 
 **Option B for the hackathon; Option A afterwards, if the project continues.**
+*(Adopted for this build in Stage 0.)*
 
 The reasoning: Option A's cost is not the hosting, it is that it adds a new
 internet-facing surface holding a paid API key, with rate limiting that has to

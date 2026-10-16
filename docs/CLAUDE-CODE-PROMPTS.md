@@ -1,6 +1,8 @@
 # Claude Code prompt index — TallyAI
 
 **Rewritten:** 2026-10-17. **Stage numbers match `docs/ROADMAP.md`.**
+**Stage 0 is done** — its row is kept as the record of what was asked and
+verified. The next prompt to write is Stage 1 or Stage 2.
 
 > **This file is now an index, not a batch of prompts.** The previous version
 > held eight pre-written prompts, including ones for a cat mascot state machine
@@ -45,16 +47,14 @@ cd backend && npm test passes
 
 Plus, per stage, whatever the roadmap entry's **acceptance** section names.
 
-> **Known failure, as of 2026-10-17:** the smoke suite reads **517/518**, not
-> 518/518. `scripts/smoke.jsx:1196` computes the expected "yesterday" from UTC
-> while the parser correctly uses the Asia/Singapore day, so the check fails
-> between 00:00 and 08:00 SGT. **The product is right; the test's expectation is
-> wrong, and it is not yet fixed** — the passes that found it were docs-only.
+> **The gate is 518/518, with no accepted failure.** It used to be 517/518 for
+> eight hours of every day: one check derived the expected "yesterday" from UTC
+> while the parser correctly uses the Asia/Singapore day. Stage 0 fixed the
+> expectation (fixed clock, literal date; the parser was right and untouched).
 >
-> **Fixing it is code work inside Stage 0**, before the suite is used as a
-> release gate. Until then, any gate that says "smoke passes" must name this one
-> check — a suite expected to fail by one is a suite in which the next real
-> failure is invisible. From Stage 1 onward the gate is **518/518**.
+> **No prompt may accept a failing check from here on.** If the suite is not
+> 518/518 — or whatever the number becomes as stages add tests — something is
+> actually broken.
 
 ---
 
@@ -85,7 +85,7 @@ condition — is in `docs/ROADMAP.md`.
 
 | Stage | Prompt must cover | Extra rules to restate |
 |---|---|---|
-| **0 · Clear the decks** | Commit the working tree as **two** commits (the wallpaper/laptop redesign, and the receipt scanner). **Fix the Singapore "yesterday" expectation at `scripts/smoke.jsx:1196`** — the expectation, never the parser — so the suite is a clean 518/518 gate. Present options for `main`, 23 commits behind, **with a recommendation and no merge or force-push without approval**. Rebuild and redeploy `gh-pages`. Record the backend hosting decision even if the answer is "not yet". No feature work. | Gate must report what was **loaded in a browser at the live URL** versus checked locally, and must check the live URL against **Path A specifically**: tracker works, Assistant falls back, receipt button says scanning is unavailable. All three are correct behaviour, not bugs. Under Option A the frontend must be **rebuilt** with `VITE_ASSISTANT_URL` — a backend deployed after the build changes nothing. |
+| **0 · Clear the decks** ✅ *done 2026-10-17* | Commit the working tree as **two** commits (the wallpaper/laptop redesign, and the receipt scanner). **Fix the Singapore "yesterday" expectation at `scripts/smoke.jsx:1196`** — the expectation, never the parser — so the suite is a clean 518/518 gate. Present options for `main`, 23 commits behind, **with a recommendation and no merge or force-push without approval**. Rebuild and redeploy `gh-pages`. Record the backend hosting decision even if the answer is "not yet". No feature work. | Gate must report what was **loaded in a browser at the live URL** versus checked locally, and must check the live URL against **Path A specifically**: tracker works, Assistant falls back, receipt button says scanning is unavailable. All three are correct behaviour, not bugs. Under Option A the frontend must be **rebuilt** with `VITE_ASSISTANT_URL` — a backend deployed after the build changes nothing. |
 | **1 · Sample demo data** | A seeded dataset plus load **and clear** controls in Settings. Must make the donut, the 7-day chart, a *run down* wallpaper and an over-budget chip all legible in one pass. Obviously sample data. Never overwrites existing rows silently. | State plainly that this is **sample financial data generated for the demo** — no real statement, card or account. Do not add anything that presents accounts or login as existing. |
 | **2 · UI polish** | The three known issues: native number spinners (`::-webkit-inner-spin-button` plus unprefixed `appearance`, in `AddView.jsx` and `SettingsView.jsx`), phone donut legend truncation, and the sparse Assistant empty state. Plus budget inputs showing raw floats. | Example questions on the Assistant screen must be asserted against the **real metric list**, so one cannot drift into an unsupported query and error in front of a judge. Phone verification rule. |
 | **3 · Comparisons and source rows** | **Source rows first** — the plan from `src/lib/assistant.js` carries the ids it summed, surfaced in the Ask thread. Then a comparison metric: two windows and a delta. Explicitly **do not** add follow-up context, the `essential` flag, or multi-category questions. | New-metric rule. Model-contract rule. Must also say what the **offline fallback** does with the new shapes — the deployed build runs in that mode. Report what the live API actually returned. |

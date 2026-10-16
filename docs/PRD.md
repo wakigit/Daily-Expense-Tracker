@@ -3,7 +3,8 @@
 **Owner:** Wei Kai (@wakii___)
 **Status:** Active. Rewritten 2026-10-16 against the code; re-verified and
 corrected 2026-10-17 against the code and the git state, including the two demo
-paths in §9.1.
+paths in §9.1. **Stage 0 was executed and verified the same day**, so the
+deployment and test figures below are current rather than aspirational.
 **Repository:** `Daily-Expense-Tracker` (directory, git remote and deployed URL
 still carry the old name; see *Naming*)
 
@@ -242,12 +243,12 @@ summarised:**
 ### 4.8 Tests — BUILT
 
 - **518 frontend checks** (`npm run smoke`): SSR render assertions plus pure
-  logic, run in Node with no browser and no framework. **517 pass.** One check
-  fails, and it is a defect in the test rather than in the product:
-  `scripts/smoke.jsx:1196` computes the expected "yesterday" from UTC while
-  `parseUtterance` correctly uses the Asia/Singapore day, so the check fails
-  between 00:00 and 08:00 SGT. **Unfixed as of 2026-10-17.** A suite that is
-  expected to fail by one is a suite that hides the next real failure.
+  logic, run in Node with no browser and no framework. **All 518 pass.** The
+  one check that used to fail for eight hours of every day — it derived the
+  expected "yesterday" from UTC while `parseUtterance` correctly uses the
+  Asia/Singapore day — was fixed in Stage 0 by injecting a fixed clock and a
+  literal date. The parser was not changed, because the parser was right.
+  Verified identical under four timezones.
 - **27 backend checks** (`cd backend && npm test`): mocked, no key and no
   network needed. All pass.
 - `npm run build` is clean.
@@ -490,16 +491,21 @@ rather than throwing. That has happened once. Every new metric therefore gets a
 test asserting against a hand-computed sum.
 
 **Deployment.** GitHub Pages, `gh-pages` branch, at
-`https://wakigit.github.io/Daily-Expense-Tracker/`. **The live build is 31
-commits behind the working branch** and predates the assistant and the receipt
-scanner, so it runs in offline-fallback mode. `main` is **23 commits behind**
-and still holds the pre-Vite single-file build. Fixing this is Stage 0 and it
-matters more than usual, because judges may open the public URL themselves.
+`https://wakigit.github.io/Daily-Expense-Tracker/`. **The live build is
+current as of 2026-10-17** (`29fc463`, built from `717d6f2`) and was verified
+in a browser: assets load, all five tabs navigate, expense entry works, the
+Assistant answers from its offline matcher and says so, and receipt scanning
+reports that it is unavailable. It still runs in offline-fallback mode, which
+is Path A and intended under Option B — **not** a stale build.
 
-**Nothing described as BUILT above is committed.** The work sits as uncommitted
-changes across 21 tracked files, plus 10 untracked files, on
-`wallpaper-redesign` — roughly 2,180 insertions of application code, and more
-again in documentation. Committing it is the first half of Stage 0.
+`main` is **23 commits behind** and still holds the pre-Vite single-file
+build. It was deliberately left untouched in Stage 0; what to do with it is
+still open. The deploy points at the working branch instead.
+
+**Everything described as BUILT above is committed** as of Stage 0, as six
+commits on `wallpaper-redesign` (`0b4c8db` … `717d6f2`). **The branch has not
+been pushed**, so `origin` still has no copy of any of it — the only remaining
+exposure from what used to be an uncommitted tree.
 
 ### 9.1 Two demo paths — what the public URL can and cannot do
 
@@ -564,11 +570,14 @@ has.
 - No error boundary; a render error blanks the screen.
 - `storage.js` swallows write failures silently, so a full quota loses data with
   no signal.
-- **Native number spinners appear in the Amount field** (Stage 2).
-  `src/styles/app.css` sets `-webkit-appearance: none` on inputs, which does not
-  remove the spin buttons — that needs `::-webkit-inner-spin-button` and the
-  unprefixed `appearance`, neither of which is present. Affects
-  `src/views/AddView.jsx:84` and `src/views/SettingsView.jsx:106`.
+- **Native number spinners in the Amount field — could not be reproduced**
+  (Stage 2). Checked in Chrome 153 on 2026-10-17: computed `appearance` and
+  `-webkit-appearance` on the input both resolve to `none` and no spin arrows
+  render at either width. Modern Chrome suppresses them without a
+  `::-webkit-inner-spin-button` rule. **Unverified on Safari and on real
+  iOS**, which is where the original report may have come from. Confirm there
+  before changing anything. Fields: `src/views/AddView.jsx:84`,
+  `src/views/SettingsView.jsx:106`.
 - **Long category names truncate on the phone donut legend** (Stage 2).
   `.legend-row` ellipsises deliberately — the fix is more room at phone width,
   not removing the truncation, which would make the name and the amount read as
@@ -577,10 +586,19 @@ has.
   empty state in `src/views/AskView.jsx` is a single sentence, with no example
   questions to tap.
 - Budget inputs display raw floats (e.g. `166.66666666666666`) with no rounding.
-- **One smoke check fails for a time-of-day reason** — see §4.8. The suite reads
-  517/518 between 00:00 and 08:00 SGT, and the failure is in the test.
+- The "avg S$x" label on the 7-day chart **overlaps the first bar** when that
+  bar is tall — seen on both viewports and all three themes (Stage 2).
+- An Assistant answer reads **"You spent S$115.30 food this month"**, missing
+  the preposition before the category label (Stage 2).
+- `<meta name="apple-mobile-web-app-capable">` is deprecated and logs a console
+  warning on every load; it is the only console output the app produces.
+- **Fixed in Stage 0:** the time-dependent smoke check. The suite is 518/518.
 - **Nothing has been tested on real iPhone hardware.** Every "works on phone"
-  claim in this document means a 390×844 viewport in desktop Chrome.
+  claim here means a 390×844 viewport in desktop Chrome — including Stage 0's
+  verification, which drove Chrome 153 at exactly 390×844 over the DevTools
+  protocol with real layout and real input events. That is a real browser at
+  the right size. It is still not a phone: no touch, no iOS Safari, no notch,
+  no on-screen keyboard.
 
 ## 11. Open questions
 
@@ -588,8 +606,10 @@ has.
    been reconfirmed**. No plan here assumes a particular countdown;
    `docs/ROADMAP.md` gives sizes and a dependency order instead. Pre-existing
    code is permitted (confirmed 2026-10-02).
-2. **Whether to host a backend for the public URL — the open decision.** Today
-   none is deployed and no provider has been chosen, so the public URL is Path A
+2. **Whether to host a backend for the public URL.** **Settled for this build
+   in Stage 0: Option B — no hosted backend.** The question stays open for
+   anything after the hackathon. No provider has been chosen and nothing is
+   deployed, so the public URL is Path A
    (§9.1): the tracker, the wallpapers, both layouts, manual and voice entry,
    and the Assistant's offline fallback. The model-backed Assistant and receipt
    scanning are Path B only. Hosting one would converge the two paths and
