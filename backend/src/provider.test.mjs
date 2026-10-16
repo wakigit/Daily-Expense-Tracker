@@ -7,8 +7,12 @@
  */
 
 import assert from 'node:assert/strict';
-import { buildSchema, isConfigured, MODEL, DEFAULT_MODEL, requestIntent, verifyModel, ProviderNotConfigured } from './provider.js';
+import {
+  buildSchema, buildReceiptSchema, RECEIPT_PROMPT, isConfigured, MODEL, DEFAULT_MODEL,
+  requestIntent, requestReceipt, verifyModel, ProviderNotConfigured,
+} from './provider.js';
 import { validateIntent } from '../../src/lib/intent.js';
+import { validateReceipt } from '../../src/lib/receipt.js';
 
 const checks = [];
 const check = (name, fn) => {
@@ -96,6 +100,73 @@ check('schema output: a clarify validates', () => {
   assert.equal(r.ok, true);
 });
 
+/* ── The receipt schema plays by the same strict rules. ── */
+
+const receiptSchema = buildReceiptSchema(CATS);
+
+check('receipt schema: every object forbids extra properties', () => {
+  everyObject(receiptSchema, (o) => assert.equal(o.additionalProperties, false));
+});
+
+check('receipt schema: every object property is required', () => {
+  everyObject(receiptSchema, (o) => {
+    const props = Object.keys(o.properties ?? {});
+    assert.deepEqual([...(o.required ?? [])].sort(), props.sort());
+  });
+});
+
+check('receipt schema: the category enum is the caller’s ids plus null', () => {
+  assert.deepEqual(receiptSchema.properties.category.enum, ['food', 'hire', null]);
+});
+
+check('receipt schema: with no categories, only null is offered', () => {
+  assert.deepEqual(buildReceiptSchema([]).properties.category.enum, [null]);
+});
+
+check('receipt schema: the total is a string, so "4.50" survives intact', () => {
+  assert.ok(receiptSchema.properties.amount.type.includes('string'));
+  assert.ok(receiptSchema.properties.amount.type.includes('null'));
+});
+
+check('receipt schema: every field but isReceipt may be null', () => {
+  for (const key of ['description', 'amount', 'currency', 'date', 'category']) {
+    assert.ok(receiptSchema.properties[key].type.includes('null'), `${key} cannot be null`);
+  }
+  assert.equal(receiptSchema.properties.isReceipt.type, 'boolean');
+});
+
+/* The prompt is load-bearing: these three instructions are the difference
+   between a usable scan and a confidently wrong one. */
+check('receipt prompt: names the total, not the subtotal', () => {
+  assert.match(RECEIPT_PROMPT, /subtotal/i);
+  assert.match(RECEIPT_PROMPT, /FINAL TOTAL PAID/);
+});
+check('receipt prompt: forbids inventing a category', () => {
+  assert.match(RECEIPT_PROMPT, /[Nn]ever invent one/);
+});
+check('receipt prompt: prefers null over a guess', () => {
+  assert.match(RECEIPT_PROMPT, /null/);
+});
+
+check('receipt output: a clean scan survives the shared validator', () => {
+  const r = validateReceipt({
+    isReceipt: true, description: 'Toast Box', amount: '14.90',
+    currency: 'SGD', date: '2026-10-15', category: 'food',
+  }, { cats, today: '2026-10-16' });
+  assert.equal(r.ok, true);
+  assert.equal(r.draft.amount, '14.90');
+  assert.deepEqual(r.draft.missing, []);
+});
+
+check('receipt output: an all-null scan is a draft of nothing, not an error', () => {
+  const r = validateReceipt({
+    isReceipt: true, description: null, amount: null,
+    currency: null, date: null, category: null,
+  }, { cats, today: '2026-10-16' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.draft.missing, ['description', 'amount', 'category', 'date']);
+});
+
 /* ── No key: refuse, do not crash, do not leak. ── */
 check('model id is configurable and defaults sensibly', () => {
   assert.equal(typeof MODEL, 'string');
@@ -107,6 +178,10 @@ if (!process.env.OPENAI_API_KEY) {
   check('no key: isConfigured reports false', () => assert.equal(isConfigured(), false));
   await checkAsync('no key: requestIntent refuses rather than calling out', async () => {
     await assert.rejects(() => requestIntent({ message: 'hi', context: {} }),
+      (e) => e instanceof ProviderNotConfigured && e.status === 503);
+  });
+  await checkAsync('no key: requestReceipt refuses rather than calling out', async () => {
+    await assert.rejects(() => requestReceipt({ base64: 'x', mimeType: 'image/jpeg', context: {} }),
       (e) => e instanceof ProviderNotConfigured && e.status === 503);
   });
   await checkAsync('no key: verifyModel refuses too', async () => {

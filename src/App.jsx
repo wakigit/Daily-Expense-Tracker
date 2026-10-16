@@ -10,6 +10,7 @@ import { sumAmounts, fromCents, toCents } from './lib/money';
 import { budgetStatus, decayLevel } from './lib/status';
 import { planFromIntent } from './lib/assistant';
 import { requestIntent } from './lib/assistantClient';
+import { mergeReceiptIntoForm } from './lib/receipt';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -62,6 +63,9 @@ export default function App() {
   const [form, setForm] = useState(blankForm());
   const [editId, setEditId] = useState(null);
   const [errors, setErrors] = useState({});
+  // Which rule the form broke, so AddView can say what is wrong rather than
+  // only which box to look at. Cleared everywhere `errors` is.
+  const [errCode, setErrCode] = useState(null);
 
   const [budDraft, setBudDraft] = useState({});
   const [savedFlash, setSavedFlash] = useState(false);
@@ -207,6 +211,7 @@ export default function App() {
     const { value } = ev.target;
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: false }));
+    setErrCode(null);
   };
 
   /**
@@ -219,16 +224,32 @@ export default function App() {
    */
   const submit = () => {
     if (editId !== null) {
-      const checked = validateExpense(form, { cats, today: today() });
-      if (!checked.ok) { setErrors({ [checked.error.field ?? 'description']: true }); return; }
+      const checked = validateExpense(form, { cats, today: today(), requireCategory: true });
+      if (!checked.ok) {
+        setErrors({ [checked.error.field ?? 'description']: true });
+        setErrCode(checked.error.code);
+        return;
+      }
       setErrors({});
+      setErrCode(null);
       setExpenses((p) => p.map((e) => (e.id === editId ? { ...checked.value, id: editId } : e)));
       setEditId(null);
       setToast({ message: 'Changes saved' });
     } else {
-      const res = addExpense(expenses, form, { cats, today: today(), source: 'manual' });
-      if (!res.ok) { setErrors({ [res.error.field ?? 'description']: true }); return; }
+      // requireCategory, even from the form. The select normally always holds a
+      // value, so this changes nothing for typing — but the receipt scanner can
+      // now deliberately leave it empty, and without this validateExpense would
+      // quietly file the expense under the first category instead of refusing.
+      const res = addExpense(expenses, form, {
+        cats, today: today(), source: 'manual', requireCategory: true,
+      });
+      if (!res.ok) {
+        setErrors({ [res.error.field ?? 'description']: true });
+        setErrCode(res.error.code);
+        return;
+      }
       setErrors({});
+      setErrCode(null);
       setExpenses(res.expenses);
       setActionLog((l) => pushAction(l, res.action));
       setToast({ message: 'Added' });
@@ -245,6 +266,22 @@ export default function App() {
   const applyVoice = (fields) => {
     setForm((f) => ({ ...f, ...fields }));
     setErrors({});
+    setErrCode(null);
+  };
+
+  /**
+   * Fills the form from a scanned receipt. Same contract as applyVoice, and
+   * deliberately the same merge: the scan omits whatever it could not read, so
+   * those fields keep what is already in them — except the two it clears
+   * outright, an unknown category and a foreign total. The merge itself lives
+   * in lib/receipt.js so it can be tested as the thing it is.
+   *
+   * This does not submit. A scanned total is a proposal — see ReceiptButton.
+   */
+  const applyReceipt = (draft) => {
+    setForm((f) => mergeReceiptIntoForm(f, draft));
+    setErrors({});
+    setErrCode(null);
   };
 
   const startEdit = (exp) => {
@@ -262,6 +299,7 @@ export default function App() {
   const cancelEdit = () => {
     setEditId(null);
     setErrors({});
+    setErrCode(null);
     setForm(blankForm(cats[0]?.id));
     setTab('home');
   };
@@ -411,6 +449,7 @@ export default function App() {
     setYm(m);
     setEditId(null);
     setErrors({});
+    setErrCode(null);
     setForm({ ...blankForm(cats[0]?.id), date: m === curYm() ? today() : `${m}-01` });
     setCatFilter(null);
     setTab('add');
@@ -510,11 +549,14 @@ export default function App() {
             form={form}
             setField={setField}
             errors={errors}
+            errorCode={errCode}
             cats={cats}
             editId={editId}
+            today={today()}
             onSubmit={submit}
             onCancel={cancelEdit}
             onVoice={applyVoice}
+            onScanned={applyReceipt}
           />
         )}
 

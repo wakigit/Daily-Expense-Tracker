@@ -31,6 +31,11 @@ import { today, curYm, money, dayLabel } from '../src/lib/format';
 import { validateIntent, buildContext, INTENT_ERR } from '../src/lib/intent';
 import { planFromIntent } from '../src/lib/assistant';
 import { requestIntent as requestIntentFromBackend } from '../src/lib/assistantClient';
+import {
+  validateReceipt, receiptToFields, mergeReceiptIntoForm, printedTotal, describeMissing, RECEIPT_ERR,
+} from '../src/lib/receipt';
+import { fit } from '../src/lib/receiptImage';
+import { requestReceipt as requestReceiptFromBackend, explainFailure } from '../src/lib/receiptClient';
 
 const cats = DEF_CATS;
 const catById = (id) => cats.find((c) => c.id === id);
@@ -121,14 +126,14 @@ run('OverviewView empty', <OverviewView
 
 run('AddView new', <AddView
   form={{ date: '2026-09-30', category: 'food', description: '', amount: '', notes: '' }}
-  setField={() => () => {}} errors={{}} cats={cats} editId={null}
-  onSubmit={() => {}} onCancel={() => {}} />,
-  'New expense', 'Amount (SGD)', 'Add expense');
+  setField={() => () => {}} errors={{}} cats={cats} editId={null} today="2026-09-30"
+  onSubmit={() => {}} onCancel={() => {}} onScanned={() => {}} />,
+  'New expense', 'Amount (SGD)', 'Add expense', 'Scan a receipt');
 
 run('AddView edit + errors', <AddView
   form={{ date: '2026-09-30', category: 'food', description: '', amount: '', notes: '' }}
   setField={() => () => {}} errors={{ description: true, amount: true }} cats={cats} editId={7}
-  onSubmit={() => {}} onCancel={() => {}} />,
+  today="2026-09-30" onSubmit={() => {}} onCancel={() => {}} onScanned={() => {}} />,
   'Edit expense', 'Save changes', 'highlighted fields', 'class="err"');
 
 run('SettingsView', <SettingsView
@@ -1302,6 +1307,108 @@ logic('ask: no stray space before the full stop',
 logic('ask: reported total matches a direct sum',
   ask('how much did I spend this week').text.includes(
     'S$' + St.sum(St.inRange(sExp, '2026-09-28', '2026-09-30')).toFixed(2)), true);
+
+/* ── Receipt scanning ───────────────────────────────────────────
+ *
+ * The scan produces a DRAFT. Everything here is about what happens when the
+ * model is wrong, because that is the normal case for OCR: a misread year, a
+ * subtotal instead of a total, a category that was never offered.
+ */
+
+const R_CATS = [{ id: 'food', label: 'Food' }, { id: 'hire', label: 'Private hire' }];
+const R_TODAY = '2026-10-16';
+const vr = (raw) => validateReceipt(raw, { cats: R_CATS, today: R_TODAY });
+const full = {
+  isReceipt: true, description: 'Toast Box', amount: '14.90',
+  currency: 'SGD', date: '2026-10-15', category: 'food',
+};
+
+logic('receipt: a clean scan validates', vr(full).ok, true);
+logic('receipt: nothing is missing from a clean scan', vr(full).draft.missing, []);
+logic('receipt: the amount is normalised to two decimals', vr({ ...full, amount: '14.9' }).draft.amount, '14.90');
+logic('receipt: a printed currency symbol is tolerated', vr({ ...full, amount: 'S$14.90' }).draft.amount, '14.90');
+logic('receipt: a thousands separator survives', vr({ ...full, amount: '1,240.00' }).draft.amount, '1240.00');
+logic('receipt: a number rather than a string is accepted', vr({ ...full, amount: 14.9 }).draft.amount, '14.90');
+
+// The failure that matters most: an unreadable total must never become a zero.
+logic('receipt: an unreadable total is null, not zero', vr({ ...full, amount: null }).draft.amount, null);
+logic('receipt: an unreadable total is reported', vr({ ...full, amount: null }).draft.missing, ['amount']);
+logic('receipt: garbage in the total is null, not NaN', vr({ ...full, amount: 'TOTAL' }).draft.amount, null);
+logic('receipt: a negative total is refused', vr({ ...full, amount: '-5.00' }).draft.amount, null);
+
+// A year misread by a digit is the single most common OCR date failure.
+logic('receipt: a future date is dropped', vr({ ...full, date: '2027-10-15' }).draft.date, null);
+logic('receipt: a dropped date is reported', vr({ ...full, date: '2027-10-15' }).draft.missing, ['date']);
+logic('receipt: today is not the future', vr({ ...full, date: R_TODAY }).draft.date, R_TODAY);
+logic('receipt: an impossible date is dropped', vr({ ...full, date: '2026-02-31' }).draft.date, null);
+logic('receipt: a malformed date is dropped', vr({ ...full, date: '15/10/2026' }).draft.date, null);
+
+// A category outside the list means the model was not choosing from the list.
+logic('receipt: an invented category is rejected outright',
+  vr({ ...full, category: 'groceries' }).error.code, RECEIPT_ERR.UNKNOWN_CATEGORY);
+logic('receipt: no category is merely missing, not an error',
+  vr({ ...full, category: null }).draft.missing, ['category']);
+
+logic('receipt: a photo of something else is refused',
+  vr({ ...full, isReceipt: false }).error.code, RECEIPT_ERR.NOT_A_RECEIPT);
+logic('receipt: a non-object is refused', vr('nope').error.code, RECEIPT_ERR.NOT_OBJECT);
+logic('receipt: null is refused', vr(null).error.code, RECEIPT_ERR.NOT_OBJECT);
+
+logic('receipt: a foreign currency is flagged, never converted',
+  [vr({ ...full, currency: 'USD' }).draft.foreign, vr({ ...full, currency: 'USD' }).draft.amount],
+  [true, '14.90']);
+logic('receipt: the home currency is not flagged', vr(full).draft.foreign, false);
+logic('receipt: an unreadable currency is not flagged as foreign',
+  vr({ ...full, currency: null }).draft.foreign, false);
+logic('receipt: a long shop name is capped',
+  vr({ ...full, description: 'x'.repeat(200) }).draft.description.length, 80);
+
+/* The merge contract: a field the scan could not read must keep whatever is
+   already typed in the form, rather than being blanked. */
+logic('receipt: unread fields are omitted from the form patch',
+  Object.keys(receiptToFields(vr({ ...full, amount: null, date: null }).draft)).sort(),
+  ['category', 'description']);
+logic('receipt: a clean scan patches every field',
+  Object.keys(receiptToFields(vr(full).draft)).sort(),
+  ['amount', 'category', 'date', 'description']);
+// Category is the one field a scan clears rather than omits — the form's
+// select is never empty, so leaving it alone would show Food as though the
+// scan had chosen it. Everything else is still omitted.
+logic('receipt: an empty draft clears only the category', receiptToFields({}), { category: '' });
+
+logic('receipt: missing fields are described in words',
+  describeMissing(['amount', 'date']), 'the total and the date');
+logic('receipt: one missing field has no list punctuation',
+  describeMissing(['amount']), 'the total');
+logic('receipt: nothing missing says nothing', describeMissing([]), '');
+
+/* Downscaling is pure arithmetic and worth pinning: getting it wrong sends a
+   4000px photo and the scan times out. */
+logic('receipt: a large photo is scaled to the long edge', fit(4032, 3024), { width: 1280, height: 960 });
+logic('receipt: portrait scales on its own long edge', fit(3024, 4032), { width: 960, height: 1280 });
+logic('receipt: a small image is never scaled up', fit(600, 800), { width: 600, height: 800 });
+
+const rFail = async () => { throw new Error('ECONNREFUSED'); };
+logic('receipt: an unreachable backend is reported, not thrown',
+  (await requestReceiptFromBackend({ base64: 'x', mimeType: 'image/jpeg' }, { cats: R_CATS, today: R_TODAY, fetchImpl: rFail })).reason,
+  'unreachable');
+const rLiar = async () => ({ ok: true, status: 200, json: async () => ({ draft: { ...full, category: 'invented' } }) });
+logic('receipt: a bad draft from the backend is rejected client-side',
+  (await requestReceiptFromBackend({ base64: 'x' }, { cats: R_CATS, today: R_TODAY, fetchImpl: rLiar })).reason,
+  RECEIPT_ERR.UNKNOWN_CATEGORY);
+const rGood = async () => ({ ok: true, status: 200, json: async () => ({ draft: full }) });
+logic('receipt: a valid draft comes through',
+  (await requestReceiptFromBackend({ base64: 'x' }, { cats: R_CATS, today: R_TODAY, fetchImpl: rGood })).draft.amount,
+  '14.90');
+logic('receipt: no image is reported before any request is made',
+  (await requestReceiptFromBackend({}, { cats: R_CATS, fetchImpl: rGood })).reason, 'image_missing');
+logic('receipt: a server error carries its reason', (await requestReceiptFromBackend(
+  { base64: 'x' },
+  { cats: R_CATS, fetchImpl: async () => ({ ok: false, status: 422, json: async () => ({ error: 'receipt_not_a_receipt' }) }) },
+)).reason, 'receipt_not_a_receipt');
+logic('receipt: every failure reason has human wording',
+  ['timeout', 'unreachable', 'provider_not_configured', 'receipt_not_a_receipt', 'image_too_large', 'wat']
+    .every((r) => explainFailure(r).length > 10), true);
 
 let failed = 0;
 for (const c of checks) {

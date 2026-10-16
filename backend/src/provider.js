@@ -164,6 +164,73 @@ Rules:
 - Prefer clarify over a confident guess.
 - "say" may hold one short sentence of context. It must contain no figures.`;
 
+/**
+ * The schema a scanned receipt must answer in.
+ *
+ * `isReceipt` comes first and exists because a vision model asked to extract a
+ * total from a photograph of a cat will extract a total from a photograph of a
+ * cat. Given somewhere to say "this is not a receipt", it says so; given only
+ * fields to fill, it fills them. lib/receipt.js rejects the response when this
+ * is false.
+ *
+ * `amount` is a string for the same reason it is in the intent schema: "4.50"
+ * survives a round trip intact, and lib/actions.js already owns the parsing.
+ */
+export function buildReceiptSchema(categoryIds = []) {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['isReceipt', 'description', 'amount', 'currency', 'date', 'category'],
+    properties: {
+      isReceipt: {
+        type: 'boolean',
+        description: 'True only if this image is a receipt, bill or invoice.',
+      },
+      description: {
+        type: ['string', 'null'],
+        description: 'The shop or merchant name, as printed. Null if unreadable.',
+      },
+      amount: {
+        type: ['string', 'null'],
+        description: 'The final total paid, digits and one decimal point only. Null if unreadable.',
+      },
+      currency: {
+        type: ['string', 'null'],
+        description: 'ISO 4217 code of the printed currency, e.g. SGD. Null if not shown.',
+      },
+      date: {
+        type: ['string', 'null'],
+        description: 'The transaction date as YYYY-MM-DD. Null if unreadable.',
+      },
+      category: {
+        type: ['string', 'null'],
+        enum: [...categoryIds, null],
+        description: 'The best match from the provided ids, or null.',
+      },
+    },
+  };
+}
+
+export const RECEIPT_PROMPT = `You read a photograph of a receipt and report what is printed on it.
+
+You transcribe. You do not calculate, and you do not estimate. Every value you
+return must be legible in the image.
+
+- amount is the FINAL TOTAL PAID — the figure after service charge, GST and any
+  discount. It is not the subtotal, not the cash tendered, and not the change.
+  Where a receipt shows several totals, take the one the customer paid.
+- Return amount as digits only, with a decimal point: "14.90", never "S$14.90".
+- description is the shop or merchant name as printed, not a description of the
+  items.
+- currency is the ISO code of the symbol printed on the receipt. Do not convert
+  anything.
+- date must be the date of the transaction, as YYYY-MM-DD. Receipts print dates
+  in many orders; where DD/MM and MM/DD are genuinely ambiguous, prefer DD/MM.
+- category must be one of the provided ids, or null. Never invent one.
+- Any field you cannot actually read is null. A null is useful; a guess is not.
+- Set isReceipt false if the image is not a receipt, bill or invoice, and leave
+  every other field null.`;
+
 /* ── Model availability ────────────────────────────────────────── */
 
 /**
@@ -262,6 +329,74 @@ export async function requestIntent({ message, context = {} }) {
   } catch {
     // Structured Outputs should make this impossible; if it happens, the
     // fallback is better than a crash.
+    throw new ProviderFailed('unparsable_response', 'The model did not return JSON.');
+  }
+}
+
+/**
+ * Ask the model to transcribe a receipt photograph.
+ *
+ * Returns the parsed object for the caller to validate against
+ * lib/receipt.js. Same contract as requestIntent: never trusted as-is.
+ *
+ * Note what this does NOT do, unlike the assistant path: the image is user
+ * content and it does leave the device. There is no way to read a photograph
+ * without sending the photograph. That is a real widening of the trust
+ * boundary the assistant was built to hold, it is why the scan is explicitly
+ * opt-in per photo, and it is written down in docs/PRD.md §9 rather than
+ * glossed over here.
+ */
+export async function requestReceipt({ base64, mimeType = 'image/jpeg', context = {} }) {
+  const openai = getClient();
+  const categoryIds = Array.isArray(context.categories)
+    ? context.categories.map((c) => c.id).filter(Boolean)
+    : [];
+
+  const contextLine = [
+    `Today is ${context.today || 'unknown'}; no receipt can be dated later.`,
+    categoryIds.length
+      ? `Categories: ${context.categories.map((c) => `${c.id} (${c.label})`).join(', ')}.`
+      : 'No categories are defined; return null for category.',
+  ].join(' ');
+
+  let response;
+  try {
+    response = await openai.responses.create({
+      model: MODEL,
+      instructions: RECEIPT_PROMPT,
+      input: [{
+        role: 'user',
+        content: [
+          { type: 'input_text', text: contextLine },
+          // A data URL rather than an uploaded file: the image is wanted for
+          // exactly one request and storing it at the provider would outlive
+          // the purpose it was sent for.
+          { type: 'input_image', image_url: `data:${mimeType};base64,${base64}`, detail: 'high' },
+        ],
+      }],
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'scanned_receipt',
+          strict: true,
+          schema: buildReceiptSchema(categoryIds),
+        },
+      },
+      max_output_tokens: 300,
+    });
+  } catch (err) {
+    if (err?.status === 401 || err?.status === 403) {
+      throw new ProviderNotConfigured(describe(err));
+    }
+    throw new ProviderFailed('provider_error', describe(err), err?.status ?? 502);
+  }
+
+  const text = response.output_text;
+  if (!text) throw new ProviderFailed('empty_response', 'The model returned nothing.');
+
+  try {
+    return JSON.parse(text);
+  } catch {
     throw new ProviderFailed('unparsable_response', 'The model did not return JSON.');
   }
 }

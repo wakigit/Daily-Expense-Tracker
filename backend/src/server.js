@@ -1,13 +1,20 @@
 /**
- * Two routes: a health check and the assistant.
+ * Three routes: a health check, the assistant, and the receipt scanner.
  *
  * `POST /assistant/intent` takes a sentence plus a little context, asks the
  * model adapter to turn it into one intent, validates that intent against the
  * SAME schema the frontend uses, and returns it. It returns a proposal — never
  * a change, and never a figure.
  *
+ * `POST /assistant/receipt` takes a photograph and returns a DRAFT expense,
+ * validated the same way. It also returns a proposal: the fields land in the
+ * Add form and a person approves them before anything is written.
+ *
  * The expense rows never arrive here. The model is given the category names and
  * today's date and nothing else, so no third party ever receives the ledger.
+ * The receipt route is the one place user content does leave the device — the
+ * image itself, which cannot be read without being sent. Nothing else goes
+ * with it, and it is opt-in per photo.
  *
  * The API key lives in this process's environment and leaves it only in a
  * request to the provider. The browser calls this server; this server calls the
@@ -20,7 +27,10 @@
 
 import { createServer } from 'node:http';
 import { validateIntent } from '../../src/lib/intent.js';
-import { requestIntent, isConfigured, ProviderNotConfigured, MODEL } from './provider.js';
+import { validateReceipt, MAX_UPLOAD_BYTES } from '../../src/lib/receipt.js';
+import {
+  requestIntent, requestReceipt, isConfigured, ProviderNotConfigured, MODEL,
+} from './provider.js';
 
 const PORT = Number(process.env.PORT) || 8787;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -38,6 +48,15 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ??
 /** Refuse oversized bodies rather than buffering whatever arrives. */
 const MAX_BODY_BYTES = 8 * 1024;
 
+/**
+ * The receipt route is the one exception, because it carries an image.
+ *
+ * Base64 costs four bytes for every three, so the wire budget is the decoded
+ * limit plus a third, plus room for the category context alongside it. The
+ * limit itself lives in lib/receipt.js with the client that enforces it first.
+ */
+const MAX_IMAGE_BODY_BYTES = Math.ceil(MAX_UPLOAD_BYTES * 4 / 3) + MAX_BODY_BYTES;
+
 function applyCors(req, res) {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -48,7 +67,7 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-function readJson(req) {
+function readJson(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let size = 0;
     let overflowed = false;
@@ -56,7 +75,7 @@ function readJson(req) {
     req.on('data', (chunk) => {
       if (overflowed) return;                 // draining, not buffering
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         overflowed = true;
         chunks.length = 0;
         // Reject, but let the request finish arriving. Destroying the socket
@@ -144,6 +163,56 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  if (pathname === '/assistant/receipt') {
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return sendJson(res, 405, { error: 'method_not_allowed', allow: ['POST'] });
+    }
+    try {
+      const body = await readJson(req, MAX_IMAGE_BODY_BYTES);
+
+      const image = typeof body.image === 'object' && body.image !== null ? body.image : {};
+      const base64 = typeof image.base64 === 'string' ? image.base64 : '';
+      if (!base64) return sendJson(res, 400, { error: 'image_required' });
+
+      // Checked here as well as in the browser. The client downscales to a
+      // tenth of this, so anything near the limit did not come from the app.
+      const decodedBytes = Math.ceil((base64.length * 3) / 4);
+      if (decodedBytes > MAX_UPLOAD_BYTES) {
+        return sendJson(res, 413, { error: 'image_too_large', maxBytes: MAX_UPLOAD_BYTES });
+      }
+
+      // An allowlist, not a pass-through. mimeType is interpolated into the
+      // data URL sent to the provider, so an arbitrary string from the request
+      // would be writing part of that URL.
+      const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+      const mimeType = ALLOWED.includes(image.mimeType) ? image.mimeType : 'image/jpeg';
+
+      const context = typeof body.context === 'object' && body.context !== null ? body.context : {};
+      const cats = Array.isArray(context.categories) ? context.categories : [];
+
+      const raw = await requestReceipt({ base64, mimeType, context });
+
+      // Same two-sided validation as the intent route: a malformed draft never
+      // leaves this server, and the client checks it again anyway.
+      const checked = validateReceipt(raw, { cats, today: context.today ?? '' });
+      if (!checked.ok) {
+        // "Not a receipt" is the model doing its job, not a failure of this
+        // server. 422 so the client can tell the two apart and say something
+        // useful instead of "something went wrong".
+        const status = checked.error.code === 'receipt_not_a_receipt' ? 422 : 502;
+        return sendJson(res, status, { error: checked.error.code });
+      }
+      return sendJson(res, 200, { draft: checked.draft });
+    } catch (err) {
+      if (err instanceof ProviderNotConfigured) {
+        return sendJson(res, 503, { error: err.code });
+      }
+      const status = err?.status ?? 500;
+      return sendJson(res, status, { error: err?.code ?? 'internal_error' });
+    }
+  }
+
   return sendJson(res, 404, { error: 'not_found', path: pathname });
 });
 
@@ -151,6 +220,7 @@ server.listen(PORT, HOST, () => {
   console.log(`[backend] listening on http://${HOST}:${PORT}`);
   console.log(`[backend] health:    http://${HOST}:${PORT}/health`);
   console.log(`[backend] assistant: POST http://${HOST}:${PORT}/assistant/intent`);
+  console.log(`[backend] receipt:   POST http://${HOST}:${PORT}/assistant/receipt`);
   console.log(`[backend] provider:  ${isConfigured()
     ? `OpenAI, model ${MODEL}`
     : 'NOT configured — the app falls back to its offline matcher'}`);
