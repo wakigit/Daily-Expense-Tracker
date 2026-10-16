@@ -110,21 +110,21 @@ function planAnswer(intent, { expenses, cats, today }) {
     case 'top_day': {
       const peak = St.topDay(rows);
       return peak
-        ? say(`${dayLabel(peak.key)} was the most, at ${money(peak.value)}.`, `Across ${scope}`)
+        ? say(`${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`, `Across ${scope}`)
         : say(`I don't have enough to compare days ${scope}.`);
     }
 
     case 'top_week': {
       const peak = St.topWeek(rows);
       return peak
-        ? say(`The week of ${dayLabel(peak.key)} was the most, at ${money(peak.value)}.`)
+        ? say(`The week of ${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`)
         : say(`I don't have enough to compare weeks ${scope}.`);
     }
 
     case 'top_month': {
       const peak = St.topMonth(rows);
       return peak
-        ? say(`${ymLabel(peak.key)} was the most, at ${money(peak.value)}.`)
+        ? say(`${ymLabel(peak.key)} was the most, at ${money(peak.total)}.`)
         : say(`I don't have enough to compare months ${scope}.`);
     }
 
@@ -132,7 +132,7 @@ function planAnswer(intent, { expenses, cats, today }) {
       const peak = St.topCategory(rows);
       if (!peak) return say(`I don't have enough to compare categories ${scope}.`);
       const label = cats.find((c) => c.id === peak.key)?.label ?? peak.key;
-      return say(`${label} is the most, at ${money(peak.value)} ${scope}.`);
+      return say(`${label} is the most, at ${money(peak.total)} ${scope}.`);
     }
 
     case 'average_per_day':

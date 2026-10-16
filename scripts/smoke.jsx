@@ -26,7 +26,7 @@ import {
   addExpense, deleteExpenseById, revert, undoLast, pushAction, sameExpense, ERR, LOG_LIMIT,
 } from '../src/lib/actions';
 import { toCents, fromCents, sumAmounts } from '../src/lib/money';
-import { today, curYm, money } from '../src/lib/format';
+import { today, curYm, money, dayLabel } from '../src/lib/format';
 import { validateIntent, buildContext, INTENT_ERR } from '../src/lib/intent';
 import { planFromIntent } from '../src/lib/assistant';
 import { requestIntent as requestIntentFromBackend } from '../src/lib/assistantClient';
@@ -740,6 +740,95 @@ logic('interpretation: present even when there is nothing to report',
 logic('narrowing: a missing category_terms field is not treated as trouble',
   plan1(vi1({ type: 'answer', query: { metric: 'total', period: 'month', category: 'food' } }).intent).kind,
   'answer');
+
+/* ── Regression: the "highest" answers must report a real figure ──
+ *
+ * stats.js peak() returns { key, total }. All four top_* branches read
+ * peak.value, which is undefined — and money(undefined) is "S$0.00", not a
+ * crash. So the assistant said "7 Oct was the most, at S$0.00." Confidently,
+ * silently, and wrong: exactly the failure docs/PRD.md §8 exists to prevent.
+ *
+ * These fix the figure to the source rows, so a shape change in stats.js
+ * cannot quietly blank them again.
+ */
+
+const PK_CATS = [{ id: 'food', label: 'Food' }, { id: 'hire', label: 'Private hire' }];
+const PK_TODAY = '2026-10-20';
+// Deliberate structure: 7 Oct is the biggest day (24.50) and sits in the week
+// of 5 Oct; October is the biggest month; hire is the biggest category.
+const PK_ROWS = [
+  { id: 'p1', date: '2026-09-28', category: 'food', description: 'Sep laksa',  amount: 7.2,  notes: '' },
+  { id: 'p2', date: '2026-10-05', category: 'food', description: 'Lunch',      amount: 4.5,  notes: '' },
+  { id: 'p3', date: '2026-10-07', category: 'hire', description: 'Grab',       amount: 18.2, notes: '' },
+  { id: 'p4', date: '2026-10-07', category: 'food', description: 'Dinner',     amount: 6.3,  notes: '' },
+  { id: 'p5', date: '2026-10-14', category: 'hire', description: 'Grab again', amount: 12.0, notes: '' },
+];
+const pkPlan = (metric, period = 'all') => planFromIntent(
+  validateIntent({ type: 'answer', query: { metric, period, category: null, category_terms: [] } }, { cats: PK_CATS }).intent,
+  { expenses: PK_ROWS, cats: PK_CATS, today: PK_TODAY });
+
+/* The shape peak() actually returns — assert it, since the bug was a caller
+   reading a field that never existed. */
+logic('peak: returns key and total', Object.keys(St.topDay(PK_ROWS)).sort(), ['key', 'total']);
+logic('peak: has no "value" field to read', 'value' in St.topDay(PK_ROWS), false);
+
+/* ── Highest day: 7 Oct = 18.20 + 6.30 = 24.50 ── */
+const biggestDay = (1820 + 630) / 100;
+logic('top_day: the source rows total 24.50', biggestDay, 24.5);
+logic('top_day: stats agrees', St.topDay(PK_ROWS).total, biggestDay);
+logic('top_day: the answer names the right day',
+  pkPlan('top_day').text.includes(dayLabel('2026-10-07')), true);
+logic('top_day: and reports the real figure',
+  pkPlan('top_day').text, `${dayLabel('2026-10-07')} was the most, at S$24.50.`);
+logic('top_day: never reports a blank amount', pkPlan('top_day').text.includes('S$0.00'), false);
+
+/* ── Highest week: the week of 5 Oct holds 4.50 + 18.20 + 6.30 = 29.00 ── */
+const biggestWeek = (450 + 1820 + 630) / 100;
+logic('top_week: the source rows total 29.00', biggestWeek, 29);
+logic('top_week: stats agrees', St.topWeek(PK_ROWS).total, biggestWeek);
+logic('top_week: the answer reports the real figure',
+  pkPlan('top_week').text, `The week of ${dayLabel('2026-10-05')} was the most, at S$29.00.`);
+logic('top_week: never reports a blank amount', pkPlan('top_week').text.includes('S$0.00'), false);
+
+/* ── Highest month: October = 4.50 + 18.20 + 6.30 + 12.00 = 41.00 ── */
+const biggestMonth = (450 + 1820 + 630 + 1200) / 100;
+logic('top_month: the source rows total 41.00', biggestMonth, 41);
+logic('top_month: stats agrees', St.topMonth(PK_ROWS).total, biggestMonth);
+logic('top_month: the answer reports the real figure',
+  pkPlan('top_month').text, 'October 2026 was the most, at S$41.00.');
+logic('top_month: never reports a blank amount', pkPlan('top_month').text.includes('S$0.00'), false);
+
+/* ── Highest category: hire = 18.20 + 12.00 = 30.20, beating food at 18.00 ── */
+const biggestCat = (1820 + 1200) / 100;
+logic('top_category: the source rows total 30.20', biggestCat, 30.2);
+logic('top_category: stats agrees', St.topCategory(PK_ROWS).total, biggestCat);
+logic('top_category: it is hire, not food', St.topCategory(PK_ROWS).key, 'hire');
+logic('top_category: the answer uses the label, not the id',
+  pkPlan('top_category').text, 'Private hire is the most, at S$30.20 all time.');
+logic('top_category: never reports a blank amount', pkPlan('top_category').text.includes('S$0.00'), false);
+
+/* Every displayed figure must equal a direct sum of the rows behind it. */
+const sumOf = (pred) => St.sum(PK_ROWS.filter(pred));
+logic('top_day: the figure equals a direct sum of that day',
+  pkPlan('top_day').text.includes(money(sumOf((e) => e.date === '2026-10-07'))), true);
+logic('top_category: the figure equals a direct sum of that category',
+  pkPlan('top_category').text.includes(money(sumOf((e) => e.category === 'hire'))), true);
+logic('top_month: the figure equals a direct sum of that month',
+  pkPlan('top_month').text.includes(money(sumOf((e) => e.date.startsWith('2026-10')))), true);
+
+/* Scoped by period, the peak must move with the window. */
+logic('top_day: honours the period window',
+  planFromIntent(
+    validateIntent({ type: 'answer', query: { metric: 'top_day', period: 'lastmonth', category: null, category_terms: [] } }, { cats: PK_CATS }).intent,
+    { expenses: PK_ROWS, cats: PK_CATS, today: PK_TODAY }).text,
+  `${dayLabel('2026-09-28')} was the most, at S$7.20.`);
+
+/* Empty data must still not invent a figure. */
+logic('top_day: nothing recorded says so, with no amount',
+  planFromIntent(
+    validateIntent({ type: 'answer', query: { metric: 'top_day', period: 'all', category: null, category_terms: [] } }, { cats: PK_CATS }).intent,
+    { expenses: [], cats: PK_CATS, today: PK_TODAY }).text.includes('S$'),
+  false);
 
 /* ── Budget status model (§2) ──────────────────────────────────── */
 
