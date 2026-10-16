@@ -7,6 +7,7 @@ import {
   addExpense, deleteExpenseById, validateExpense, revert, undoLast, pushAction,
 } from './lib/actions';
 import { sumAmounts, fromCents, toCents } from './lib/money';
+import { budgetStatus, decayLevel } from './lib/status';
 import { planFromIntent } from './lib/assistant';
 import { requestIntent } from './lib/assistantClient';
 
@@ -186,12 +187,13 @@ export default function App() {
   const totalBudget = fromCents(cats.reduce((cents, c) => cents + toCents(budgets[c.id] || 0), 0));
   const remaining = totalBudget - totalSpent;
   const budPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0;
-  const isOver = totalSpent > totalBudget && totalBudget > 0;
-
-  // Drives the wallpaper. The scene reads one boolean — `isOver` is false
-  // when no budget is set, so someone who never sets one keeps a calm scene
-  // rather than being handed a permanently bleak app. Loops run on Home only.
-  useTheme(themeId, { isOver, paused: tab !== 'home', motion });
+  // Drives the wallpaper. App.jsx deliberately holds no opinion about what
+  // "close to limit" or "over" mean — it asks lib/status.js, which is the same
+  // helper the chip, the bars and the History screen ask. One set of
+  // thresholds, so the scene and the words on top of it cannot disagree.
+  // Loops run on Home only.
+  const decay = decayLevel(budgetStatus(totalSpent, totalBudget).key);
+  useTheme(themeId, { decay, paused: tab !== 'home', motion });
 
   const chartData = cats
     .filter((c) => spending[c.id] > 0)
@@ -449,7 +451,10 @@ export default function App() {
         />
       )}
 
-      <div className="app">
+      {/* The laptop grid is per-view: Home has a ledger column, the card lists
+          fill two equal columns, and the form-like views keep one readable
+          measure. Phone ignores this attribute entirely. */}
+      <div className="app" data-view={catFilter && tab === 'home' ? 'category' : tab}>
         <h1 className="sr-only">Expense Tracker</h1>
 
         <Header
@@ -481,6 +486,7 @@ export default function App() {
             budgets={budgets}
             spending={spending}
             monthExp={monthExp}
+            allExpenses={expenses}
             onPickCat={setCatFilter}
             catById={catById}
             {...txnProps}
@@ -546,7 +552,6 @@ export default function App() {
           />
         )}
 
-        <p className="footer-credit">made by @wakii___</p>
       </div>
 
       <BottomNav tab={tab} onGo={goTo} />

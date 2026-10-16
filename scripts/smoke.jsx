@@ -18,9 +18,10 @@ import { matchesQuery, sortExpenses, filterAndSort } from '../src/lib/search';
 import { parseUtterance } from '../src/lib/parseUtterance';
 import { answer } from '../src/lib/ask';
 import * as St from '../src/lib/stats';
-import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../src/themes/scenes';
+import { paintBackground, setSceneDecay, setScenePaused, setSceneStill, travel } from '../src/themes/scenes';
 import { THEMES, isKnownTheme, themeById, DEFAULT_THEME } from '../src/themes/themes';
-import { budgetStatus } from '../src/lib/status';
+import { budgetStatus, decayLevel } from '../src/lib/status';
+import WeekBars from '../src/components/WeekBars';
 import {
   newExpenseId, parseAmount, parseDate, validateExpense, findDuplicate,
   addExpense, deleteExpenseById, revert, undoLast, pushAction, sameExpense, ERR, LOG_LIMIT,
@@ -52,6 +53,7 @@ const chartData = cats.filter((c) => spending[c.id] > 0)
 const txn = { catById, onDelete() {}, onEdit() {} };
 
 const checks = [];
+const count = (hay, needle) => hay.split(needle).length - 1;
 const run = (name, el, ...must) => {
   try {
     const html = renderToString(el);
@@ -832,6 +834,33 @@ logic('top_day: nothing recorded says so, with no amount',
 
 /* ── Budget status model (§2) ──────────────────────────────────── */
 
+/* ── Last 7 days ───────────────────────────────────────────────── */
+{
+  const mk = (date, amount) => ({ id: date, date, category: 'food', description: 'x', amount });
+  const week = [
+    mk('2026-09-28', 10), mk('2026-09-30', 25),   // before the month boundary
+    mk('2026-10-01', 5), mk('2026-10-03', 40), mk('2026-10-03', 2),
+  ];
+  const html = renderToString(<WeekBars expenses={week} anchor="2026-10-03" anchorIsToday />);
+  // The window is 2026-09-27..2026-10-03, so the two September rows belong in
+  // it. Scoping the chart to the displayed month would silently drop them.
+  logic('week: totals the whole window, across the 1st', html.includes('S$82.00'), true);
+  logic('week: seven columns', count(html, 'class="week-day"'), 7);
+  logic('week: the busiest day is marked', count(html, 'week-bar top'), 1);
+  logic('week: days with nothing still get a column', count(html, 'week-bar none'), 3);
+  logic('week: the anchor is labelled Today', html.includes('>Today<'), true);
+  // A past month ends on its last day, and calling that "Today" would be a lie.
+  logic('week: a past window is not labelled Today',
+    renderToString(<WeekBars expenses={week} anchor="2026-10-03" />).includes('>Today<'), false);
+  logic('week: an empty window says so',
+    renderToString(<WeekBars expenses={[]} anchor="2026-10-03" />).includes('Nothing logged'), true);
+  /* 82 over 7 days. Assert the figure, not a phrase containing it: React SSR
+     puts a <!-- --> marker between static text and an expression, so 'avg ' and
+     the number are not adjacent in the output. */
+  logic('week: the average is the window total over seven',
+    renderToString(<WeekBars expenses={week} anchor="2026-10-03" />).includes('S$11.71'), true);
+}
+
 logic('status: no budget set', budgetStatus(50, 0).label, 'No budget set');
 logic('status: on track below 75%', budgetStatus(100, 200).label, 'On track');
 logic('status: 74% is still on track', budgetStatus(74, 100).label, 'On track');
@@ -843,6 +872,18 @@ logic('status: above budget is over', budgetStatus(101, 100).label, 'Over budget
 logic('status: keys follow the labels',
   [budgetStatus(10, 100).key, budgetStatus(80, 100).key, budgetStatus(120, 100).key],
   ['calm', 'watch', 'over']);
+/* The wallpaper's three states are a projection of those keys, not a second set
+   of thresholds. Asserted at every boundary the labels above use, because the
+   failure mode is silent: a scene that decays while the chip says "On track". */
+logic('decay: no budget is healthy', decayLevel(budgetStatus(50, 0).key), 0);
+logic('decay: 74% is healthy', decayLevel(budgetStatus(74, 100).key), 0);
+logic('decay: 75% is strained', decayLevel(budgetStatus(75, 100).key), 1);
+logic('decay: 99% is strained', decayLevel(budgetStatus(99, 100).key), 1);
+logic('decay: exactly 100% is strained, not run down',
+  decayLevel(budgetStatus(100, 100).key), 1);
+logic('decay: 101% is run down', decayLevel(budgetStatus(101, 100).key), 2);
+logic('decay: an unknown key is healthy', decayLevel('nonsense'), 0);
+
 // The chip reports the true figure even past 100 — only the bar clamps.
 logic('status: pct is not capped', budgetStatus(108, 100).pct, 108);
 logic('status: over amount', budgetStatus(108, 100).over, 8);
@@ -870,7 +911,7 @@ logic('a known id is kept', themeById('city').id, 'city');
  * engine wrote: the markup, the injected stylesheet, and a stand-in for the
  * scene root so the state setters can be driven the way React drives them.
  */
-function mount(theme) {
+function mount(theme, wide = false) {
   let html = '';
   let css = '';
   const root = {
@@ -884,7 +925,7 @@ function mount(theme) {
   };
   let styleEl = null;
 
-  globalThis.window = { innerWidth: 390, innerHeight: 844, matchMedia: () => ({ matches: false }) };
+  globalThis.window = { innerWidth: wide ? 1440 : 390, innerHeight: wide ? 900 : 844, matchMedia: () => ({ matches: wide }) };
   globalThis.document = {
     documentElement: { clientWidth: 390, style: { setProperty: () => {} } },
     head: { appendChild: (el) => { styleEl = el; css = el.textContent; } },
@@ -899,8 +940,10 @@ function mount(theme) {
   return { html, css, root };
 }
 
-const count = (hay, needle) => hay.split(needle).length - 1;
 
+// City has no entry in THEMES, so it is mounted through a bare descriptor —
+// the engine only ever reads these two fields.
+const CITY = { bgKind: 'scene', scene: 'city', vars: {} };
 const forest = mount('forest');
 const beach = mount('beach');
 
@@ -912,7 +955,7 @@ for (const [name, m] of [['forest', forest], ['beach', beach]]) {
   // y=0, so centring the overflow would push the focal band under the hero text.
   logic(`${name}: fills the viewport by slicing, not stretching`, m.html.includes('preserveAspectRatio="xMidYMin slice"'), true);
   logic(`${name}: carries the scene class`, m.html.includes('class="scene"'), true);
-  logic(`${name}: mounts in the calm state`, m.html.includes('data-over="false"'), true);
+  logic(`${name}: mounts in the healthy state`, m.html.includes('data-decay="0"'), true);
   logic(`${name}: no viewport size baked into the svg tag`, /<svg[^>]*\swidth="/.test(m.html), false);
   logic(`${name}: no NaN reaches the svg`, m.html.includes('NaN'), false);
 }
@@ -926,10 +969,42 @@ logic('scene is sized by height, not stretched', forest.css.includes('height:100
 logic('scene still covers a phone edge to edge', forest.css.includes('min-width:100%'), true);
 // City has no entry in THEMES until phase 2 replaces them, so it is mounted
 // through a bare descriptor — the engine only ever reads these two fields.
-const CITY = { bgKind: 'scene', scene: 'city', vars: {} };
 logic('city builds', mount(CITY).html.includes('class="scene"'), true);
 logic('city: no NaN reaches the svg', mount(CITY).html.includes('NaN'), false);
 logic('city: composed in the same box', mount(CITY).html.includes('viewBox="0 0 390 844"'), true);
+
+/* ── The widescreen compositions ───────────────────────────────── */
+
+/* A second composition per scene, drawn for a screen that has a rail and two
+   columns sitting on top of the art. Only ONE is ever mounted: the phone must
+   not pay for the laptop's element count. */
+for (const name of ['forest', 'beach', 'city']) {
+  const theme = name === 'city' ? CITY : name;
+  const w = mount(theme, true);
+  logic(`${name}: wide is composed in the 1440x900 box`,
+    w.html.includes('viewBox="0 0 1440 900"'), true);
+  logic(`${name}: wide mounts healthy`, w.html.includes('data-decay="0"'), true);
+  logic(`${name}: wide has no NaN`, w.html.includes('NaN'), false);
+  logic(`${name}: only one composition is mounted`,
+    (w.html.match(/<svg/g) || []).length, 1);
+  logic(`${name}: narrow stays in the phone box`,
+    mount(theme, false).html.includes('viewBox="0 0 390 844"'), true);
+}
+
+/* The reason two compositions were affordable at all: the decay stylesheet is
+   written against CLASS NAMES, never coordinates, so every rule in it already
+   applies to the wide art. If a wide scene stopped carrying a class, its decay
+   would silently stop working at laptop width only — which is precisely the
+   bug nobody would find before the demo. */
+for (const [name, theme, classes] of [
+  ['forest', 'forest', ['moon-glow', 'moon-0', 'moon-1', 'moon-2', 'river-lines', 'fish-group', 'deer', 'fog', 'bare', 'deadfall', 'leaf-drop', 'ridge-far']],
+  ['beach', 'beach', ['s0', 'sun', 'sea-top', 'sand-top', 'beach-stars', 'mouth-happy', 'mouth-flat', 'mouth-sad', 'surf-wrap', 'crab-wrap', 'rocks', 'litter']],
+  ['city', CITY, ['win-col', 'win-dark', 'face-happy', 'face-flat', 'face-sad', 'rain-layer', 'rain-heavy', 'street-ref', 'puddle-wide', 'viaduct-lamp', 'skyline-far']],
+]) {
+  const w = mount(theme, true).html;
+  logic(`${name}: wide carries every decay class`,
+    classes.filter((c) => !w.includes(`${c}"`) && !w.includes(`${c} `)), []);
+}
 
 /* Rule 3.2: spending must never touch the markup. */
 logic('scene markup takes no budget argument', paintBackground.length, 1);
@@ -938,11 +1013,22 @@ logic('scene markup takes no budget argument', paintBackground.length, 1);
 const live = mount('forest');
 
 /* Rule 3.3: one attribute carries the whole state change. */
-setSceneOver(true);
-logic('over sets data-over', live.root.getAttribute('data-over'), 'true');
-setSceneOver(false);
-logic('back under budget clears data-over', live.root.getAttribute('data-over'), 'false');
+setSceneDecay(1);
+logic('strained sets data-decay', live.root.getAttribute('data-decay'), '1');
+setSceneDecay(2);
+logic('run down sets data-decay', live.root.getAttribute('data-decay'), '2');
+setSceneDecay(0);
+logic('recovering clears data-decay', live.root.getAttribute('data-decay'), '0');
 logic('switching state leaves the markup untouched', live.html === forest.html, true);
+
+/* A level outside 0..2 would match no rule at all and strand the scene on
+   whatever it last showed, which is worse than snapping to a neighbour. */
+setSceneDecay(9);
+logic('a level above the range clamps', live.root.getAttribute('data-decay'), '2');
+setSceneDecay(-4);
+logic('a negative level clamps', live.root.getAttribute('data-decay'), '0');
+setSceneDecay(undefined);
+logic('a missing level falls back to healthy', live.root.getAttribute('data-decay'), '0');
 
 /* Rule 3.6 and 3.9: pausing and stillness are classes, not rebuilds. */
 setScenePaused(true);
@@ -956,8 +1042,18 @@ logic('and removes it', live.root.classes.has('still'), false);
 
 /* The stylesheet is shared, so it must be injected exactly once. */
 logic('stylesheet is injected', forest.css.includes('@keyframes w-deer'), true);
-logic('every calm value has an over counterpart',
-  count(forest.css, '.moon-shade{'), 2);
+// One base rule plus one per decayed level. The moon glow is the canary: if a
+// level is ever dropped from the stylesheet this count is what notices.
+logic('every healthy value has a counterpart at both levels',
+  count(forest.css, '.moon-glow{'), 3);
+
+/* The phase is three pre-masked discs cross-faded, NOT one shade circle moved
+   by CSS. Chrome rasterises mask content once, so a cx driven from CSS moves
+   the element without rebuilding the mask and the phase never renders — which
+   is exactly how it shipped, unnoticed, until the third state made it obvious.
+   Assert the structure, since the symptom is invisible to every other test. */
+logic('the moon has a disc per state', count(forest.html, 'mask="url(#fmoon'), 3);
+logic('no mask geometry is driven from CSS', forest.css.includes('.moon-shade'), false);
 logic('state lives on the data attribute, not in custom properties',
   forest.css.includes('--moon-shade'), false);
 logic('pausing is wired to the animated set', forest.css.includes('.scene.paused .a{animation-play-state:paused}'), true);
@@ -971,9 +1067,54 @@ logic('reduced motion yields only to an explicit opt-in',
 
 const css = forest.css;
 
-// Waves translate by one screen width over a 30px period: 390/30 is whole.
-logic('waves move a whole number of periods', 390 % 30, 0);
-logic('wave keyframe travels exactly one screen', css.includes('to{transform:translateX(-390px)}'), true);
+/* ── Travel loops close off-frame ────────────────────────────────
+ *
+ * Every keyframe that carries something across the frame reads --out/--in from
+ * the element, because the distance depends on the composition. These assert
+ * the property rather than the literal: the first version of the widescreen
+ * scenes inherited the phone's numbers, so a car "exiting right" stopped at
+ * x 1150 in a 1440 box and then jumped back to x 380 in full view. Every check
+ * below fails on that bug; the old string-match passed straight through it. */
+logic('wave keyframe reads its shift from the element',
+  css.includes('to{transform:translateX(var(--wave,-390px))}'), true);
+
+for (const [name, theme, boxW, period] of [['phone', 'beach', 390, 30], ['wide', 'beach', 1440, 40]]) {
+  const html = mount(theme, boxW > 390).html;
+  const shifts = [...html.matchAll(/--wave:(-?\d+)px/g)].map((m) => Math.abs(+m[1]));
+  logic(`${name}: every wave declares a shift`, shifts.length > 0, true);
+  // A shift that is not a whole number of crest periods snaps once a cycle.
+  logic(`${name}: wave shift is a whole number of periods`,
+    shifts.filter((d) => d % period !== 0), []);
+  logic(`${name}: wave shift spans the box`, shifts.every((d) => d >= boxW), true);
+}
+
+/* The travel geometry lives in one function, so it is tested as one function
+   rather than inferred back out of the markup. */
+{
+  const t = travel(390, 232, 52);          // a phone car
+  logic('travel: out clears the right edge', 232 + 52 + t.out > 390, true);
+  logic('travel: in clears the left edge', 232 + 52 + t.in < 0, true);
+  const w = travel(1440, 820, 99, 60);     // the same car, wide
+  logic('travel: wide out clears the wider edge', 820 + 99 + w.out > 1440, true);
+  logic('travel: wide in clears the left edge', 820 + 99 + w.in < 0, true);
+  logic('travel: an element already off-frame still exits',
+    -136 + 217 + travel(390, -136, 217).out > 390, true);
+}
+
+/* And the regression itself: the wide compositions must not be carrying the
+   phone's distances. Every traveller's throw has to grow with the box. */
+for (const [scene, theme] of [['city', CITY], ['beach', 'beach']]) {
+  const grab = (html) => [...html.matchAll(/--out:(-?\d+)px;--in:(-?\d+)px/g)]
+    .map((m) => Math.abs(+m[1]) + Math.abs(+m[2]));
+  const tall = grab(mount(theme, false).html);
+  const wide = grab(mount(theme, true).html);
+  logic(`${scene}: both compositions declare travellers`,
+    tall.length > 0 && tall.length === wide.length, true);
+  // The wide box is 3.7x the phone's. Anything that did not grow by at least
+  // 2.5x is a distance that was copied across instead of recomputed.
+  logic(`${scene}: wide travel scales with the box`,
+    tall.filter((d, i) => wide[i] < d * 2.5), []);
+}
 
 // River dashes: every dasharray sums to 24, and the offset is -48.
 const dashSums = [...forest.html.matchAll(/stroke-dasharray="(\d+) (\d+)"/g)]
@@ -1001,7 +1142,36 @@ const delays = new Set([...forest.html.matchAll(/animation-delay:(-?[\d.]+)s/g)]
 logic('forest staggers its animation delays', delays.size > 5, true);
 
 /* Over budget stills the water rather than reversing it. */
-logic('flow stops when over', css.includes('.scene[data-over="true"] .flow'), true);
+logic('flow stops when run down', css.includes('.scene[data-decay="2"] .flow'), true);
+logic('the deer stops grazing when strained', css.includes('.scene[data-decay="1"] .deerhead'), true);
+
+/* The middle tier is the one that can silently go missing: delete its rules and
+   everything still builds, still passes, and spending 90% of the budget just
+   looks healthy. Assert each scene actually defines both levels, and that it
+   changes something STRUCTURAL at level 1 rather than only shifting colour. */
+for (const [scene, marker] of [['forest', 'fog'], ['beach', 'litter'], ['city', 'win-dark']]) {
+  logic(`${scene}: defines a strained state`,
+    css.includes(`.scene[data-decay="1"] .${marker}`), true);
+  logic(`${scene}: defines a run-down state`,
+    css.includes(`.scene[data-decay="2"] .${marker}`), true);
+  logic(`${scene}: its strained marker is in the markup`,
+    mount(scene === 'city' ? CITY : scene).html.includes(marker), true);
+}
+
+/* Anything that differs between levels has to be in the .trc transition list,
+   or it snaps instead of easing — the one failure in this feature that looks
+   fine in every test and wrong only to the eye. */
+const lists = [...css.matchAll(/#bg \.trc?\{transition:([^}]+)\}/g)].map((m) => m[1]);
+logic('both transition lists exist', lists.length, 2);
+const eased = new Set(
+  lists.flatMap((l) => l.split(',').map((part) => part.trim().split(/\s/)[0]))
+);
+const levelled = new Set(
+  [...css.matchAll(/\[data-decay="[12]"\][^{]*\{([^}]*)\}/g)]
+    .flatMap((m) => [...m[1].matchAll(/([a-z-]+):/g)].map((d) => d[1]))
+);
+const unEased = [...levelled].filter((prop) => !eased.has(prop) && prop !== 'animation');
+logic('every levelled property eases', unEased, []);
 logic('the state change eases once', css.includes('transition:transform 3.2s'), true);
 
 // Every theme is a scene now; an unknown id must still paint something rather

@@ -1,8 +1,9 @@
 import Donut from '../components/Donut';
+import WeekBars from '../components/WeekBars';
 import TxnList from '../components/TxnList';
 import SearchBar from '../components/SearchBar';
 import StatusChip from '../components/StatusChip';
-import { money, ymLabel, today } from '../lib/format';
+import { money, ymLabel, today, curYm } from '../lib/format';
 import { budgetStatus } from '../lib/status';
 import { useCountUp } from '../hooks/useCountUp';
 import { useTxnFilter } from '../hooks/useTxnFilter';
@@ -25,8 +26,20 @@ function daysLeftIn(ym, now = new Date()) {
 export default function HomeView({
   totalSpent, totalBudget, chartData, cats, budgets, spending, monthExp, ym,
   onPickCat, catById, onDelete, onEdit, onAddFirst,
+  /* Falls back to the displayed month when a caller has nothing wider to give.
+     That is never wrong inside the month, only incomplete across the 1st — so
+     App.jsx passes the full list and the window stays correct there. */
+  allExpenses = monthExp,
 }) {
   const shownTotal = useCountUp(totalSpent);
+
+  /* The seven-day window ends today on the current month and on the month's
+     last day otherwise, so stepping back to September shows that September's
+     final week rather than seven empty days. */
+  const isCurrentMonth = ym === curYm();
+  const weekAnchor = isCurrentMonth
+    ? today()
+    : new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).toISOString().slice(0, 10);
   const f = useTxnFilter(monthExp, catById);
   const st = budgetStatus(totalSpent, totalBudget);
   const daysLeft = daysLeftIn(ym);
@@ -37,7 +50,14 @@ export default function HomeView({
 
   return (
     <>
-      {/* ── Hero: zone 2 of §4. Lives on the scene, not in a card. ── */}
+      {/*
+        The two columns below are `display: contents` on a phone, so they add
+        no box and the markup renders exactly as it did before. At laptop width
+        they become the centre and ledger columns of the shell grid. One set of
+        sections, placed two ways — no component is forked per breakpoint.
+      */}
+      <div className="col col--main">
+        {/* ── Hero: zone 2 of §4. Lives on the scene, not in a card. ── */}
       <section className="hero" aria-label={`${monthName} summary`}>
         <p className="hero-cap">Spent in {monthName}</p>
         <p className="display hero-amount money">{money(shownTotal)}</p>
@@ -102,8 +122,14 @@ export default function HomeView({
         </section>
       )}
 
-      {/* ── Budgets ── */}
-      <section className="card" style={{ '--i': 1 }}>
+      {/* Day-level detail the donut cannot carry: the donut says where the
+          money went, this says when. */}
+      <WeekBars expenses={allExpenses} anchor={weekAnchor} anchorIsToday={isCurrentMonth} />
+      </div>
+
+      <div className="col col--side">
+        {/* ── Budgets ── */}
+        <section className="card card--budgets" style={{ '--i': 1 }}>
         <p className="lbl">Budget by category — tap to view ›</p>
         {cats.map((c) => {
           const spent = spending[c.id] || 0;
@@ -144,7 +170,7 @@ export default function HomeView({
 
       {/* ── Recent ── */}
       {monthExp.length > 0 && (
-        <section className="card" style={{ '--i': 2 }}>
+        <section className="card card--recent" style={{ '--i': 2 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <p className="lbl">Recent</p>
             {f.isFiltering && (
@@ -173,6 +199,7 @@ export default function HomeView({
           )}
         </section>
       )}
+      </div>
     </>
   );
 }

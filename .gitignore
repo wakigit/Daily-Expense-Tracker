@@ -43,6 +43,7 @@ venv/
 
 # Smoke-test build output
 .smoke-build/
+.matrix-build/
 
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/

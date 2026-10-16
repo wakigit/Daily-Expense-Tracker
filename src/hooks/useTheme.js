@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { themeById } from '../themes/themes';
-import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '../themes/scenes';
+import { paintBackground, setSceneDecay, setScenePaused, setSceneStill, isWide, WIDE_QUERY } from '../themes/scenes';
 
 /**
  * Applies a theme's CSS custom properties to :root and mounts the wallpaper.
@@ -11,12 +11,30 @@ import { paintBackground, setSceneOver, setScenePaused, setSceneStill } from '..
  * an element that is already mounted, so logging an expense no longer makes the
  * deer teleport or the rain stutter.
  *
- * `isOver` is the whole budget signal the scene gets: one boolean, per §2 of
- * the redesign spec. There is no gradient of health any more — the scene is
- * calm, or it is over.
+ * `decay` is the whole budget signal the scene gets: one number, 0 to 2, from
+ * `decayLevel()` in lib/status.js. The scene is healthy, strained, or run down,
+ * and it eases between them in either direction — spend more and the world
+ * wears out, delete the expense and it recovers.
  */
-export function useTheme(themeId, { isOver = false, paused = false, still = false, motion = 'auto' } = {}) {
-  // ── Build: theme changes only.
+export function useTheme(themeId, { decay = 0, paused = false, still = false, motion = 'auto' } = {}) {
+  /* Which composition is mounted. Crossing the laptop breakpoint is the only
+     other thing that forces a rebuild, and a rebuild restarts every loop — but
+     at that exact moment the whole layout is changing anyway, so the restart is
+     invisible. Dragging a window across 1024px is the only way to see it.
+
+     Mounting both compositions and swapping with display:none would avoid even
+     that, at the cost of doubling the element count on phones, which is the
+     constrained device. Not worth it for a transition nobody watches. */
+  const [wide, setWide] = useState(isWide);
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE_QUERY);
+    const onChange = () => setWide(mq.matches);
+    mq.addEventListener('change', onChange);
+    onChange();
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  // ── Build: theme and composition only.
   useEffect(() => {
     const theme = themeById(themeId);
     Object.entries(theme.vars).forEach(([k, v]) =>
@@ -27,7 +45,7 @@ export function useTheme(themeId, { isOver = false, paused = false, still = fals
     // Keep the iOS status bar / browser chrome in step with the theme.
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme.vars['--ground']);
-  }, [themeId]);
+  }, [themeId, wide]);
 
   // ── Motion: 'on' opts out of the reduced-motion rules, 'auto' defers to the
   // system. Stamped on :root because the rules it unlocks are global, not just
@@ -37,8 +55,8 @@ export function useTheme(themeId, { isOver = false, paused = false, still = fals
   }, [motion]);
 
   // ── State: re-applied after a rebuild, hence themeId in the deps.
-  useEffect(() => { setSceneOver(isOver); }, [isOver, themeId]);
-  useEffect(() => { setSceneStill(still); }, [still, themeId]);
+  useEffect(() => { setSceneDecay(decay); }, [decay, themeId, wide]);
+  useEffect(() => { setSceneStill(still); }, [still, themeId, wide]);
 
   // ── Pausing: off the Home tab, or whenever the tab is in the background.
   useEffect(() => {
@@ -46,5 +64,5 @@ export function useTheme(themeId, { isOver = false, paused = false, still = fals
     apply();
     document.addEventListener('visibilitychange', apply);
     return () => document.removeEventListener('visibilitychange', apply);
-  }, [paused, themeId]);
+  }, [paused, themeId, wide]);
 }

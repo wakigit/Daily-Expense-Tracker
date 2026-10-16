@@ -67,6 +67,8 @@
   --zone-hero-end: 260px;
   --zone-cards: 392px;
   --nav-h: 84px;
+  /* Width of the laptop navigation rail. Phone ignores it. */
+  --rail-w: 88px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -121,6 +123,30 @@ body {
 
 @media (min-aspect-ratio: 390/844) {
   #scrim[data-home='true'] { min-width: 0; }
+}
+
+/* The laptop composition covers the viewport rather than sitting as a panel, so
+   the scrim has to span it too — the panel geometry above would dim a 390-wide
+   strip down the middle of the screen and nothing else. */
+@media (min-width: 1024px) {
+  #scrim[data-home='true'] {
+    left: 0; transform: none; width: 100%; aspect-ratio: auto; inset: 0;
+    /* Two masks, intersected. The vertical one is the phone's: dim the top,
+       clear by the time the cards start. The horizontal one is new and exists
+       for the moon — --scrim-home is dark until 55% across, which on a phone is
+       nowhere near the top-right corner the moon lives in, but the laptop
+       composition puts the moon at 56% (the only vertical band that clears both
+       the hero text and the ledger column). Without this it sat under half an
+       opacity of scrim and read grey instead of lit. */
+    -webkit-mask-image:
+      linear-gradient(180deg, #000 0%, #000 34%, transparent 52%),
+      linear-gradient(90deg, #000 0%, #000 34%, transparent 46%);
+    mask-image:
+      linear-gradient(180deg, #000 0%, #000 34%, transparent 52%),
+      linear-gradient(90deg, #000 0%, #000 34%, transparent 46%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
 }
 
 .display { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; }

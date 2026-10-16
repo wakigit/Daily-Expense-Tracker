@@ -88,7 +88,7 @@ input:focus, select:focus {
 
 input[type='date'] { color-scheme: light; }
 
-input.err {
+input.err, select.err {
   border-color: var(--st-over) !important;
   box-shadow: 0 0 0 4px rgba(var(--st-over-rgb), 0.15) !important;
   animation: shake 0.32s var(--ease-out);
@@ -795,6 +795,9 @@ button:active { transform: scale(0.96); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* A long category name truncates with an ellipsis; without this gap the
+     ellipsis sits flush against the amount and the two read as one string. */
+  gap: 8px;
   margin-bottom: 9px;
   cursor: pointer;
   padding: 3px 5px;
@@ -1044,6 +1047,83 @@ button:active { transform: scale(0.96); }
   margin-top: 8px;
 }
 
+/* ═══ Receipt scan ═════════════════════════════════════════════ */
+
+/* Shares .voice-btn so the two shortcuts are visibly the same KIND of control.
+   Tighter bottom margin than .voice because they stack. */
+.receipt { margin-bottom: 0.55rem; }
+
+/* Solid where voice is dashed: scanning is the primary shortcut of the two,
+   and the form below is where the dashed, optional feel belongs. */
+.receipt-btn {
+  border-style: solid;
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+.receipt-btn.working {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.15);
+}
+
+/* A line travelling down a band, like a scanner passing over paper. The wait
+   is 8–15s — long enough that a static label reads as a hang. */
+.receipt-scan {
+  position: relative;
+  height: 3px;
+  margin-top: 9px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.16);
+  overflow: hidden;
+}
+.receipt-scan i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  animation: scan 1.4s var(--ease-out) infinite;
+}
+
+@keyframes scan {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(363%); }
+}
+
+/* Says what the scan could NOT read. Not an error — the form is usable either
+   way — so it takes the muted colour rather than the over-budget red. */
+.receipt-note {
+  font-size: 12.5px;
+  color: var(--tx-sub);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* The foreign-currency warning.
+   Loud on purpose, and different in KIND from .receipt-note: it is the only
+   scan outcome that empties a field you must refill before you can save, so it
+   is coloured like the over-budget state, boxed, and left-aligned for reading
+   rather than centred like a caption. */
+.receipt-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 9px 11px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--st-over);
+  background: rgba(var(--st-over-rgb), 0.13);
+  border: 1px solid rgba(var(--st-over-rgb), 0.45);
+  border-radius: 11px;
+}
+.receipt-warn svg { flex-shrink: 0; margin-top: 1px; }
+
+/* The scan line is pure decoration; a still bar is the honest resting state. */
+@media (prefers-reduced-motion: reduce) {
+  .receipt-scan i { animation: none; width: 100%; opacity: 0.6; }
+}
+
 /* ═══ Ask ══════════════════════════════════════════════════════ */
 
 /* Quieter than the answer, loud enough to catch a wrong reading. */
@@ -1170,3 +1250,247 @@ button:active { transform: scale(0.96); }
 
 /* Five tabs need a little less breathing room than four. */
 .bottom-nav .nav-btn { padding: 8px 10px; }
+
+/* ═══ Laptop layout ════════════════════════════════════════════ */
+
+/* Below 1024px NOTHING here applies: the phone column is untouched, and the
+   768–1023px band deliberately gets no layout of its own — a third breakpoint
+   would be a third thing to verify for a width nobody is demoing on.
+
+   The whole laptop shell is CSS. No component is forked, no view is rewritten,
+   and `tab` is still one string in App.jsx driving one set of handlers. The
+   columns exist in the markup at every width; on a phone they are
+   `display: contents`, which removes their box entirely, so the phone renders
+   the identical box tree it did before this section was written. */
+
+.col { display: contents; }
+
+@media (min-width: 1024px) {
+  /* The rail is fixed to the viewport edge, so the shell reserves its width
+     with padding rather than a grid track — that keeps the content grid to the
+     two columns that actually hold content. */
+  .app {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 760px) minmax(0, 380px);
+    column-gap: 28px;
+    align-content: start;
+    justify-content: center;
+    padding: max(20px, env(safe-area-inset-top)) 32px 40px calc(var(--rail-w) + 32px);
+  }
+
+  .app > * { grid-column: 1; }
+  .app > .top-bar { grid-column: 1 / -1; }
+
+  /* ── Per-view grids ──
+     Home is the only view with a ledger. Reserving that column everywhere left
+     Settings and Overview as a narrow strip of cards against a wide empty gap,
+     which read as a broken layout rather than as whitespace. */
+
+  /* Card lists fill two equal columns and pack from the top, so neither side
+     is left short. align-items:start keeps a four-row card from stretching to
+     match a one-row card beside it. */
+  .app[data-view='settings'],
+  .app[data-view='overview'],
+  .app[data-view='category'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    max-width: 1240px;
+  }
+  .app[data-view='settings'] > *,
+  .app[data-view='overview'] > *,
+  .app[data-view='category'] > * { grid-column: auto; }
+  .app[data-view='settings'] > .top-bar,
+  .app[data-view='overview'] > .top-bar,
+  .app[data-view='category'] > .top-bar { grid-column: 1 / -1; }
+
+  /* Add is a form and Ask is a conversation. Both get worse at 1240px wide, so
+     they keep one column — but centred in the whole content area rather than
+     pinned left with dead space to the right. */
+  .app[data-view='add'],
+  .app[data-view='ask'] { grid-template-columns: minmax(0, 720px); }
+
+  .col { display: block; }
+  .col--main { grid-column: 1; }
+  .col--side { grid-column: 2; grid-row: 2; }
+
+  /* Only Settings renders it now, and Settings is a two-column grid, so it
+     spans rather than sitting under one column. */
+  .footer-credit { grid-column: 1 / -1; }
+
+  /* The hero's fixed height is measured against the phone's §4 zones. On a
+     laptop the cards below it are in a different column, so there is no card
+     line to protect and the height is just dead space. */
+  .hero { height: auto; padding-bottom: 20px; }
+  .hero > * { max-width: 100%; }
+  .hero-bar { width: min(100%, 420px); }
+
+  /* The transaction list never capped its row count — the phone simply ran out
+     of screen. Giving it a full-height column of its own is the whole reason
+     the ledger exists, and it needs no code to do it. */
+}
+
+/* ── The rail ──
+   Same five items, same component, same raised Add. Only the box changes. */
+@media (min-width: 1024px) {
+  .bottom-nav {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: var(--rail-w);
+    max-width: none;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-auto-rows: max-content;
+    align-content: center;
+    gap: 10px;
+    padding: 24px 8px;
+    border-top: none;
+    border-left: none;
+    border-right: 1px solid var(--nav-line);
+    border-radius: 0;
+  }
+
+  /* The raised Add pulls up by 14px to clear the bottom bar's edge. In a
+     vertical rail there is no edge to clear, and the offset just knocked it
+     out of alignment with the four flat icons. */
+  .nav-btn.raised .nav-ico { margin-top: 0; }
+}
+
+/* ═══ Last 7 days ══════════════════════════════════════════════ */
+
+/* Answers "when", where the donut answers "where". The scale is the tallest bar
+   in the window, never the budget: there is no honest daily budget to divide
+   out of a monthly one, so the only reference line drawn is the window's own
+   average. */
+
+.week-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.week-total { color: var(--tx-sub); }
+.week-empty {
+  font-size: 13px;
+  color: var(--tx-muted);
+  text-align: center;
+  padding: 1.1rem 0 0.4rem;
+  margin: 0;
+}
+
+/* The day-label row, as an exact number rather than whatever the font decides.
+   Everything in this chart is positioned against the BAR AREA — the plot minus
+   this row — so it has to be a figure the stylesheet can do arithmetic with. */
+.week-plot {
+  --wk-day-h: 14px;
+  --wk-gap: 7px;
+  --wk-foot: calc(var(--wk-day-h) + var(--wk-gap));
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  height: 128px;
+  align-items: end;
+}
+
+/* A grid, not a flex column, so the bar gets a track of its own. A percentage
+   height on a flex child resolves against the whole column — including the day
+   label — so the tallest bar was sized to 100% of a box it could only occupy
+   the top 82% of, and was silently clipped. Every bar above roughly four
+   fifths of the peak was therefore drawn at the same height as the peak, which
+   made two very different days look identical. Against a 1fr track the
+   percentage means what it says. */
+.week-col {
+  display: grid;
+  grid-template-rows: 1fr var(--wk-day-h);
+  row-gap: var(--wk-gap);
+  justify-items: center;
+  align-items: end;
+  height: 100%;
+  min-width: 0;
+}
+
+.week-bar {
+  position: relative;
+  width: 100%;
+  max-width: 34px;
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(180deg,
+    rgba(var(--accent-rgb), 0.85), rgba(var(--accent-rgb), 0.42));
+  transition: filter var(--dur) var(--ease-out);
+}
+/* The biggest day is the one worth noticing, so it is the only solid bar. */
+.week-bar.top { background: var(--accent); }
+/* A day with nothing logged still gets a mark, or the week reads as six days. */
+.week-bar.none { background: var(--track-card, rgba(255,255,255,0.1)); }
+
+.week-bar:hover { filter: brightness(1.15); }
+
+.week-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tx);
+  background: var(--chip);
+  border: 1px solid var(--card-line);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur);
+}
+.week-col:hover .week-tip { opacity: 1; }
+
+.week-day {
+  font-size: 11px;
+  line-height: var(--wk-day-h);
+  height: var(--wk-day-h);
+  font-weight: 600;
+  color: var(--tx-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Measured from the bars' baseline, over the bars' own height — the same two
+   numbers the bars use. Positioned against the plot it would sit a day-label
+   row too low, which made a bar worth well under the average appear to touch
+   it. */
+.week-avg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--wk-foot) + var(--wk-ratio, 0) * (100% - var(--wk-foot)));
+  border-top: 1px dashed var(--card-line);
+  pointer-events: none;
+}
+/* Left, not right: the right-hand column is the most recent day and the one
+   most likely to be the tallest bar, which the label was landing on top of. */
+.week-avg span {
+  position: absolute;
+  left: 0;
+  top: -8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tx-muted);
+  /* A bar taller than the average passes behind this label. The card tint
+     alone is translucent, so it was reading through the digits; the blur is
+     what the rest of the app already uses to hold text over a busy ground. */
+  background: var(--card);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bars have room to breathe in a laptop column; on a phone they do not. */
+@media (min-width: 1024px) {
+  .week-plot { height: 164px; gap: 12px; }
+  .week-bar { max-width: 46px; }
+}

@@ -202,6 +202,10 @@ export default function SettingsView({
           <button onClick={onAddCat} className="btn-primary btn-block">+ Add category</button>
         </div>
       </section>
+
+      {/* The credit used to sit under every screen, including Home, where it
+          competed with the wallpaper. Here it is findable but out of the way. */}
+      <p className="footer-credit">made by @wakii___</p>
     </>
   );
 }
