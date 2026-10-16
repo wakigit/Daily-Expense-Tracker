@@ -1192,8 +1192,16 @@ const vCats = [
   { id: 'pub', label: 'Public transport' },
   { id: 'hire', label: 'Private hire' },
 ];
-const said = (t) => parseUtterance(t, vCats);
-const yest = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })();
+const said = (t, now) => parseUtterance(t, vCats, now);
+
+/* A fixed clock, and the expected date written out in full.
+
+   This used to derive the expectation from `new Date()` in UTC while the parser
+   resolves "yesterday" on the Asia/Singapore day. Between 00:00 and 08:00 SGT
+   the two disagree and the check failed — a red suite caused by the test, not
+   by the parser, which is right. 04:00Z is midday in Singapore, where both
+   calendars agree, so the literal below is unambiguous. */
+const VOICE_NOW = atUtc('2026-10-06T04:00:00Z');
 
 logic('voice: colloquial dollars-cents', said('four fifty for chicken rice').amount, '4.50');
 logic('voice: description from colloquial', said('four fifty for chicken rice').description, 'Chicken rice');
@@ -1209,7 +1217,8 @@ logic('voice: category matched by label', said('spent 20 on shopping').category,
 logic('voice: category matched by distinctive word', said('15 dollars public transport').category, 'pub');
 logic('voice: no category when nothing matches', said('nine dollars sticker').category, undefined);
 
-logic('voice: yesterday resolves to a date', said('five dollars kopi yesterday').date, yest);
+logic('voice: yesterday resolves to a date',
+  said('five dollars kopi yesterday', VOICE_NOW).date, '2026-10-05');
 logic('voice: no date word leaves date alone', said('five dollars kopi').date, undefined);
 
 logic('voice: filler words are dropped', said('add an expense for six dollars kopi').description, 'Kopi');
