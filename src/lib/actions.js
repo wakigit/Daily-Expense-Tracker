@@ -16,7 +16,9 @@
  * into one of these calls; the arithmetic and the validation stay on this side.
  */
 
-import { toCents, roundAmount } from './money';
+// Extension required: the docstring above promises this file is importable
+// from the backend, and Node's ESM resolver — unlike Vite — does not infer it.
+import { toCents, roundAmount } from './money.js';
 
 /** Anything above this is a typo, not a kopi. */
 export const MAX_AMOUNT = 1_000_000;
@@ -57,6 +59,22 @@ let seq = 0;
 export function newExpenseId(now = Date.now()) {
   seq = (seq + 1) % 0xffff;
   return `e${now.toString(36)}-${seq.toString(36)}`;
+}
+
+/**
+ * An action's own identity, which is NOT the id of the expense it touched.
+ *
+ * Both an add and a later delete of the same row carry that row's id, so a
+ * caller holding an expense id cannot say which of the two it means. Looking
+ * one up by expense id finds the add first and tries to reverse that instead —
+ * and reversing an add whose row has just been deleted fails as
+ * `already_removed`, so Undo offered a button that quietly did nothing. The
+ * toast now carries this instead.
+ */
+let actionSeq = 0;
+export function newActionId(now = Date.now()) {
+  actionSeq = (actionSeq + 1) % 0xffff;
+  return `a${now.toString(36)}-${actionSeq.toString(36)}`;
 }
 
 /* ── Validation ────────────────────────────────────────────────── */
@@ -208,7 +226,7 @@ export function addExpense(expenses = [], input = {}, opts = {}) {
   return {
     ok: true,
     expenses: [...expenses, expense],
-    action: { type: 'add', source, id: expense.id, expense },
+    action: { type: 'add', actionId: newActionId(now), source, id: expense.id, expense },
     warnings: duplicate ? [{ code: ERR.DUPLICATE, existingId: duplicate.id }] : [],
   };
 }
@@ -225,7 +243,7 @@ export function deleteExpenseById(expenses = [], id, opts = {}) {
     expenses: expenses.filter((_, i) => i !== index),
     // The index travels with the action so undo puts the row back where it was
     // rather than on the end.
-    action: { type: 'delete', source, id: expense.id, expense, index },
+    action: { type: 'delete', actionId: newActionId(opts.now), source, id: expense.id, expense, index },
   };
 }
 

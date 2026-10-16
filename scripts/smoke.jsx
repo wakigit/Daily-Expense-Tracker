@@ -1410,6 +1410,109 @@ logic('receipt: every failure reason has human wording',
   ['timeout', 'unreachable', 'provider_not_configured', 'receipt_not_a_receipt', 'image_too_large', 'wat']
     .every((r) => explainFailure(r).length > 10), true);
 
+/* ── Regressions found by driving the real app in a browser ─────
+ *
+ * Both of these passed every unit test that existed and still failed on
+ * screen, which is the argument for this pass having happened at all.
+ */
+
+/* 1. Undo after deleting a row you added in the same session.
+ *
+ * An add and a later delete of the same row both carried that row's expense id
+ * as `action.id`. The toast looked its action up by that id, found the ADD
+ * first, and tried to reverse it — which fails, because the row is already
+ * gone. The button was offered and did nothing. */
+const rAdd = addExpense([], { description: 'Teh peng', amount: '1.80', category: 'food', date: TODAY },
+  { cats: sCats, today: TODAY });
+const rDel = deleteExpenseById(rAdd.expenses, rAdd.action.id, { source: 'manual' });
+const rLog = pushAction(pushAction([], rAdd.action), rDel.action);
+
+logic('undo regression: an action id is not the expense id',
+  rAdd.action.actionId === rAdd.action.id, false);
+logic('undo regression: the two actions are told apart',
+  rAdd.action.actionId === rDel.action.actionId, false);
+logic('undo regression: both actions still carry the expense id',
+  [rAdd.action.id, rDel.action.id], [rAdd.action.id, rAdd.action.id]);
+logic('undo regression: looking up by expense id finds the WRONG action',
+  rLog.find((a) => a.id === rDel.action.id).type, 'add');
+logic('undo regression: looking up by action id finds the right one',
+  rLog.find((a) => a.actionId === rDel.action.actionId).type, 'delete');
+logic('undo regression: reverting the delete restores the row',
+  revert(rDel.expenses, rLog.find((a) => a.actionId === rDel.action.actionId)).expenses.length, 1);
+logic('undo regression: reverting the add instead fails, as it did on screen',
+  revert(rDel.expenses, rLog.find((a) => a.id === rDel.action.id)).error.code, ERR.ALREADY_REMOVED);
+
+/* 2. The form must not silently file an unchosen category under the first one.
+ *
+ * validateExpense falls back to cats[0] when a category is omitted. That was
+ * safe while the select could never be empty — the receipt scanner can now
+ * empty it deliberately, so the form passes requireCategory like the
+ * assistant does. */
+logic('category regression: an empty category defaults to the first without requireCategory',
+  validateExpense({ description: 'x', amount: '1', category: '', date: TODAY }, { cats: sCats, today: TODAY }).value.category,
+  sCats[0].id);
+logic('category regression: with requireCategory it is refused instead',
+  validateExpense({ description: 'x', amount: '1', category: '', date: TODAY }, { cats: sCats, today: TODAY, requireCategory: true }).error.code,
+  ERR.CATEGORY_REQUIRED);
+logic('category regression: the refusal points at the category field',
+  validateExpense({ description: 'x', amount: '1', category: '', date: TODAY }, { cats: sCats, today: TODAY, requireCategory: true }).error.field,
+  'category');
+
+/* 3. A foreign total must never be written into an SGD field. */
+const foreignDraft = validateReceipt(
+  { isReceipt: true, description: 'Blue Bottle', amount: '19.06', currency: 'USD', date: '2026-10-14', category: 'food' },
+  { cats: R_CATS, today: R_TODAY },
+).draft;
+logic('foreign regression: the amount is read and reported',
+  [foreignDraft.amount, foreignDraft.currency, foreignDraft.foreign], ['19.06', 'USD', true]);
+logic('foreign regression: the form is offered an EMPTY amount, not no amount',
+  receiptToFields(foreignDraft).amount, '');
+logic('foreign regression: the rest of the receipt still is',
+  Object.keys(receiptToFields(foreignDraft)).sort(), ['amount', 'category', 'date', 'description']);
+logic('foreign regression: a home-currency total is offered as usual',
+  receiptToFields(validateReceipt({ ...full, currency: 'SGD' }, { cats: R_CATS, today: R_TODAY }).draft).amount,
+  '14.90');
+
+/* 3b. The MERGED FORM, which is the thing that was actually wrong.
+   Omitting the amount is not the same as clearing it: these fields are spread
+   over the form the person is already typing into, so an omitted key keeps the
+   old value. Someone part-way through an SGD expense who scans a USD receipt
+   used to keep their own figure under the new shop's name — asserting on
+   receiptToFields alone could never see it. */
+const typing = { date: '2026-10-01', category: 'shop', description: 'Lunch at home', amount: '12.30', notes: 'split' };
+
+logic('merged form: a foreign scan CLEARS an amount already typed',
+  mergeReceiptIntoForm(typing, foreignDraft).amount, '');
+logic('merged form: the foreign scan still replaces the readable fields',
+  (({ description, date, category }) => [description, date, category])(mergeReceiptIntoForm(typing, foreignDraft)),
+  ['Blue Bottle', '2026-10-14', 'food']);
+logic('merged form: notes are the person\'s own and survive any scan',
+  mergeReceiptIntoForm(typing, foreignDraft).notes, 'split');
+logic('merged form: an SGD scan fills the amount normally',
+  mergeReceiptIntoForm(typing, validateReceipt({ ...full, currency: 'SGD' }, { cats: R_CATS, today: R_TODAY }).draft).amount,
+  '14.90');
+logic('merged form: an SGD scan with an unreadable total keeps what was typed',
+  mergeReceiptIntoForm(typing, validateReceipt({ ...full, amount: null }, { cats: R_CATS, today: R_TODAY }).draft).amount,
+  '12.30');
+logic('merged form: a foreign scan with an unreadable total ALSO clears it',
+  mergeReceiptIntoForm(typing, validateReceipt(
+    { ...full, currency: 'USD', amount: null }, { cats: R_CATS, today: R_TODAY },
+  ).draft).amount, '');
+
+/* 3c. The sentence that quotes the printed total must never say "null". */
+logic('printed total: quoted when it was read', printedTotal(foreignDraft), 'USD 19.06');
+logic('printed total: null when the total could not be read',
+  printedTotal(validateReceipt({ ...full, currency: 'USD', amount: null }, { cats: R_CATS, today: R_TODAY }).draft),
+  null);
+logic('printed total: null when there is no currency either', printedTotal({ amount: null, currency: null }), null);
+
+/* 4. An unread category is cleared, not left on the form's default. */
+logic('category regression: an unread category clears the field',
+  receiptToFields(validateReceipt({ ...full, category: null }, { cats: R_CATS, today: R_TODAY }).draft).category,
+  '');
+logic('category regression: a read category is passed through',
+  receiptToFields(validateReceipt(full, { cats: R_CATS, today: R_TODAY }).draft).category, 'food');
+
 let failed = 0;
 for (const c of checks) {
   if (!c.ok) failed++;

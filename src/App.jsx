@@ -312,7 +312,7 @@ export default function App() {
     setActionLog((l) => pushAction(l, res.action));
     // The toast carries the id of the action it undoes, so tapping Undo
     // reverses that delete even if something else happened in the 4.6s since.
-    setToast({ message: 'Entry deleted', kind: 'undo', actionId: res.action.id });
+    setToast({ message: 'Entry deleted', kind: 'undo', actionId: res.action.actionId });
   };
 
   /**
@@ -405,7 +405,11 @@ export default function App() {
   };
 
   const undoDelete = () => {
-    const action = actionLog.find((a) => a.id === toast?.actionId);
+    // By actionId, not by expense id. Adding a row and then deleting it logs
+    // two actions carrying the SAME expense id, and matching on that found the
+    // add — reversing which, with the row already gone, failed silently and
+    // left Undo looking broken.
+    const action = actionLog.find((a) => a.actionId === toast?.actionId);
     const res = revert(expenses, action);
     setActionLog((l) => l.filter((a) => a !== action));
     if (!res.ok) { setToast({ message: 'Nothing to undo' }); return; }
