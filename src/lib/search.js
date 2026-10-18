@@ -1,3 +1,4 @@
+import { parseDateSearch } from './dateSearch';
 /**
  * Pure search/sort logic for expenses.
  *
@@ -32,7 +33,10 @@ export function sortExpenses(items, sort) {
   return out;
 }
 
-export function filterAndSort(items, query, sort, catById) {
+export function filterAndSort(items, query, sort, catById, year) {
+  const parsed = year ? parseDateSearch(query, year) : { kind: 'text' };
+  if (parsed.kind === 'invalid') return [];
+  if (parsed.kind === 'date') return sortExpenses(items.filter(e => e.date === parsed.date), sort);
   const matched = items.filter((e) =>
     matchesQuery(e, query, catById?.(e.category)?.label ?? '')
   );

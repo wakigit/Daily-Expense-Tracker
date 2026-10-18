@@ -12,7 +12,8 @@
  * reaching it is a published key.
  */
 
-import { validateIntent, buildContext } from './intent';
+import { dialogueIntent } from './assistantDialogue.js';
+import { validateIntent, buildContext, intentDiagnostic } from './intent';
 
 /**
  * Where the backend lives. A URL, not a secret, so VITE_ is correct here —
@@ -24,11 +25,31 @@ export const ASSISTANT_URL =
 
 const TIMEOUT_MS = 12_000;
 
+/** The local answer remains available when the model request fails. */
+export function explainIntentFailure(reason) {
+  switch (reason) {
+    case 'provider_not_configured': return 'Answered offline. No model is connected.';
+    case 'provider_key_rejected': return 'Answered offline. The server AI key was rejected.';
+    case 'provider_access_denied': return 'Answered offline. AI access was denied. Check the server key and model permissions.';
+    case 'unreachable': case 'no_fetch': case 'provider_connection_failed': return 'Answered offline. Connection to the assistant failed.';
+    case 'timeout': case 'provider_timeout': return 'Answered offline. The assistant request timed out.';
+    case 'invalid_intent': case 'unreadable_response': case 'empty_response': case 'unparsable_response': return 'Answered offline. AI interpretation failed validation.';
+    case 'provider_error': return 'Answered offline. The model provider request failed.';
+    case 'http_404': case 'http_405': return 'Answered offline. The assistant endpoint is unavailable.';
+    default: return reason?.startsWith('intent_') ? 'Answered offline. AI interpretation failed validation.' : 'Answered offline. The assistant request failed.';
+  }
+}
+
 /**
  * @returns {Promise<{ok: true, intent: object} | {ok: false, reason: string}>}
  *   Never throws. A rejected promise here would mean an unanswered message.
  */
 export async function requestIntent(message, { cats, today, expenses, fetchImpl, url } = {}) {
+  const local=dialogueIntent(message);
+  if(local) {
+    const checked=validateIntent(local,{cats,message});
+    if(checked.ok) return {ok:true,intent:checked.intent,source:'builtin'};
+  }
   const endpoint = `${url ?? ASSISTANT_URL}/assistant/intent`;
   const doFetch = fetchImpl ?? (typeof fetch === 'function' ? fetch : null);
   if (!doFetch) return { ok: false, reason: 'no_fetch' };
@@ -49,7 +70,9 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      return { ok: false, reason: body.error ?? `http_${res.status}` };
+      const diagnostic=body.error==='invalid_intent'?intentDiagnostic(body.detail):null;
+      if(diagnostic) console.info('[assistant diagnostic]',JSON.stringify({phase:'server',httpStatus:res.status,...diagnostic}));
+      return { ok: false, reason: body.error ?? `http_${res.status}`, ...(diagnostic?{diagnostic}:{}), httpStatus:res.status };
     }
 
     const body = await res.json().catch(() => null);
@@ -58,10 +81,14 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
     // Validated again on arrival. The server already checked, but a frontend
     // that trusts its backend is one compromised backend away from executing
     // whatever it is handed.
-    const checked = validateIntent(body.intent, { cats });
-    if (!checked.ok) return { ok: false, reason: checked.error.code };
+    const checked = validateIntent(body.intent, { cats, message });
+    if (!checked.ok) {
+      const diagnostic=intentDiagnostic(checked.error);
+      console.info('[assistant diagnostic]',JSON.stringify({phase:'client',httpStatus:res.status,...diagnostic}));
+      return {ok:false,reason:diagnostic.code,diagnostic,httpStatus:res.status};
+    }
 
-    return { ok: true, intent: checked.intent };
+    return { ok: true, intent: checked.intent, endpoint, httpStatus: res.status };
   } catch (err) {
     return { ok: false, reason: err?.name === 'AbortError' ? 'timeout' : 'unreachable' };
   } finally {

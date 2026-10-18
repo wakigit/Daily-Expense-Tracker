@@ -11,7 +11,7 @@ const Chevron = () => (
  * Zone 1 of §4: the month picker on Home, the screen title everywhere else.
  * Settings has its own tab, so nothing else belongs up here.
  *
- * Drilling into a category replaces the month stepper with a way back out.
+ * A category keeps both its back button and the selected-month picker.
  */
 export default function Header({ title, filteredCat, onClearFilter, ym, onOpenPicker }) {
   return (
@@ -32,6 +32,11 @@ export default function Header({ title, filteredCat, onClearFilter, ym, onOpenPi
         >
           <span>{ymLabel(ym)}</span>
           <Chevron />
+        </button>
+      )}
+      {filteredCat && (
+        <button className="month-btn" onClick={onOpenPicker} aria-label={`Change month, ${ymLabel(ym)}`}>
+          <span>{ymLabel(ym)}</span><Chevron />
         </button>
       )}
     </header>

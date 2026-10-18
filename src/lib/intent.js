@@ -1,3 +1,5 @@
+import { dialogueIntent } from './assistantDialogue.js';
+import { validateQuery } from './queryContract.js';
 /**
  * The contract between the model and this application.
  *
@@ -18,7 +20,9 @@
  */
 
 export const INTENT_TYPES = [
+  'help',
   'answer',
+  'analyze',
   'propose_add',
   'find_delete_candidates',
   'undo',
@@ -27,6 +31,7 @@ export const INTENT_TYPES = [
 
 /** Every figure the assistant can ask for. Each maps to a lib/stats.js call. */
 export const METRICS = [
+  'compare',
   'total',
   'count',
   'top_day',
@@ -39,6 +44,7 @@ export const METRICS = [
 ];
 
 /** Matches the windows lib/ask.js already understands. */
+export const COMPARISON_PERIODS = ['month', 'week'];
 export const PERIODS = ['today', 'yesterday', 'week', 'lastweek', 'month', 'lastmonth', 'all'];
 
 export const INTENT_ERR = {
@@ -64,14 +70,31 @@ const trimmed = (v) => (typeof v === 'string' ? v.trim() : '');
  * category id is the kind of error that stays invisible, because the total is
  * still right and only a budget looks wrong later.
  */
-export function validateIntent(raw, { cats = [] } = {}) {
+export function validateIntent(raw, { cats = [], message = '' } = {}) {
   if (!isPlainObject(raw)) return bad(INTENT_ERR.NOT_OBJECT);
 
+  // Greetings and genuinely ambiguous highest requests cannot turn into arbitrary totals.
+  const dialogue=dialogueIntent(message);
+  if(dialogue) return {ok:true,intent:dialogue};
   const type = trimmed(raw.type);
   if (!INTENT_TYPES.includes(type)) return bad(INTENT_ERR.UNKNOWN_TYPE, { type: raw.type ?? null });
 
+  if(type==='help') return bad(INTENT_ERR.BAD_FIELD,{field:'message'});
+
   const catIds = cats.map((c) => c.id);
   const say = trimmed(raw.say);
+
+  if (type === 'analyze') {
+    const unquoted = message.toLowerCase().replace(/[“\"][^”\"]*[”\"]/g, ' ');
+    const mentioned = cats.filter(c => {
+      const escaped = c.label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'u').test(unquoted);
+    });
+    if (mentioned.length > 1) return bad(INTENT_ERR.BAD_FIELD, { field: 'multiple_categories' });
+    const { amountCents: ignored, ...q } = raw.query ?? {};
+    const checked = validateQuery(q, cats);
+    return checked.ok ? { ok: true, intent: { type, query: checked.query, say } } : bad(INTENT_ERR.BAD_FIELD, { field: `query.${checked.field}` });
+  }
 
   if (type === 'answer') {
     const q = isPlainObject(raw.query) ? raw.query : {};
@@ -80,6 +103,8 @@ export function validateIntent(raw, { cats = [] } = {}) {
 
     const period = trimmed(q.period) || 'month';
     if (!PERIODS.includes(period)) return bad(INTENT_ERR.UNKNOWN_PERIOD, { period: q.period ?? null });
+
+    if (metric === 'compare' && !COMPARISON_PERIODS.includes(period)) return bad(INTENT_ERR.BAD_FIELD, { field: 'period' });
 
     const category = q.category == null || q.category === '' ? null : trimmed(q.category);
     if (category !== null && !catIds.includes(category)) {
@@ -183,4 +208,10 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
     expenseCount: expenses.length,
     hasData: expenses.length > 0,
   };
+}
+
+/** Public diagnostics contain fixed codes/field names, never model values or category labels. */
+export function intentDiagnostic(error) {
+  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','multiple_categories','expense','filter','question','scope','period'];
+  return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

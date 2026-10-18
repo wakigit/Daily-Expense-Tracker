@@ -151,6 +151,22 @@ body {
 
 .display { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; }
 
+/* Money is read, not admired.
+
+   Caprasimo is a heavy display serif: its S and its $ carry the same thick
+   spurs and nearly the same width, so "S$73.50" set in it reads as a pile of
+   currency symbols before it reads as a figure — and a figure that has to be
+   decoded is the wrong thing to put at the top of a budget screen. Every
+   amount therefore takes the UI face, bold and tight, with the tabular
+   numerals it already had. Headings keep Caprasimo, which is where the
+   character belongs and where nobody has to parse a decimal. */
+.display.money,
+.donut-center-val {
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
 /* Money must never jitter as digits change — tabular figures keep every
    numeral the same width. In a finance app this is the single highest-value
    typographic detail. */

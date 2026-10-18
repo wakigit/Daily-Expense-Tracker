@@ -87,6 +87,24 @@ export function travel(boxW, startX, elW, pad = 30) {
 }
 
 /** The same, as the inline style the keyframes read. */
+/**
+ * The y of a cubic Bezier at a given t, and the x beside it.
+ *
+ * Added because the widescreen fish were positioned by eye against a river
+ * drawn as a curve: the river's surface falls 178 units from right to left,
+ * so a fish at a fixed y was in the water at one end of the frame and jumping
+ * off dry land at the other. Anything that has to sit ON the water now asks
+ * the water where it is.
+ */
+export function bezierAt(t, p0, p1, p2, p3) {
+  const u = 1 - t;
+  const b = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+  return {
+    x: b[0] * p0[0] + b[1] * p1[0] + b[2] * p2[0] + b[3] * p3[0],
+    y: b[0] * p0[1] + b[1] * p1[1] + b[2] * p2[1] + b[3] * p3[1],
+  };
+}
+
 const travelStyle = (...args) => {
   const t = travel(...args);
   return `--out:${t.out}px;--in:${t.in}px`;
@@ -443,6 +461,15 @@ const SCENE_CSS = `
 }
 #bg .crab-leg{transform-box:fill-box;transform-origin:50% 0%;animation:w-scuttle 0.42s ease-in-out infinite}
 @keyframes w-scuttle{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(13deg)}}
+
+/* Laptop legs share the 16-second patrol's rests; the phone loop is untouched. */
+#bg .crab--wide .crab-leg{animation-name:w-scuttle-wide;animation-duration:16s;animation-timing-function:linear;animation-delay:0s !important;--leg-sign:1}
+#bg .crab--wide .crab-leg:nth-child(even){--leg-sign:-1}
+@keyframes w-scuttle-wide{
+  0%,5%,22%,30%,48%,56%,72%,80%,96%,100%{transform:rotate(0deg)}
+  7%,11%,15%,19%,32%,36%,40%,44%,58%,62%,66%,70%,82%,86%,90%,94%{transform:rotate(calc(26deg * var(--leg-sign)))}
+  9%,13%,17%,21%,34%,38%,42%,46%,60%,64%,68%,84%,88%,92%{transform:rotate(calc(-26deg * var(--leg-sign)))}
+}
 
 /* A shooting star is almost all waiting. Opacity 0 at both ends of the loop is
    what lets it reset its position without anyone seeing the jump (§3.7). */
@@ -1096,13 +1123,29 @@ const wideStars = (n, salt, maxY, skip) => Array.from({ length: n }, (_, i) => {
 
 function forestWide() {
   const HORIZON = 560;
-  /* The moon sits at x 800, not in the top-right corner where a phone puts it.
-     At laptop width the top right is the ledger column, and the moon spent the
-     whole month behind a card. x 760..840 is the one vertical band that stays
-     clear of BOTH the hero text on the left and the ledger on the right across
-     1024..1512, because the centre column is capped at 760px and centred. */
-  const MOON_X = 800;
-  const MOON_Y = 150;
+  /* The moon sits in the sky window the Home grid reserves — the empty cell to
+     the right of the hero and above both cards. Measured at 1280x800 and
+     1440x900, that window is x 660..1400, y 90..380 in these units, and it is
+     empty by design rather than by luck: see the `sky` area in app.css. */
+  const MOON_X = 1040;
+  const MOON_Y = 196;
+
+  // The bank and water share this curve. Raising it opens a broad river;
+  // fish and ripples derive their positions from the same geometry.
+  const RIVER = [
+    [[1440, 720], [1180, 738], [960, 750], [720, 766]],
+    [[720, 766], [470, 780], [230, 792], [0, 802]],
+  ];
+  const riverAt = (t) => {
+    // t runs 0..1 right-to-left across both segments.
+    const seg = t < 0.5 ? RIVER[0] : RIVER[1];
+    return bezierAt(t < 0.5 ? t * 2 : (t - 0.5) * 2, ...seg);
+  };
+  const riverPath = (dy = 0) =>
+    `M${RIVER[0][0][0]},${RIVER[0][0][1] + dy} ` +
+    RIVER.map(([, c1, c2, p]) =>
+      `C${c1[0]},${(c1[1] + dy).toFixed(0)} ${c2[0]},${(c2[1] + dy).toFixed(0)} ${p[0]},${(p[1] + dy).toFixed(0)}`
+    ).join(' ');
   const stars = wideStars(48, 101, 420, (x, y) => Math.abs(x - MOON_X) < 170 && y < 310);
 
   // Three ridges receding up the frame, then the framing pines at both edges.
@@ -1110,20 +1153,29 @@ function forestWide() {
     `<polygon points="${pine(x0 + i * (span / n) + rnd(i, salt) * 10, y + rnd(i, salt + 1) * 8, h + rnd(i, salt + 2) * 22, w + rnd(i, salt + 3) * 4)}"/>`
   ).join('');
 
-  const framing = [[40, 900, 560, 44], [128, 840, 400, 34], [1400, 900, 600, 48], [1312, 850, 430, 36]]
+  const framing = [[40, 900, 560, 44], [128, 840, 400, 34], [1442, 900, 480, 24]]
     .map((d, i) => `<polygon class="a sway" points="${pine(...d)}" style="animation-duration:${(6.5 + i * 1.3).toFixed(1)}s;animation-delay:${(-i * 1.7).toFixed(1)}s"/>`)
     .join('');
 
+  /* Each fish is placed by its position ALONG the river rather than by an x
+     and a y, so it breaks the surface wherever the surface happens to be. The
+     jump itself is the keyframe's -22 units of lift from here, so landing the
+     origin on the water is the whole of the fix. */
   const fish = (i) => {
     const which = ['fish-a', 'fish-b', 'fish-c'][i];
     const st = ` style="animation-duration:${rr(i, 43, 9, 17).toFixed(1)}s;animation-delay:${(-rr(i, 44, 0, 17)).toFixed(1)}s"`;
-    return `<g class="trc ${which}" transform="translate(${rr(i, 141, 420, 1120).toFixed(0)} ${rr(i, 142, 700, 780).toFixed(0)}) scale(${rr(i, 45, 1.1, 1.7).toFixed(2)})">` +
+    /* t runs right-to-left. The fish are kept in the right-hand half, which
+       is the part of the water the dashboard leaves uncovered at both laptop
+       sizes — the ledger now sits over the left bank. They are still placed
+       ON the curve, so moving the window does not put them back on land. */
+    const at = riverAt([0.035, 0.09, 0.16][i]);
+    return `<g class="trc ${which}" transform="translate(${at.x.toFixed(0)} ${(at.y + 10).toFixed(0)}) scale(${rr(i, 45, 1.1, 1.7).toFixed(2)})">` +
       `<ellipse class="a ripple" cx="0" cy="2" rx="9" ry="2.2" fill="none" stroke="#BFD2EA" stroke-width="0.9"${st}/>` +
       `<path class="a fish" d="M0,0 C4,-3 9,-3 12,0 C9,3 4,3 0,0 Z M12,0 L16,-3 L16,3 Z" fill="#C9D9EE"${st}/></g>`;
   };
 
   const deadLeaves = Array.from({ length: 48 }, (_, i) =>
-    `<ellipse cx="${rr(i, 171, 10, 1430).toFixed(0)}" cy="${rr(i, 172, 566, 618).toFixed(0)}" rx="${rr(i, 173, 2, 4).toFixed(1)}" ry="${rr(i, 174, 1, 1.9).toFixed(1)}"/>`
+    `<ellipse cx="${rr(i, 171, 10, 1430).toFixed(0)}" cy="${rr(i, 172, 590, 700).toFixed(0)}" rx="${rr(i, 173, 2, 4).toFixed(1)}" ry="${rr(i, 174, 1, 1.9).toFixed(1)}"/>`
   ).join('');
 
   const falling = Array.from({ length: 16 }, (_, i) =>
@@ -1152,8 +1204,8 @@ function forestWide() {
 <radialGradient id="fwglow"><stop offset="0" stop-color="#F6E7B8" stop-opacity="0.5"/><stop offset="1" stop-color="#F6E7B8" stop-opacity="0"/></radialGradient>
 <linearGradient id="fwriv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C4A6E"/><stop offset="1" stop-color="#132338"/></linearGradient>
 <linearGradient id="fwfog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FB4CE" stop-opacity="0"/><stop offset="0.45" stop-color="#9FB4CE" stop-opacity="0.5"/><stop offset="1" stop-color="#9FB4CE" stop-opacity="0"/></linearGradient>
-${[['0', 908], ['1', 856], ['2', 816]].map(([n, cx]) =>
-  `<mask id="fwmoon${n}"><rect x="${MOON_X - 110}" y="${MOON_Y - 90}" width="220" height="220" fill="#fff"/><circle cx="${cx}" cy="${MOON_Y - 8}" r="42" fill="#000"/></mask>`
+${[['0', 108], ['1', 56], ['2', 16]].map(([n, dx]) =>
+  `<mask id="fwmoon${n}"><rect x="${MOON_X - 110}" y="${MOON_Y - 90}" width="220" height="220" fill="#fff"/><circle cx="${MOON_X + dx}" cy="${MOON_Y - 8}" r="42" fill="#000"/></mask>`
 ).join('')}
 </defs>
 <rect width="${VW_W}" height="${VW_H}" fill="url(#fwsky)"/>
@@ -1169,19 +1221,23 @@ ${['0', '1', '2'].map((n) => `<circle class="trc moon-${n}" cx="${MOON_X}" cy="$
 <path d="M0,${HORIZON - 40} C260,${HORIZON - 80} 520,${HORIZON - 50} 760,${HORIZON - 70} C1000,${HORIZON - 88} 1240,${HORIZON - 48} 1440,${HORIZON - 64} L1440,${HORIZON + 60} L0,${HORIZON + 60} Z" fill="#121D33"/>
 <g fill="#0F192B">${ridge(34, 40, 1380, 530, 56, 14, 191)}</g>
 <path d="M0,${HORIZON + 30} C440,${HORIZON + 6} 980,${HORIZON + 54} 1440,${HORIZON + 24} L1440,900 L0,900 Z" fill="#0B1422"/>
+<!-- A broad, muted green bank separates the hooves from the blue water.
+     The waterline stays fixed, retaining the enlarged river and fish origins. -->
+<path class="riverbank" d="${riverPath(-52)} L0,900 L1440,900 Z" fill="#1C2827"/>
 <g class="trc deadfall" fill="#4A3A26">${deadLeaves}</g>
 
-<path d="M1440,650 C1180,682 960,724 720,742 C470,760 230,790 0,828 L0,900 L1440,900 Z" fill="url(#fwriv)"/>
-<ellipse class="trc moon-reflect" cx="${MOON_X - 40}" cy="750" rx="38" ry="5" fill="#F4ECD2"/>
+<path d="${riverPath()} L0,900 L1440,900 Z" fill="url(#fwriv)"/>
+<ellipse class="trc moon-reflect" cx="${MOON_X}" cy="${(riverAt(0.27).y + 16).toFixed(0)}" rx="38" ry="5" fill="#F4ECD2"/>
 <g class="trc river-lines" fill="none" stroke="#A9C2E0" stroke-linecap="round">
-<path class="a flow" d="M1440,668 C1180,700 960,742 720,760 C470,778 230,808 0,846" stroke-width="1.7" stroke-dasharray="9 22"/>
-<path class="a flow" d="M1440,690 C1180,722 960,764 720,782 C470,800 230,830 0,868" stroke-width="1.3" stroke-dasharray="5 26" style="animation-duration:7s"/>
-<path class="a flow" d="M1440,648 C1180,680 960,722 720,740 C470,758 230,788 0,826" stroke-width="1.1" stroke-dasharray="10 20" style="animation-duration:6s"/>
+<path class="a flow" d="${riverPath(16)}" stroke-width="1.7" stroke-dasharray="9 22"/>
+<path class="a flow" d="${riverPath(34)}" stroke-width="1.3" stroke-dasharray="5 26" style="animation-duration:7s"/>
+<path class="a flow" d="${riverPath(6)}" stroke-width="1.1" stroke-dasharray="10 20" style="animation-duration:6s"/>
 </g>
 <g class="trc fish-group">${[0, 1, 2].map(fish).join('')}</g>
 
-<g class="tr deer" style="--k:2.6">
-<g transform="translate(300 606) scale(1.9)">
+<g class="tr deer" style="--k:0.35">
+<!-- Hooves sit roughly 40 units inland across the complete walking loop. -->
+<g transform="translate(1330 642) scale(1.1)">
 <g class="a deerwalk" fill="#05090F" stroke="rgba(196,210,232,0.38)" stroke-width="0.6">
 <path d="M0,13 L-4,10 L-1,17 Z"/>
 <rect x="2" y="21" width="2.6" height="17"/><rect x="7" y="21" width="2.6" height="17"/>
@@ -1197,28 +1253,50 @@ ${['0', '1', '2'].map((n) => `<circle class="trc moon-${n}" cx="${MOON_X}" cy="$
 <g fill="#070D18">${framing}</g>
 <g class="trc bare" fill="none" stroke="#1B2436" stroke-width="2.2" stroke-linecap="round">${bare}</g>
 <g class="trc leaf-drop" fill="#6B4A28">${falling}</g>
-<rect class="trc fog" x="-20" y="600" width="1480" height="260" fill="url(#fwfog)"/>
+<rect class="trc fog" x="-20" y="640" width="1480" height="250" fill="url(#fwfog)"/>
 </svg>`;
 }
 
 function beachWide() {
-  const HORIZON = 540;
-  const SHORE = 648;
+  // A visible sand strip and room for the entire wave below the horizon.
+  // The crab patrols the open right bank, within both laptop crops.
+  const HORIZON = 650;
+  const SHORE = 790;
+  /* The sand is a curve, not a line: it rises to SHORE-14 around x 480. The
+     surfer's lowest point has to clear the HIGHEST sand, not the average one,
+     or it beaches itself a third of the way across the frame. */
+  const SURF_Y = 724;
   const stars = wideStars(44, 201, 440);
+  /* Same reserved window the forest's moon uses. */
+  const SUN_X = 1040;
 
   const wavePath = (y, a) => {
     let d = `M0,${y}`;
     for (let x = 0; x < 2880; x += 40) d += ` Q${x + 20},${y - a} ${x + 40},${y}`;
     return d;
   };
-  const waves = [[560, 2.4, 1.2, 0.34, 34], [582, 2.8, 1.2, 0.3, 42], [606, 3.2, 1.1, 0.26, 50], [628, 3.6, 1.1, 0.22, 58], [648, 4, 1, 0.18, 68]]
+  const waves = [[660, 2.4, 1.2, 0.34, 34], [685, 2.8, 1.2, 0.3, 42], [710, 3.2, 1.1, 0.26, 50], [740, 3.6, 1.1, 0.22, 58], [770, 4, 1, 0.18, 68]]
     // 1440 / 40 = 36 whole crest periods, so the shift is invisible.
     .map(([y, amp, w, op, dur]) => `<path class="a wave" d="${wavePath(y, amp)}" stroke="#F7D2B4" stroke-width="${w}" opacity="${op}" style="--wave:-1440px;animation-duration:${dur}s"/>`)
     .join('');
 
-  const reflect = Array.from({ length: 12 }, (_, i) => {
-    const w = 110 - i * 7;
-    return `<rect class="a shim" x="${(720 - w / 2 + (rnd(i, 211) - 0.5) * 12).toFixed(1)}" y="${548 + i * 9}" width="${w}" height="3" rx="1.5" style="animation-delay:${(-rr(i, 212, 0, 4)).toFixed(1)}s"/>`;
+  /* The sun's glitter on the water.
+
+     It used to be twelve near-identical bars of the same opacity marching down
+     the sea, which read as a ladder of stray marks rather than as light. A
+     glitter path is widest and brightest where it meets the horizon under the
+     sun and breaks up as it comes towards the viewer, so the marks now taper
+     in width AND fade, and each one is jittered off the centre line. */
+  const reflect = Array.from({ length: 16 }, (_, i) => {
+    const f = i / 15;
+    const w = (96 - 78 * f) * rr(i, 213, 0.72, 1.12);
+    const op = (0.5 - 0.4 * f) * rr(i, 214, 0.65, 1.15);
+    const jitter = (rnd(i, 211) - 0.5) * (10 + 26 * f);
+    /* The taper rides on a wrapper group: `w-tw` animates opacity on the rect
+       itself, and a CSS animation beats a presentation attribute, so putting
+       the fade on the rect would simply be overwritten. On the group the two
+       multiply, which is the twinkle happening *within* the fade. */
+    return `<g opacity="${op.toFixed(2)}"><rect class="a shim" x="${(SUN_X - w / 2 + jitter).toFixed(1)}" y="${(HORIZON + 6 + i * 6.4).toFixed(1)}" width="${w.toFixed(1)}" height="${(2.6 - 0.9 * f).toFixed(1)}" rx="1.3" style="animation-delay:${(-rr(i, 212, 0, 4)).toFixed(1)}s"/></g>`;
   }).join('');
 
   const grains = Array.from({ length: 420 }, (_, i) =>
@@ -1257,12 +1335,17 @@ function beachWide() {
 <g class="a drift" style="animation-duration:132s;animation-delay:-20s"><ellipse cx="1240" cy="140" rx="104" ry="7"/></g>
 </g>
 <g clip-path="url(#bwclip)">
-<circle class="a glow trc sun-glow" cx="720" r="220" fill="url(#bwglow)"/>
-<circle class="trc sun" cx="720" r="54" fill="url(#bwsun)"/>
+<circle class="a glow trc sun-glow" cx="${SUN_X}" r="220" fill="url(#bwglow)"/>
+<circle class="trc sun" cx="${SUN_X}" r="54" fill="url(#bwsun)"/>
 </g>
 
+<!-- The banner was crossing at y 300, which at laptop width is the band the
+     dashboard's first card row occupies: it was behind a card for all but a
+     sliver of its flight. It now flies through the same reserved sky window
+     the sun sits in, so the face on the banner is readable for most of the
+     crossing rather than for a moment at each edge. -->
 <g class="a plane" style="${travelStyle(VW_W, -211, 337, 60)}">
-<g transform="translate(0 300) scale(3.4)">
+<g transform="translate(0 150) scale(3.4)">
 <path d="M0,0 L19,0 L25,-5 L29,-5 L26,0 L33,0 L37,4 L25,4 L19,4 Z" fill="#2E2235"/>
 <path d="M12,0 L6,-9 L10,-9 L19,0 Z" fill="#3C2C44"/>
 <path d="M1,1.5 L-5,0" stroke="#2E2235" stroke-width="1.1" opacity="0.8"/>
@@ -1284,7 +1367,9 @@ function beachWide() {
 
 <g class="trc surf-wrap">
 <g class="a surfer" style="${travelStyle(VW_W, -134, 243, 60)}">
-<g transform="translate(0 606) scale(3.2)">
+<!-- scale 2.6: at 3.2 the wave stood 90 units tall and could not fit between
+     the waterline and the sand without one end or the other leaving the sea. -->
+<g transform="translate(0 ${SURF_Y}) scale(2.2)">
 <g class="a surf-crest">
 <path d="M-42,13 Q-24,11 -9,4 Q3,-3 14,-9 Q25,-15 30,-7 Q34,1 32,13 Z" fill="#4E97B0"/>
 <path d="M-34,13 Q-18,11 -5,5 Q6,-1 15,-6 Q24,-11 28,-4 Q31,3 29,13 Z" fill="#7CBFD2" opacity="0.85"/>
@@ -1323,8 +1408,10 @@ function beachWide() {
 <g class="trc litter">${litter}</g>
 
 <g class="trc crab-wrap">
-<g class="a crab" style="--k:3">
-<g transform="translate(${rr(0, 269, 180, 420).toFixed(0)} ${(SHORE + 40).toFixed(0)}) scale(1.9)">
+<!-- Wider patrol and a 1.8x larger crab. Its full body stays below the
+     dashboard, on sand, with a margin inside both reference laptop crops. -->
+<g class="a crab crab--wide" style="--k:0.86;animation-duration:16s">
+<g transform="translate(1282 ${(SHORE + 84).toFixed(0)}) scale(2.34)">
 ${crabLeg(-7, -4)}${crabLeg(-3, -3)}${crabLeg(3, 3)}${crabLeg(7, 4)}
 <ellipse cx="0" cy="-2" rx="8" ry="5.4" fill="#D7372A"/>
 <ellipse cx="0" cy="-3.4" rx="6" ry="3" fill="#E8564A" opacity="0.8"/>
@@ -1342,7 +1429,13 @@ function cityWide() {
   const FACE_HAPPY = ['.......', '.XX.XX.', '.XX.XX.', '.......', 'X.....X', '.X...X.', '..XXX..'];
   const FACE_FLAT = ['.......', '.XX.XX.', '.XX.XX.', '.......', '.......', '.XXXXX.', '.......'];
   const FACE_SAD = ['.......', '.XX.XX.', '.XX.XX.', '.......', '..XXX..', '.X...X.', 'X.....X'];
-  const FACE_X = 1016, FACE_Y = 212, FDX = 34, FDY = 27;
+  /* The face used to sit at y 212..386 on a tower starting at y 150 — the
+     exact rectangle the old laptop layout put the Budget by category card in,
+     so the one subject that reacts to the budget was invisible at every budget
+     state. Tower and face now start high enough to land inside the sky window
+     the Home grid reserves (x 660..1400, y 90..380 in these units). */
+  const TOWER_X = 990, TOWER_Y = 64, TOWER_W = 300;
+  const FACE_X = 1016, FACE_Y = 116, FDX = 34, FDY = 27;
 
   const win = (x, y, o, cls = '', delay = '', w = 11, h = 7) =>
     `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="0.8" opacity="${o}"${delay}/>`;
@@ -1351,14 +1444,17 @@ function cityWide() {
   const grid = (x0, y0, cols, rows, dx, dy, base, salt, reserve = false) => {
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const k = r * cols + c + salt * 100;
-      if (reserve && r >= 2 && r <= 11) continue;
+      if (reserve && r >= 1 && r <= 13) continue;
       if (rnd(k, salt) < 0.4) continue;
       const flick = rnd(k, salt + 7) > 0.92 ? 'a flick' : '';
       out.push(win(x0 + c * dx, y0 + r * dy, (base * rr(k, salt + 3, 0.6, 1)).toFixed(2), flick,
         ` style="animation-delay:${(-rr(k, salt + 5, 0, 12)).toFixed(1)}s"`));
     }
   };
-  grid(1000, 170, 9, 16, 29, 21, 0.95, 1, true);
+  /* reserve skips the rows the face occupies, so no ordinary lit window is
+     drawn underneath it. Face rows run y 116..368; this grid starts at 84
+     with a 21 pitch, so those are rows 2..13. */
+  grid(1000, 84, 9, 22, 29, 21, 0.95, 1, true);
   const towerCount = out.length;
   grid(620, 280, 7, 11, 29, 22, 0.6, 2);
   grid(250, 330, 6, 9, 30, 22, 0.5, 3);
@@ -1383,18 +1479,18 @@ function cityWide() {
     return `<line class="a rain" x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x - drift).toFixed(1)}" y2="${(y + len).toFixed(1)}" style="animation-delay:${(-rnd(i, saltBase + 2)).toFixed(2)}s;animation-duration:${(dur0 + rnd(i, saltBase + 3) * durSpan).toFixed(2)}s"/>`;
   }).join('');
 
-  const drips = [[180, 700], [460, 742], [760, 760], [1060, 736], [1310, 708], [300, 766]]
+  const drips = [[180, 812], [460, 836], [760, 848], [1060, 832], [1310, 818], [300, 854]]
     .map((p, i) => `<ellipse class="a drip" cx="${p[0]}" cy="${p[1]}" rx="11" ry="2.6" style="animation-delay:${(-i * 0.45).toFixed(2)}s"/>`).join('');
 
-  const puddle = (x, w) => `<rect x="${x}" y="664" width="${w}" height="110" fill="url(#cwref)"/>`;
+  const puddle = (x, w) => `<rect x="${x}" y="812" width="${w}" height="80" fill="url(#cwref)"/>`;
   const wide = [[70, 240], [470, 300], [900, 220], [1200, 180]]
-    .map(([x, w]) => `<ellipse cx="${x + w / 2}" cy="${744 + (x % 9)}" rx="${w / 2}" ry="11"/>`).join('');
-  const laneDash = Array.from({ length: 24 }, (_, i) => `<rect x="${i * 62}" y="764" width="34" height="3" rx="1.5" fill="#C9D6E8" opacity="0.22"/>`).join('');
+    .map(([x, w]) => `<ellipse cx="${x + w / 2}" cy="${868 + (x % 9)}" rx="${w / 2}" ry="9"/>`).join('');
+  const laneDash = Array.from({ length: 24 }, (_, i) => `<rect x="${i * 62}" y="880" width="34" height="3" rx="1.5" fill="#C9D6E8" opacity="0.22"/>`).join('');
   const viaductLamps = Array.from({ length: 22 }, (_, i) => `<rect x="${20 + i * 66}" y="588" width="4" height="8" rx="1.5"/>`).join('');
 
   // Scaled 1.9x, so the body is ~99 wide rather than 52.
   const car = (x, body, roof, cls) => `<g class="a ${cls}" style="${travelStyle(VW_W, x, 99, 60)}">
-<g transform="translate(${x} 690) scale(1.9)">
+<g transform="translate(${x} 822) scale(1.55)">
 <path d="M4,14 L8,4 Q10,1 14,1 L34,1 Q38,1 40,4 L45,14 Z" fill="${roof}"/>
 <rect x="0" y="13" width="52" height="11" rx="4" fill="${body}"/>
 <rect class="trc win-col" x="11" y="5" width="12" height="7" rx="1.5" opacity="0.75"/>
@@ -1416,8 +1512,8 @@ function cityWide() {
 <rect x="240" y="320" width="196" height="240" fill="#131928"/>
 <rect x="610" y="266" width="220" height="294" fill="#121826"/>
 <rect x="30" y="368" width="180" height="192" fill="#121826"/>
-<rect x="990" y="150" width="300" height="410" fill="#121826"/>
-<rect x="990" y="150" width="300" height="7" fill="#1C2436"/>
+<rect x="${TOWER_X}" y="${TOWER_Y}" width="${TOWER_W}" height="${560 - TOWER_Y}" fill="#121826"/>
+<rect x="${TOWER_X}" y="${TOWER_Y}" width="${TOWER_W}" height="7" fill="#1C2436"/>
 <g class="trc win-col">${towerWindows}</g>
 <g class="trc win-dark"><g class="trc win-col">${blockWindows}</g></g>
 <g class="trc win-col face-happy">${face(FACE_HAPPY, 'face-happy')}</g>
@@ -1433,32 +1529,36 @@ function cityWide() {
 <rect x="170" y="528" width="5" height="15" fill="#090D15"/><rect x="286" y="528" width="5" height="15" fill="#090D15"/><rect x="402" y="528" width="5" height="15" fill="#090D15"/>
 </g>
 
-<rect x="0" y="624" width="${VW_W}" height="276" fill="#111622"/>
-<line x1="0" y1="626" x2="${VW_W}" y2="626" stroke="#2A3348" stroke-width="2"/>
+<g transform="translate(0 -160)">
+<!-- The road sits in the strip the dashboard leaves clear, so the cars that
+     cross it are actually on screen rather than under the centre column. -->
+<rect x="0" y="790" width="${VW_W}" height="270" fill="#111622"/>
+<line x1="0" y1="792" x2="${VW_W}" y2="792" stroke="#2A3348" stroke-width="2"/>
 ${laneDash}
-<rect x="0" y="636" width="${VW_W}" height="2" fill="#C9D6E8" opacity="0.12"/>
+<rect x="0" y="802" width="${VW_W}" height="2" fill="#C9D6E8" opacity="0.12"/>
 
-<rect x="224" y="602" width="5" height="44" fill="#0B0F18"/>
-<circle cx="226" cy="600" r="72" fill="url(#cwlampg)"/>
-<circle class="trc lamp-col" cx="226" cy="600" r="5"/>
-<rect x="1180" y="602" width="5" height="44" fill="#0B0F18"/>
-<circle cx="1182" cy="600" r="72" fill="url(#cwlampg)"/>
-<circle class="trc lamp-col" cx="1182" cy="600" r="5"/>
+<rect x="224" y="768" width="5" height="40" fill="#0B0F18"/>
+<circle cx="226" cy="766" r="72" fill="url(#cwlampg)"/>
+<circle class="trc lamp-col" cx="226" cy="766" r="5"/>
+<rect x="1180" y="768" width="5" height="40" fill="#0B0F18"/>
+<circle cx="1182" cy="766" r="72" fill="url(#cwlampg)"/>
+<circle class="trc lamp-col" cx="1182" cy="766" r="5"/>
 
 ${car(820, '#2F6E9E', '#24567C', 'car-a')}
 ${car(600, '#8C5A2B', '#6E4621', 'car-b')}
 
 <g>
-<rect x="1096" y="624" width="5" height="92" fill="#0B0F18"/>
-<rect x="1086" y="556" width="26" height="60" rx="7" fill="#0B0F18"/>
-<circle class="a lamp-red" cx="1099" cy="570" r="7" fill="#E2483C"/>
-<circle class="a lamp-amber" cx="1099" cy="586" r="7" fill="#E8B04F"/>
-<circle class="a lamp-green" cx="1099" cy="602" r="7" fill="#6FD39B"/>
+<rect x="1096" y="846" width="5" height="34" fill="#0B0F18"/>
+<rect x="1086" y="786" width="26" height="60" rx="7" fill="#0B0F18"/>
+<circle class="a lamp-red" cx="1099" cy="800" r="7" fill="#E2483C"/>
+<circle class="a lamp-amber" cx="1099" cy="816" r="7" fill="#E8B04F"/>
+<circle class="a lamp-green" cx="1099" cy="832" r="7" fill="#6FD39B"/>
 </g>
 
 <g class="trc puddle-wide" fill="#1A2334" opacity="0">${wide}</g>
 <g class="street-ref">${puddle(240, 30)}${puddle(640, 20)}${puddle(900, 16)}${puddle(1240, 22)}${puddle(90, 14)}</g>
 <g class="rain-layer" fill="none" stroke="#B9C9DE" stroke-width="0.7">${drips}</g>
+</g>
 <g class="trc rain-layer" stroke="#C9D6E8" stroke-width="0.9" stroke-linecap="round">${streaks(130, 21, 18, 4, 0.8, 0.4)}</g>
 <g class="trc rain-heavy" stroke="#D8E2F0" stroke-width="1.1" stroke-linecap="round">${streaks(100, 31, 24, 5, 0.6, 0.3)}</g>
 </svg>`;

@@ -1,5 +1,7 @@
+import RoastCard from './components/RoastCard';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppData } from './hooks/useAppData';
+import { useRoaster } from './hooks/useRoaster';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
 import { answer } from './lib/ask';
@@ -9,8 +11,11 @@ import {
 import { sumAmounts, fromCents, toCents } from './lib/money';
 import { budgetStatus, decayLevel } from './lib/status';
 import { planFromIntent } from './lib/assistant';
-import { requestIntent } from './lib/assistantClient';
+import { markOutdatedAnswers } from './lib/answerEvidence';
+import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
+import { planLoad, planRemove, hasSampleRows, ownRows } from './lib/sampleState';
+import { ymLabel as sampleYmLabel } from './lib/format';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -47,13 +52,17 @@ const blankForm = (catId) => ({
 export default function App() {
   const {
     ready,
+    roastPrefs, setRoastPrefs, roastSeed,
     expenses, setExpenses,
     budgets, setBudgets,
     cats, setCats,
     appName, setAppName,
     themeId, setThemeId,
     motion, setMotion,
+    sampleMark, setSampleMark,
   } = useAppData();
+
+  const roaster = useRoaster({ ready, seed: roastSeed, expenses, cats, budgets, preferences: roastPrefs, today: today() });
 
   const [ym, setYm] = useState(curYm());
   const [tab, setTab] = useState('home');
@@ -75,6 +84,9 @@ export default function App() {
   // Conversation lives here rather than in the view so switching tabs and
   // coming back doesn't wipe the thread.
   const [chat, setChat] = useState([]);
+  useEffect(() => {
+    setChat((messages) => markOutdatedAnswers(messages, expenses, cats, budgets));
+  }, [expenses, cats, budgets, chat]);
   // Every change to `expenses` is recorded here so it can be reversed. Session
   // state on purpose: undo that outlived a reload would be a surprise.
   const [actionLog, setActionLog] = useState([]);
@@ -147,9 +159,9 @@ export default function App() {
   const catItems = useMemo(() => {
     if (!catFilter) return [];
     return expenses
-      .filter((e) => e.category === catFilter)
+      .filter((e) => e.category === catFilter && e.date.startsWith(ym))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [catFilter, expenses]);
+  }, [catFilter, expenses, ym]);
 
   const catTotal = useMemo(() => sumAmounts(catItems), [catItems]);
 
@@ -253,6 +265,7 @@ export default function App() {
       setExpenses(res.expenses);
       setActionLog((l) => pushAction(l, res.action));
       setToast({ message: 'Added' });
+      roaster.saved(res);
     }
     setForm(blankForm(cats[0]?.id));
     setTab('home');
@@ -278,6 +291,28 @@ export default function App() {
    *
    * This does not submit. A scanned total is a proposal — see ReceiptButton.
    */
+  /* Sample data. Both actions are planned in lib/sampleState.js so the rules —
+     keep what the person typed, remember what was replaced — are testable
+     without a browser. The view does the asking; this does the writing. */
+  const loadSample = () => {
+    const plan = planLoad({ expenses, budgets, todayYmd: today() });
+    setExpenses(plan.expenses);
+    setBudgets(plan.budgets);
+    setBudDraft(Object.fromEntries(cats.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
+    setSampleMark(plan.mark);
+    setYm(curYm());
+    setToast({ message: 'Sample data loaded' });
+  };
+
+  const removeSample = () => {
+    const plan = planRemove({ expenses, budgets, mark: sampleMark });
+    setExpenses(plan.expenses);
+    setBudgets(plan.budgets);
+    setBudDraft(Object.fromEntries(cats.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
+    setSampleMark(null);
+    setToast({ message: `Removed ${plan.removed} sample entries` });
+  };
+
   const applyReceipt = (draft) => {
     setForm((f) => mergeReceiptIntoForm(f, draft));
     setErrors({});
@@ -323,8 +358,8 @@ export default function App() {
 
   /** The offline path: regex intent matching over lib/stats.js. Always works. */
   const answerLocally = (text, note) => {
-    const reply = answer(text, { expenses, cats });
-    say({ from: 'bot', text: reply.text, detail: note ?? reply.detail });
+    const reply = answer(text, { expenses, cats, today: today(), budgets });
+    say({ from: 'bot', source: 'offline', text: reply.text, suggestions: reply.suggestions, detail: [note, reply.detail].filter(Boolean).join(' '), comparison: reply.comparison, evidence: reply.evidence, interpretation: reply.interpretation, budgetEvidence: reply.budgetEvidence, clarificationDraft: reply.kind === 'clarify' ? text : null });
   };
 
   /**
@@ -344,20 +379,18 @@ export default function App() {
 
     const res = await requestIntent(text, { cats, today: today(), expenses });
     if (!res.ok) {
-      answerLocally(text, res.reason === 'provider_not_configured'
-        ? 'Answered offline — no model is connected.'
-        : 'Answered offline — the assistant is unreachable.');
+      answerLocally(text, explainIntentFailure(res.reason));
       setAsking(false);
       return;
     }
 
-    const plan = planFromIntent(res.intent, { expenses, cats, today: today(), actionLog });
+    const plan = planFromIntent(res.intent, { expenses, cats, today: today(), actionLog, budgets });
     setAsking(false);
 
     if (plan.kind === 'answer') {
-      return say({ from: 'bot', text: plan.text, detail: plan.detail, interpretation: plan.interpretation });
+      return say({ from: 'bot', source: res.source ?? 'model', suggestions: plan.suggestions, endpoint: res.endpoint, httpStatus: res.httpStatus, text: plan.text, detail: plan.detail, interpretation: plan.interpretation, comparison: plan.comparison, evidence: plan.evidence, budgetEvidence: plan.budgetEvidence });
     }
-    if (plan.kind === 'clarify') return say({ from: 'bot', text: plan.question, options: plan.options });
+    if (plan.kind === 'clarify') return say({ from: 'bot', source: res.source ?? 'model', endpoint:res.endpoint, httpStatus:res.httpStatus, text: plan.question, suggestions:plan.options, clarificationDraft: text });
 
     if (plan.kind === 'undo') {
       const undone = undoLast(expenses, actionLog, { source: 'assistant' });
@@ -388,7 +421,8 @@ export default function App() {
       if (!res.ok) return say({ from: 'bot', text: "That didn't go through — nothing was added." });
       setExpenses(res.expenses);
       setActionLog((l) => pushAction(l, res.action));
-      return say({ from: 'bot', text: 'Added.' });
+      roaster.saved(res);
+      return say({ from: 'bot', text: roastPrefs.enabled ? 'Added.' : 'Added.' });
     }
 
     const res = deleteExpenseById(expenses, choiceId, { source: 'assistant' });
@@ -475,7 +509,7 @@ export default function App() {
         height: '100vh', color: 'var(--on-scene)',
         fontFamily: "'Caprasimo', Georgia, serif", fontSize: 18,
       }}>
-        {appName || 'Expense Tracker'}
+        {appName || 'TallyAI'}
       </div>
     );
   }
@@ -498,7 +532,7 @@ export default function App() {
           fill two equal columns, and the form-like views keep one readable
           measure. Phone ignores this attribute entirely. */}
       <div className="app" data-view={catFilter && tab === 'home' ? 'category' : tab}>
-        <h1 className="sr-only">Expense Tracker</h1>
+        <h1 className="sr-only">TallyAI</h1>
 
         <Header
           title={PAGE_TITLES[tab]}
@@ -511,6 +545,8 @@ export default function App() {
         {tab === 'home' && catFilter && (
           <CategoryView
             cat={filteredCat}
+            ym={ym}
+            onChangeMonth={setYm}
             items={catItems}
             total={catTotal}
             byMonth={catByMonth}
@@ -520,10 +556,12 @@ export default function App() {
 
         {tab === 'home' && !catFilter && (
           <HomeView
+            onChangeMonth={setYm}
             totalSpent={totalSpent}
             totalBudget={totalBudget}
             ym={ym}
             onAddFirst={() => goTo('add')}
+            onAdd={() => goTo('add')}
             chartData={chartData}
             cats={cats}
             budgets={budgets}
@@ -566,7 +604,7 @@ export default function App() {
 
         {tab === 'ask' && (
           <AskView
-            messages={chat}
+            messages={markOutdatedAnswers(chat, expenses, cats, budgets)}
             onSend={askQuestion}
             hasData={expenses.length > 0}
             busy={asking}
@@ -578,6 +616,8 @@ export default function App() {
 
         {tab === 'settings' && (
           <SettingsView
+            roastPrefs={roastPrefs}
+            onRoastPrefs={setRoastPrefs}
             themeId={themeId}
             onTheme={setThemeId}
             motion={motion}
@@ -595,11 +635,22 @@ export default function App() {
             newCat={newCat}
             onNewCat={setNewCat}
             onAddCat={addCat}
+            sample={{
+              loaded: hasSampleRows(expenses),
+              rowCount: expenses.length - ownRows(expenses).length,
+              ownRows: ownRows(expenses).length,
+              hasBudgets: Object.keys(budgets).length > 0,
+              canRestoreBudgets: !!sampleMark?.previousBudgets && !!sampleMark?.appliedBudgets,
+              months: (sampleMark?.months ?? []).map(sampleYmLabel).join(' and '),
+              onLoad: loadSample,
+              onRemove: removeSample,
+            }}
           />
         )}
 
       </div>
 
+      <RoastCard roast={tab === 'add' || tab === 'settings' ? null : roaster.card} onDismiss={roaster.dismiss} onPause={roaster.pause} />
       <BottomNav tab={tab} onGo={goTo} />
       <Toast
         message={toast?.message}

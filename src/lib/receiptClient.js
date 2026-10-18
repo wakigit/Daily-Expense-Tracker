@@ -76,6 +76,8 @@ export function explainFailure(reason) {
     case 'unreachable':
     case 'no_fetch':                return 'Scanning is unavailable — the assistant is offline.';
     case 'provider_not_configured': return 'Scanning is unavailable — no model is connected.';
+    case 'provider_key_rejected':   return 'Scanning is unavailable. The server AI key was rejected. Your form is unchanged.';
+    case 'provider_access_denied':  return 'Scanning is unavailable. AI access was denied. Check the server key and model permissions. Your form is unchanged.';
     case 'image_too_large':         return 'That photo is too large to read.';
     case 'body_too_large':          return 'That photo is too large to send.';
     default:                        return "Couldn't read that one. Try again, or type it in.";

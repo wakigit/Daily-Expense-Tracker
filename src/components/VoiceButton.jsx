@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { isSupported, listenOnce } from '../lib/speech';
-import { parseUtterance } from '../lib/parseUtterance';
+import { parseVoiceDraft } from '../lib/parseUtterance';
 import Icon from './Icon';
 
 /**
@@ -14,6 +14,7 @@ export default function VoiceButton({ cats, onParsed }) {
   const [state, setState] = useState('idle');   // idle | listening | error
   const [heard, setHeard] = useState('');
   const [error, setError] = useState('');
+  const [draft, setDraft] = useState(null);
 
   if (!isSupported()) return null;
 
@@ -21,16 +22,18 @@ export default function VoiceButton({ cats, onParsed }) {
     setState('listening');
     setHeard('');
     setError('');
+    setDraft(null);
     try {
       const transcript = await listenOnce({ onPartial: setHeard });
-      const fields = parseUtterance(transcript, cats);
+      const parsed = parseVoiceDraft(transcript, cats);
+      const { fields } = parsed;
+      setDraft(parsed);
       setHeard(transcript);
       setState('idle');
-      if (Object.keys(fields).length === 0) {
-        setError("Didn't catch an amount — try “four fifty for chicken rice”");
-        return;
-      }
-      onParsed(fields, transcript);
+      if (parsed.amountStatus !== 'resolved') {
+        setError('Amount unclear. Review the transcript and enter the price before saving.');
+        onParsed({ ...fields, amount: '' }, transcript);
+      } else onParsed(fields, transcript);
     } catch (err) {
       setState('error');
       setError(err.message || 'Could not hear you');
@@ -57,8 +60,9 @@ export default function VoiceButton({ cats, onParsed }) {
       )}
 
       {heard && state !== 'error' && (
-        <p className="voice-heard">“{heard}”</p>
+        <p className="voice-heard">Heard: “{heard}”</p>
       )}
+      {draft && <p className="voice-draft" role="status">Draft: {draft.fields.amount ? `S$${draft.fields.amount}` : 'Amount needs review'}{draft.fields.description ? ` · ${draft.fields.description}` : ''}. Review the form before saving.</p>}
       {error && <p className="voice-error">{error}</p>}
     </div>
   );

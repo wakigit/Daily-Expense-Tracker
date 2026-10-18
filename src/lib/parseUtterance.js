@@ -25,79 +25,68 @@ const TENS = {
   sixty: 60, seventy: 70, eighty: 80, ninety: 90,
 };
 
-/** Words that carry no meaning for a description. */
-const FILLER = new Set([
-  'add', 'added', 'adding', 'new', 'entry', 'expense', 'expenditure', 'record',
-  'log', 'spent', 'spend', 'spending', 'paid', 'pay', 'for', 'on', 'at', 'of',
-  'a', 'an', 'the', 'i', 'my', 'me', 'to', 'in', 'it', 'was', 'is', 'and',
-  'dollar', 'dollars', 'buck', 'bucks', 'cent', 'cents', 'sgd', 'dollarss',
-  'today', 'yesterday', 'please', 'just', 'some', 'about',
-]);
-
-/**
- * Collapses number words into digits, honouring English composition:
- *   "twenty five"  → 25   (tens + unit is a real compound)
- *   "four fifty"   → 4 50 (unit + tens is not — it's dollars and cents)
- */
-function wordsToDigits(tokens) {
-  const out = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    const next = tokens[i + 1];
-
-    if (t in TENS) {
-      if (next in UNITS && UNITS[next] > 0 && UNITS[next] < 10) {
-        out.push(String(TENS[t] + UNITS[next]));
-        i++;
-        continue;
-      }
-      out.push(String(TENS[t]));
-      continue;
-    }
-    if (t in UNITS) { out.push(String(UNITS[t])); continue; }
-    if (t === 'hundred' && out.length) {
-      out[out.length - 1] = String(Number(out[out.length - 1]) * 100);
-      continue;
-    }
-    out.push(t);
+/** Parse numbers only inside candidate spans; never rewrite description tokens. */
+function scalar(tokens, i) {
+  const t = tokens[i]?.lower;
+  if (!t) return null;
+  if (/^\d+(?:\.\d+)?$/.test(t)) return { value: Number(t), end: i };
+  if (!(t in UNITS) && !(t in TENS)) return null;
+  let value = UNITS[t] ?? TENS[t], end = i;
+  if (tokens[end + 1]?.lower === 'hundred' && value > 0 && value < 10) {
+    value *= 100; end++;
+    if (tokens[end + 1]?.lower === 'and') end++;
+    const rest = scalar(tokens, end + 1);
+    if (rest && rest.value < 100) { value += rest.value; end = rest.end; }
+  } else if (t in TENS && (tokens[i + 1]?.lower in UNITS) && UNITS[tokens[i + 1].lower] > 0 && UNITS[tokens[i + 1].lower] < 10) {
+    value += UNITS[tokens[++end].lower];
   }
-  return out;
+  return { value, end };
 }
 
-/** Finds the amount and reports which token positions it consumed. */
-function extractAmount(tokens) {
-  const isNum = (t) => t !== undefined && /^\d+(\.\d+)?$/.test(t);
-
+function moneySpans(tokens) {
+  const explicit = [];
   for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (!isNum(t)) continue;
-
-    const a = Number(t);
-    const next = tokens[i + 1];
-    const after = tokens[i + 2];
-
-    // "4 dollars 50" / "4 dollars 50 cents" / "4 dollars and 50"
-    if (/^dollars?$|^bucks?$/.test(next || '')) {
-      const cents = after === 'and' ? tokens[i + 3] : after;
-      if (isNum(cents) && Number(cents) < 100 && !/^\d+\.\d/.test(cents)) {
-        const span = after === 'and' ? 4 : 3;
-        return { amount: a + Number(cents) / 100, from: i, to: i + span - 1 };
+    const t = tokens[i].lower;
+    const marked = /^(?:s?\$)\s*\d/.test(t);
+    const currency = t === 'sgd';
+    const number = marked ? { value: Number(t.replace(/s?\$\s*/i, '')), end: i } : scalar(tokens, currency ? i + 1 : i);
+    if (!number) continue;
+    let end = number.end, amount = number.value;
+    if (/^(dollars?|bucks?|sgd)$/.test(tokens[end + 1]?.lower ?? '')) {
+      end++;
+      const fractionStart = tokens[end + 1]?.lower === 'and' ? end + 2 : end + 1;
+      const fraction = scalar(tokens, fractionStart);
+      if (Number.isInteger(number.value) && fraction && Number.isInteger(fraction.value) && fraction.value < 100 && (fraction.value >= 10 || fraction.end === tokens.length - 1 || /^cents?$/.test(tokens[fraction.end + 1]?.lower ?? ''))) {
+        amount += fraction.value / 100; end = fraction.end;
+        if (/^cents?$/.test(tokens[end + 1]?.lower ?? '')) end++;
       }
-      return { amount: a, from: i, to: i + 1 };
-    }
-
-    // Already decimal: "4.50"
-    if (t.includes('.')) return { amount: a, from: i, to: i };
-
-    // Colloquial "four fifty" → 4.50. Only when the second part is a plain
-    // two-digit number; "twenty five" was already collapsed to one token.
-    if (isNum(next) && !next.includes('.') && Number(next) < 100 && next.length <= 2 && a < 1000) {
-      return { amount: a + Number(next) / 100, from: i, to: i + 1 };
-    }
-
-    return { amount: a, from: i, to: i };
+    } else if (/^cents?$/.test(tokens[end + 1]?.lower ?? '')) {
+      amount = Number.isInteger(amount) && amount < 100 ? amount / 100 : NaN; end++;
+    } else if (!marked && !currency) continue;
+    if (/^(minus|negative)$/.test(tokens[i - 1]?.lower ?? '') || tokens[i].negative) amount = NaN;
+    explicit.push({ from: i, to: end, amount, total: /^(total|totalling|totaling)$/.test(tokens[i - 1]?.lower ?? '') });
+    i = end;
   }
-  return null;
+  if (explicit.length) {
+    const totals = explicit.filter(span => span.total);
+    return totals.length === 1 ? totals : explicit;
+  }
+  const bare = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const first = scalar(tokens, i);
+    if (!first) continue;
+    let { value: amount, end } = first;
+    let colloquial = false;
+    const next = tokens[end + 1]?.lower;
+    // Keep the established “four fifty” shortcut, but not “7 Eleven”.
+    if (Number.isInteger(amount) && amount < 1000 && ((next in TENS) || /^\d{2}$/.test(next ?? ''))) {
+      const fraction = scalar(tokens, end + 1);
+      if (fraction && fraction.value < 100) { amount += fraction.value / 100; end = fraction.end; colloquial = true; }
+    }
+    bare.push({ from: i, to: end, amount, moneyLike: colloquial || tokens[i].lower.includes('.') || /^(spent|paid|pay|cost|price|total)$/.test(tokens[i - 1]?.lower ?? '') || (i === 0 && end === tokens.length - 1) });
+    i = end;
+  }
+  return bare.length === 1 && !bare[0].moneyLike ? [] : bare;
 }
 
 /** Matches leftover words against the user's real category labels. */
@@ -128,37 +117,34 @@ const shiftDays = (n, now = new Date()) => {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 };
 
+export function parseVoiceDraft(transcript, cats = [], now = new Date()) {
+  if (!transcript || typeof transcript !== 'string') return { fields: {}, amountStatus: 'missing' };
+  const tokens = [...transcript.matchAll(/s?\$\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?|[\p{L}]+/giu)].map(m => ({ raw: m[0], lower: m[0].toLowerCase(), start: m.index, end: m.index + m[0].length, negative: transcript[m.index - 1] === '-' }));
+  const candidates = moneySpans(tokens);
+  const found = candidates.length === 1 && candidates[0].amount > 0 ? candidates[0] : null;
+  let description = transcript;
+  if (found) {
+    let from = tokens[found.from].start, to = tokens[found.to].end;
+    const previous = tokens[found.from - 1];
+    if (previous && /^(for|at|on|total|totalling|totaling)$/.test(previous.lower)) from = previous.start;
+    const next = tokens[found.to + 1];
+    if (next && /^(for|at|on)$/.test(next.lower)) to = next.end;
+    description = `${transcript.slice(0, from)} ${transcript.slice(to)}`;
+  }
+  const hasYesterday = /\byesterday\b/i.test(transcript);
+  description = description.replace(/\b(today|yesterday)\b/gi, ' ')
+    .replace(/^\s*(?:(?:please\s+)?(?:i\s+)?(?:spent|paid|pay|add(?:\s+an?\s+expense)?|record(?:\s+an?\s+expense)?|log|new expense)\b[\s,]*)+/i, '')
+    .replace(/^\s*(for|on|at)\s+/i, '')
+    .replace(/^[\s,.;:]+|[\s,.;:]+$/g, '').replace(/\s+/g, ' ').trim();
+  const category = matchCategory(description.toLowerCase().split(/\s+/), cats);
+  const fields = {};
+  if (found) fields.amount = found.amount.toFixed(2);
+  if (description) fields.description = description.replace(/^\p{L}/u, m => m.toUpperCase());
+  if (category) fields.category = category;
+  if (hasYesterday) fields.date = shiftDays(-1, now);
+  return { fields, amountStatus: found ? 'resolved' : candidates.length > 1 ? 'ambiguous' : 'missing' };
+}
+
 export function parseUtterance(transcript, cats = [], now = new Date()) {
-  if (!transcript || typeof transcript !== 'string') return {};
-
-  const raw = transcript.toLowerCase().replace(/[^\w\s.$-]/g, ' ');
-  const hasYesterday = /\byesterday\b/.test(raw);
-
-  // "$4.50" → "4.50" so the $ doesn't break tokenising.
-  const tokens = wordsToDigits(
-    raw.replace(/\$\s*/g, ' ').split(/[\s-]+/).filter(Boolean)
-  );
-
-  const found = extractAmount(tokens);
-
-  const leftover = tokens
-    .filter((_, i) => !found || i < found.from || i > found.to)
-    .filter((t) => !FILLER.has(t))
-    // A bare number that isn't the amount is noise, not a description.
-    .filter((t) => !/^\d+(\.\d+)?$/.test(t));
-
-  const category = matchCategory(leftover, cats);
-
-  // Don't repeat the category name back as the description when it's all
-  // that was said — "spent 20 on shopping" should describe itself.
-  const catLabel = cats.find((c) => c.id === category)?.label?.toLowerCase() ?? '';
-  const descWords = leftover.filter((w) => !catLabel.split(/\s+/).includes(w));
-  const description = (descWords.length ? descWords : leftover).join(' ').trim();
-
-  const out = {};
-  if (found && found.amount > 0) out.amount = found.amount.toFixed(2);
-  if (description) out.description = description.replace(/\b\w/, (m) => m.toUpperCase());
-  if (category) out.category = category;
-  if (hasYesterday) out.date = shiftDays(-1, now);
-  return out;
+  return parseVoiceDraft(transcript, cats, now).fields;
 }

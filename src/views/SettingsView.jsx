@@ -1,21 +1,38 @@
+import { ROAST_DEFAULTS } from '../lib/roastContract';
+import { useState } from 'react';
 import { money } from '../lib/format';
 import { THEMES, PALETTE } from '../themes/themes';
 import Icon from '../components/Icon';
+import { SAMPLE_BUDGET_TOTAL } from '../lib/sampleData';
 
 export default function SettingsView({
+  roastPrefs = ROAST_DEFAULTS, onRoastPrefs = () => {},
   themeId, onTheme,
   motion, onMotion,
   appName, onAppName,
   cats, budDraft, onBudDraft, onSaveBudgets, saved,
   delCatId, onAskDelCat, onDelCat,
   newCat, onNewCat, onAddCat,
+  /* Defaulted rather than required: a view that throws when one prop is
+     forgotten takes the whole screen down, and this one is far from the
+     code that supplies it. */
+  sample = {},
 }) {
+  const sampleState = {
+    loaded: false, rowCount: 0, ownRows: 0, hasBudgets: false,
+    canRestoreBudgets: false, months: '', onLoad: () => {}, onRemove: () => {},
+    ...sample,
+  };
+  /* 'idle' | 'confirm-load' | 'confirm-remove'. Loading over existing data and
+     removing data are both one tap from being regretted, so each asks once —
+     and the asking names what will happen to what is already there. */
+  const [ask, setAsk] = useState('idle');
   const draftTotal = cats.reduce((s, c) => s + (Number(budDraft[c.id]) || 0), 0);
 
   return (
     <>
       {/* ── Theme ── */}
-      <section className="card" style={{ '--i': 0 }}>
+      <section className="card set--theme" style={{ '--i': 0 }}>
         <h2 className="display card-title">Theme</h2>
         <div className="theme-grid">
           {THEMES.map((t) => (
@@ -51,7 +68,7 @@ export default function SettingsView({
       </section>
 
       {/* ── Motion ── */}
-      <section className="card" style={{ '--i': 1 }}>
+      <section className="card set--motion" style={{ '--i': 1 }}>
         <h2 className="display card-title">Motion</h2>
         <button
           type="button"
@@ -73,15 +90,29 @@ export default function SettingsView({
         </button>
       </section>
 
+      <section className="card set--roast">
+        <h2 className="display card-title">Your personal roaster</h2>
+        <p className="settings-roast-hint">A short joke after each new expense. Sends that purchase and a few spending summaries to OpenAI, never your full ledger or notes. Preferences stay on this device and are included only when enabled.</p>
+        {[
+          ['enabled', 'Roast new purchases', 'On by default. Turn off to stop requests and dismiss the current roast.'],
+          ['singapore', 'Singapore references', 'Optional local references, mostly natural English.'],
+          ['smu', 'SMU student references', 'Optional BOSS bidding and class participation references when relevant.'],
+        ].map(([key, label, hint]) => <button key={key} type="button" role="switch" aria-checked={roastPrefs[key]} onClick={() => onRoastPrefs({ ...roastPrefs, [key]: !roastPrefs[key] })} className="switch-row">
+          <span><span className="switch-label">{label}</span><span className="switch-hint">{hint}</span></span>
+          <span className={`switch${roastPrefs[key] ? ' on' : ''}`} aria-hidden="true"><span className="switch-knob" /></span>
+        </button>)}
+        <div className="field"><label htmlFor="roast-name">Preferred name (optional)</label><input id="roast-name" type="text" maxLength={40} value={roastPrefs.name} placeholder="Leave blank to skip" onChange={ev => onRoastPrefs({ ...roastPrefs, name: ev.target.value })} /></div>
+      </section>
+
       {/* ── App name ── */}
-      <section className="card" style={{ '--i': 2 }}>
+      <section className="card set--name" style={{ '--i': 2 }}>
         <h2 className="display card-title">App name</h2>
         <div className="field">
           <label htmlFor="s-name">Your name for this app</label>
           <input
             id="s-name"
             type="text"
-            placeholder="Expense Tracker"
+            placeholder="TallyAI"
             value={appName}
             onChange={(ev) => onAppName(ev.target.value)}
             maxLength={30}
@@ -93,7 +124,7 @@ export default function SettingsView({
       </section>
 
       {/* ── Budgets ── */}
-      <section className="card" style={{ '--i': 3 }}>
+      <section className="card set--budgets" style={{ '--i': 3 }}>
         <h2 className="display card-title">Monthly budgets</h2>
         {cats.map((c) => (
           <div key={c.id} className="field">
@@ -123,7 +154,7 @@ export default function SettingsView({
           marginBottom: '1.2rem',
         }}>
           <span style={{ fontSize: 14, color: 'var(--tx-sub)' }}>Total monthly budget</span>
-          <span className="display" style={{ fontSize: '1rem', color: 'var(--tx)' }}>{money(draftTotal)}</span>
+          <span className="display money" style={{ fontSize: '1rem', color: 'var(--tx)' }}>{money(draftTotal)}</span>
         </div>
 
         <button onClick={onSaveBudgets} className="btn-primary btn-block">
@@ -131,8 +162,106 @@ export default function SettingsView({
         </button>
       </section>
 
+      {/* ── Sample data ── */}
+      <section className="card set--sample" style={{ '--i': 5 }}>
+        <h2 className="display card-title">Sample data</h2>
+
+        {sampleState.loaded ? (
+          <>
+            <p className="set-note">
+              <strong>Sample data is loaded.</strong> {sampleState.rowCount} invented
+              transactions across {sampleState.months}, with a set of budgets to match.
+              None of it is real.
+            </p>
+            {sampleState.ownRows > 0 && (
+              <p className="set-note">
+                Your own {sampleState.ownRows}{' '}
+                {sampleState.ownRows === 1 ? 'entry is' : 'entries are'} still here and
+                will be kept.
+              </p>
+            )}
+
+            {ask === 'confirm-remove' ? (
+              <div className="danger-zone">
+                <p className="set-note">
+                  Remove the {sampleState.rowCount} sample entries
+                  {sampleState.canRestoreBudgets
+                    ? ' and restore unchanged sample budgets, keeping your later budget edits?'
+                    : ' and leave the budgets as they are?'}{' '}
+                  {sampleState.ownRows > 0
+                    ? 'Nothing you entered yourself is touched.'
+                    : 'Your budget edits are kept.'}
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="btn-danger"
+                    onClick={() => { sampleState.onRemove(); setAsk('idle'); }}>
+                    Remove sample data
+                  </button>
+                  <button type="button" className="btn-ghost" onClick={() => setAsk('idle')}>
+                    Keep it
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="btn-ghost" onClick={() => setAsk('confirm-remove')}>
+                Remove sample data
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="set-note">
+              Fills the app with an invented Singapore student's spending — this
+              month so far and the whole of last month, with budgets totalling{' '}
+              {money(SAMPLE_BUDGET_TOTAL)}. Last month runs over its budget, so the
+              wallpaper's run-down state is one step back on the month picker.
+            </p>
+            <p className="set-note set-note--quiet">
+              Demonstration figures only. Nothing here comes from a real account,
+              card or statement, and it can be removed again without touching
+              anything you have entered.
+            </p>
+
+            {ask === 'confirm-load' ? (
+              <div className="danger-zone">
+                <p className="set-note">
+                  You already have {sampleState.ownRows}{' '}
+                  {sampleState.ownRows === 1 ? 'entry' : 'entries'}
+                  {sampleState.hasBudgets ? ' and a set of budgets' : ''}. Your entries
+                  will be kept alongside the sample
+                  {sampleState.hasBudgets
+                    ? ', but the sample\u2019s budgets will replace yours — removing the sample restores yours and keeps later budget edits.'
+                    : '.'}
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="btn-primary"
+                    onClick={() => { sampleState.onLoad(); setAsk('idle'); }}>
+                    Load it anyway
+                  </button>
+                  <button type="button" className="btn-ghost" onClick={() => setAsk('idle')}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  // Only ask when there is something to lose.
+                  if (sampleState.ownRows > 0 || sampleState.hasBudgets) setAsk('confirm-load');
+                  else sampleState.onLoad();
+                }}
+              >
+                Load sample data
+              </button>
+            )}
+          </>
+        )}
+      </section>
+
       {/* ── Categories ── */}
-      <section className="card" style={{ '--i': 4 }}>
+      <section className="card set--cats" style={{ '--i': 4 }}>
         <h2 className="display card-title">Categories</h2>
 
         {cats.map((c) => {

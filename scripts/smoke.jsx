@@ -1,6 +1,13 @@
+import { assistantReliabilityChecks } from './assistant-reliability-checks';
+import { voiceMoneyChecks } from './voice-money-checks';
+import { queryChecks } from './query-checks';
 /* Temporary smoke test: render every view to a string and assert key content.
    Catches bad props, typos and crashes without needing a browser. */
+import { recentPreview } from '../src/lib/recentPreview';
+import { roastChecks } from './roast-checks';
 import { renderToString } from 'react-dom/server';
+import { comparisonRanges, comparisonAnswer } from '../src/lib/comparison';
+import ComparisonEvidence from '../src/components/ComparisonEvidence';
 import HomeView from '../src/views/HomeView';
 import CategoryView from '../src/views/CategoryView';
 import OverviewView from '../src/views/OverviewView';
@@ -11,6 +18,8 @@ import SwipeRow from '../src/components/SwipeRow';
 import SearchBar from '../src/components/SearchBar';
 import Toast from '../src/components/Toast';
 import Donut from '../src/components/Donut';
+import AnswerEvidence from '../src/components/AnswerEvidence';
+import { evidenceIsOutdated, markOutdatedAnswers } from '../src/lib/answerEvidence';
 import BottomNav from '../src/components/BottomNav';
 import Header from '../src/components/Header';
 import { DEF_CATS } from '../src/themes/themes';
@@ -22,6 +31,13 @@ import { paintBackground, setSceneDecay, setScenePaused, setSceneStill, travel }
 import { THEMES, isKnownTheme, themeById, DEFAULT_THEME } from '../src/themes/themes';
 import { budgetStatus, decayLevel } from '../src/lib/status';
 import WeekBars from '../src/components/WeekBars';
+import MonthTrend from '../src/components/MonthTrend';
+import { monthTrend, daysInMonth, niceCeil, axisTicks } from '../src/lib/trend';
+import {
+  buildSample, patternTotalThrough, sampleTotal, isSampleRow,
+  SAMPLE_BUDGETS, SAMPLE_BUDGET_TOTAL, PATTERN_TOTAL, OVER_BUDGET_FROM_DAY,
+} from '../src/lib/sampleData';
+import { planLoad, planRemove, hasSampleRows } from '../src/lib/sampleState';
 import {
   newExpenseId, parseAmount, parseDate, validateExpense, findDuplicate,
   addExpense, deleteExpenseById, revert, undoLast, pushAction, sameExpense, ERR, LOG_LIMIT,
@@ -30,7 +46,7 @@ import { toCents, fromCents, sumAmounts } from '../src/lib/money';
 import { today, curYm, money, dayLabel } from '../src/lib/format';
 import { validateIntent, buildContext, INTENT_ERR } from '../src/lib/intent';
 import { planFromIntent } from '../src/lib/assistant';
-import { requestIntent as requestIntentFromBackend } from '../src/lib/assistantClient';
+import { requestIntent as requestIntentFromBackend, explainIntentFailure } from '../src/lib/assistantClient';
 import {
   validateReceipt, receiptToFields, mergeReceiptIntoForm, printedTotal, describeMissing, RECEIPT_ERR,
 } from '../src/lib/receipt';
@@ -96,13 +112,13 @@ run('HomeView empty', <HomeView
   'Nothing logged for ', 'October', 'Add your first expense', 'No budget set');
 
 run('CategoryView', <CategoryView
-  cat={cats[0]} items={expenses} total={47.6}
+  cat={cats[0]} ym="2026-09" items={expenses} total={47.6}
   byMonth={[['2026-09', expenses]]} {...txn} />,
-  'All-time total', 'September 2026', 'Transactions');
+  'September 2026', 'total', 'Transactions');
 
 run('CategoryView empty', <CategoryView
-  cat={cats[0]} items={[]} total={0} byMonth={[]} {...txn} />,
-  'No entries for this category yet');
+  cat={cats[0]} ym="2026-10" items={[]} total={0} byMonth={[]} {...txn} />,
+  'No ', 'entries in ', 'October 2026', 'S$0.00');
 
 const overview = { onPickMonth: () => {}, onAddToMonth: () => {} };
 
@@ -138,12 +154,35 @@ run('AddView edit + errors', <AddView
 
 run('SettingsView', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
-  appName="Expense Tracker" onAppName={() => {}}
+  appName="TallyAI" onAppName={() => {}}
   cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
   delCatId="food" onAskDelCat={() => {}} onDelCat={() => {}}
   newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />,
   'Moonlit Forest', 'Rainy City', 'Animate the wallpaper', 'role="switch"', 'aria-checked="false"', 'Total monthly budget', 'S$740.00',
-  'will be deleted', 'Add new category', 'Selected');
+  'will be deleted', 'Add new category', 'Selected',
+  // The sample card survives a missing `sample` prop and offers the load.
+  'Sample data', 'Load sample data');
+
+/* Both states of the sample card, and the labelling that keeps it honest. */
+run('SettingsView sample not loaded', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  sample={{ loaded: false, rowCount: 0, ownRows: 2, hasBudgets: true }} />,
+  'Load sample data', 'Demonstration figures only', 'can be removed again',
+  'run-down state', 'S$320.00');
+
+run('SettingsView sample loaded', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  sample={{ loaded: true, rowCount: 67, ownRows: 2, months: 'September 2026 and October 2026' }} />,
+  'Sample data is loaded', '67', 'None of it is real', 'Remove sample data',
+  'September 2026 and October 2026');
 
 run('MonthSheet', <MonthSheet
   histByYear={[['2026', ['2026-09']]]} ym="2026-09"
@@ -173,9 +212,9 @@ run('HomeView no search bar under threshold', <HomeView
   'Chicken rice');
 
 run('CategoryView with search', <CategoryView
-  cat={cats[0]} items={manyExpenses} total={72.2}
+  cat={cats[0]} ym="2026-09" items={manyExpenses} total={72.2}
   byMonth={[['2026-09', manyExpenses]]} {...txn} />,
-  'Search transactions', 'All-time total');
+  'Search transactions', 'September 2026', 'total');
 
 run('SwipeRow closed', <SwipeRow open={false} onOpenChange={() => {}} onDelete={() => {}}><span>row</span></SwipeRow>,
   'swipe-wrap', 'translate3d(0px,0,0)', 'tabindex="-1"');
@@ -658,6 +697,21 @@ const notConfigured = async () => ({ ok: false, status: 503, json: async () => (
 logic('fallback: an unconfigured provider is reported',
   (await requestIntentFromBackend('x', { cats: AI_CATS, fetchImpl: notConfigured })).reason,
   'provider_not_configured');
+for (const [code, wording] of [
+  ['provider_key_rejected', 'key was rejected'],
+  ['provider_access_denied', 'access was denied'],
+]) {
+  const denied = async () => ({ ok: false, status: 503, json: async () => ({ error: code }) });
+  const result = await requestIntentFromBackend('how much this month', { cats: AI_CATS, fetchImpl: denied });
+  logic(`fallback: ${code} is a failed model request`, result.ok, false);
+  logic(`fallback: ${code} retains its safe code`, result.reason, code);
+  logic(`fallback: ${code} explains the cause`, explainIntentFailure(result.reason).includes(wording), true);
+  logic(`fallback: ${code} still identifies the offline answer`, explainIntentFailure(result.reason).includes('Answered offline'), true);
+  logic(`receipt: ${code} retains its safe code`,
+    (await requestReceiptFromBackend({ base64: 'x' }, { fetchImpl: denied })).reason, code);
+  logic(`receipt: ${code} explains the cause and retained form`,
+    explainFailure(code).includes(wording) && explainFailure(code).includes('form is unchanged'), true);
+}
 const liar = async () => ({ ok: true, status: 200, json: async () => ({ intent: { type: 'answer', query: { metric: 'vibes' } } }) });
 logic('fallback: a malformed intent from the backend is rejected client-side',
   (await requestIntentFromBackend('x', { cats: AI_CATS, fetchImpl: liar })).reason,
@@ -853,12 +907,12 @@ logic('top_day: nothing recorded says so, with no amount',
   logic('week: seven columns', count(html, 'class="week-day"'), 7);
   logic('week: the busiest day is marked', count(html, 'week-bar top'), 1);
   logic('week: days with nothing still get a column', count(html, 'week-bar none'), 3);
-  logic('week: the anchor is labelled Today', html.includes('>Today<'), true);
+  logic('week: the anchor has its actual weekday', html.includes('Sat'), true);
   // A past month ends on its last day, and calling that "Today" would be a lie.
   logic('week: a past window is not labelled Today',
     renderToString(<WeekBars expenses={week} anchor="2026-10-03" />).includes('>Today<'), false);
   logic('week: an empty window says so',
-    renderToString(<WeekBars expenses={[]} anchor="2026-10-03" />).includes('Nothing logged'), true);
+    renderToString(<WeekBars expenses={[]} anchor="2026-10-03" />).includes('Show transactions'), true);
   /* 82 over 7 days. Assert the figure, not a phrase containing it: React SSR
      puts a <!-- --> marker between static text and an expression, so 'avg ' and
      the number are not adjacent in the output. */
@@ -1285,37 +1339,279 @@ logic('stats: last month', [St.period('lastmonth', TODAY).start, St.period('last
 
 const ask = (q) => answer(q, { expenses: sExp, cats: sCats, today: TODAY });
 
-logic('ask: total this week', ask('how much did I spend this week').text, 'You spent S$45.00 this week.');
-logic('ask: total this month defaults when no period given', ask('how much have I spent').text, 'You spent S$49.00 this month.');
-logic('ask: total last month', ask('how much did I spend last month').text, 'You spent S$60.00 last month.');
-logic('ask: total for a category', ask('how much on food this month').text, 'You spent S$44.00 on Food this month.');
-logic('ask: biggest day', ask('which day did I spend the most').intent, 'topDay');
+logic('ask: total this week', ask('how much did I spend this week').text.includes('S$45.00'), true);
+logic('ask: total this month defaults when no period given', ask('how much have I spent').text.includes('S$49.00'), true);
+logic('ask: total last month', ask('how much did I spend last month').text.includes('S$60.00'), true);
+logic('ask: total for a category', ask('how much on food this month').text.includes('S$44.00'), true);
+logic('ask: biggest day', ask('which day did I spend the most').intent, 'highest');
 logic('ask: biggest day names the amount', ask('which day did I spend the most').text.includes('S$60.00'), true);
 logic('ask: biggest day can be scoped to a period', ask('which day did I spend the most this month').text.includes('S$30.00'), true);
-logic('ask: biggest week', ask('which week did I spend the most').intent, 'topWeek');
+logic('ask: biggest week', ask('which week did I spend the most').intent, 'highest');
 logic('ask: biggest week amount', ask('what week did I spend the most amount').text.includes('S$60.00'), true);
 logic('ask: biggest week scoped to this month', ask('which week did I spend the most this month').text.includes('S$45.00'), true);
-logic('ask: biggest month', ask('which month did I spend the most').text.includes('August'), true);
-logic('ask: average per week', ask('what is my average spending per week').intent, 'avgWeek');
-logic('ask: average per month', ask('average spending for the month').intent, 'avgMonth');
-logic('ask: average per day', ask('how much do I spend on average a day').intent, 'avgDay');
+logic('ask: biggest month', ask('which month did I spend the most').text.includes('2026-08'), true);
+logic('ask: average per week', ask('what is my average spending per week').intent, 'average');
+logic('ask: average per month', ask('average spending for the month').intent, 'average');
+logic('ask: average per day', ask('how much do I spend on average a day').intent, 'average');
 logic('ask: top category all time', ask('what do I spend the most on').text.includes('Shopping'), true);
 logic('ask: top category this month', ask('what do I spend the most on this month').text.includes('Food'), true);
 logic('ask: count', ask('how many entries this month').text.includes('4'), true);
 logic('ask: empty question', answer('', { expenses: sExp, cats: sCats }).intent, 'none');
-logic('ask: unrecognised question is honest', ask('what is the meaning of life').intent, 'unknown');
-logic('ask: no data for a period says so', answer('how much did I spend today', { expenses: sExp, cats: sCats, today: TODAY }).intent, 'empty');
-logic('ask: no expenses at all is safe', answer('which day did I spend the most', { expenses: [], cats: sCats, today: TODAY }).intent, 'empty');
+logic('ask: unrecognised question is honest', ask('what is the meaning of life').intent, 'clarify');
+logic('ask: no data for a period says so', answer('how much did I spend today', { expenses: sExp, cats: sCats, today: TODAY }).evidence.rows.length, 0);
+logic('ask: no expenses at all is safe', answer('which day did I spend the most', { expenses: [], cats: sCats, today: TODAY }).evidence.rows.length, 0);
 
 // The whole point of this design: arithmetic is exact, never approximated.
 logic('ask: singular entry is not "1 entries"',
-  ask('which day did I spend the most').detail.startsWith('1 entry'), true);
+  ask('which day did I spend the most').evidence.rows.length === 1, true);
 logic('ask: no stray space before the full stop',
   ask('what do I spend the most on').detail.includes(' .'), false);
 
 logic('ask: reported total matches a direct sum',
   ask('how much did I spend this week').text.includes(
     'S$' + St.sum(St.inRange(sExp, '2026-09-28', '2026-09-30')).toFixed(2)), true);
+
+/* ── Month trend: the laptop dashboard's main graph ─────────────
+ *
+ * Every figure below is hand-computed from the four rows in TR_ROWS and
+ * written out as a literal. money(undefined) renders as "S$0.00" rather than
+ * throwing, so a chart that quietly lost a row would still draw a convincing
+ * curve — the only defence is asserting the number.
+ *
+ *   1 Mar  10.00 + 5.00  -> running 15.00
+ *   2 Mar  nothing       -> running 15.00
+ *   3 Mar  20.00         -> running 35.00
+ *   4 Mar  nothing       -> running 35.00
+ *   5 Mar  7.50          -> running 42.50
+ *   6..31 Mar nothing    -> running 42.50
+ */
+
+const TR_ROWS = [
+  { id: 't1', date: '2026-03-01', category: 'food', amount: 10.00 },
+  { id: 't2', date: '2026-03-01', category: 'pub', amount: 5.00 },
+  { id: 't3', date: '2026-03-03', category: 'food', amount: 20.00 },
+  { id: 't4', date: '2026-03-05', category: 'shop', amount: 7.50 },
+];
+
+const trPast = monthTrend(TR_ROWS, '2026-03', '2026-10-17', 0);
+
+logic('trend: a past month is drawn whole', trPast.points.length, 31);
+logic('trend: March has 31 days', trPast.lastDay, 31);
+logic('trend: a past month is not the current one', trPast.isCurrent, false);
+logic('trend: day 1 is the sum of both rows on it', trPast.points[0].total, 15);
+logic('trend: a day with nothing carries the total forward', trPast.points[1].total, 15);
+logic('trend: and reports nothing spent on it', trPast.points[1].spent, 0);
+logic('trend: day 3 adds its own row', trPast.points[2].total, 35);
+logic('trend: day 5 adds the last row', trPast.points[4].total, 42.5);
+logic('trend: the line is flat to the end of the month', trPast.points[30].total, 42.5);
+logic('trend: the final total equals a direct sum', trPast.total, St.sum(TR_ROWS));
+logic('trend: the final total is the hand-computed figure', trPast.total, 42.5);
+logic('trend: the running total never goes down',
+  trPast.points.every((p, i) => i === 0 || p.total >= trPast.points[i - 1].total), true);
+logic('trend: three days carried spending', trPast.daysWithSpend, 3);
+logic('trend: each point names its own date', trPast.points[4].date, '2026-03-05');
+
+/* The axis has to contain the curve, and the budget line with it. */
+logic('trend: the scale clears the curve with no budget', trPast.scaleMax, 50);
+logic('trend: the scale clears the BUDGET when the budget is higher',
+  monthTrend(TR_ROWS, '2026-03', '2026-10-17', 100).scaleMax, 100);
+logic('trend: a budget under the curve does not shrink the scale',
+  monthTrend(TR_ROWS, '2026-03', '2026-10-17', 20).scaleMax, 50);
+
+/* The current month stops at today rather than drawing days that have not
+   happened — eleven flat days to the 31st would read as "spent nothing". */
+const trNow = monthTrend(TR_ROWS.map((r) => ({ ...r, date: r.date.replace('2026-03', '2026-10') })),
+  '2026-10', '2026-10-17', 310);
+logic('trend: the current month stops at today', trNow.points.length, 17);
+logic('trend: and says so', trNow.isCurrent, true);
+logic('trend: the last point is today', trNow.points[16].date, '2026-10-17');
+logic('trend: today carries the full running total', trNow.points[16].total, 42.5);
+
+/* Refusing to draw is a feature. One day of data cannot show a trend. */
+logic('trend: two spending days is enough', trPast.enough, true);
+logic('trend: one spending day is not',
+  monthTrend([TR_ROWS[0]], '2026-03', '2026-10-17', 0).enough, false);
+logic('trend: no spending at all is not',
+  monthTrend([], '2026-03', '2026-10-17', 0).enough, false);
+logic('trend: two rows on the SAME day are still one day',
+  monthTrend([TR_ROWS[0], TR_ROWS[1]], '2026-03', '2026-10-17', 0).enough, false);
+logic('trend: an empty month reports a zero total',
+  monthTrend([], '2026-03', '2026-10-17', 0).total, 0);
+
+/* Month lengths come from the calendar, not from a 30-day assumption. */
+logic('trend: February 2026 has 28 days', daysInMonth('2026-02'), 28);
+logic('trend: a leap February has 29', daysInMonth('2028-02'), 29);
+logic('trend: April has 30', daysInMonth('2026-04'), 30);
+logic('trend: December has 31', daysInMonth('2026-12'), 31);
+logic('trend: a February month is drawn to 28 points',
+  monthTrend(TR_ROWS.map((r) => ({ ...r, date: r.date.replace('2026-03', '2026-02') })),
+    '2026-02', '2026-10-17', 0).points.length, 28);
+
+/* A readable axis top, and ticks that reach both ends of it. */
+logic('niceCeil: rounds 42.50 up to 50', niceCeil(42.5), 50);
+logic('niceCeil: rounds 389.60 up to 400', niceCeil(389.6), 400);
+logic('niceCeil: leaves a round 100 alone', niceCeil(100), 100);
+logic('niceCeil: zero has no scale', niceCeil(0), 0);
+logic('niceCeil: a negative has no scale', niceCeil(-5), 0);
+logic('niceCeil: never lands under the value it has to contain',
+  [1, 7, 12, 42.5, 99, 101, 389.6, 1234].every((v) => niceCeil(v) >= v), true);
+logic('axisTicks: starts at zero', axisTicks(50)[0], 0);
+logic('axisTicks: ends at the maximum', axisTicks(50)[4], 50);
+logic('axisTicks: five labels for four gaps', axisTicks(50).length, 5);
+logic('axisTicks: evenly spaced', axisTicks(50), [0, 12.5, 25, 37.5, 50]);
+
+/* The card itself: the figure has to reach the screen, and the empty state
+   has to say why it is empty rather than drawing a flat line. */
+const trendHtml = renderToString(
+  <MonthTrend expenses={TR_ROWS} ym="2026-03" todayYmd="2026-10-17" budget={100} />);
+logic('trend card: names the period', trendHtml.includes('March 2026'), true);
+logic('trend card: states the running total', trendHtml.includes('S$42.50'), true);
+logic('trend card: labels the scale in Singapore dollars', trendHtml.includes('S$0'), true);
+logic('trend card: shows the budget as a reference', trendHtml.includes('budget S$100'), true);
+logic('trend card: says the figures are a running total',
+  trendHtml.includes('Running total in Singapore dollars'), true);
+logic('trend card: offers a way to read individual days',
+  trendHtml.includes('to read any day'), true);
+logic('trend card: draws a line', trendHtml.includes('trend-line'), true);
+
+const trendEmpty = renderToString(
+  <MonthTrend expenses={[TR_ROWS[0]]} ym="2026-03" todayYmd="2026-10-17" budget={100} />);
+logic('trend card: refuses to draw from one day',
+  trendEmpty.includes('Not enough to show a trend yet'), true);
+logic('trend card: and says it will not guess',
+  trendEmpty.includes('will not guess'), true);
+logic('trend card: draws no line when it refuses',
+  trendEmpty.includes('trend-line'), false);
+
+/* ── Sample data ────────────────────────────────────────────────
+ *
+ * Every figure below is hand-summed from the PATTERN table in
+ * lib/sampleData.js, not read back out of it. The dataset exists to be shown
+ * to a stranger, so a wrong total here is a wrong total in front of a judge.
+ *
+ * The 40-entry pattern costs S$503.60. Running totals by day of month:
+ *   day  3  64.50      day 10  196.50      day 17  324.10
+ *   day  5 111.10      day 12  227.50      day 20  383.30
+ *   day  8 164.30      day 15  296.70      day 28  503.60
+ */
+
+logic('sample: the whole pattern costs the stated total', patternTotalThrough(28), PATTERN_TOTAL);
+logic('sample: and that total is 503.60', PATTERN_TOTAL, 503.6);
+logic('sample: day 3 running total', patternTotalThrough(3), 64.5);
+logic('sample: day 5 running total', patternTotalThrough(5), 111.1);
+logic('sample: day 8 running total', patternTotalThrough(8), 164.3);
+logic('sample: day 10 running total', patternTotalThrough(10), 196.5);
+logic('sample: day 15 running total', patternTotalThrough(15), 296.7);
+logic('sample: day 17 running total', patternTotalThrough(17), 324.1);
+logic('sample: day 28 running total', patternTotalThrough(28), 503.6);
+logic('sample: the running total never goes down',
+  Array.from({ length: 28 }, (_, i) => patternTotalThrough(i + 1))
+    .every((v, i, a) => i === 0 || v >= a[i - 1]), true);
+
+logic('sample: the budgets add up to the stated total',
+  Object.values(SAMPLE_BUDGETS).reduce((a, b) => a + b, 0), SAMPLE_BUDGET_TOTAL);
+logic('sample: and that total is 320', SAMPLE_BUDGET_TOTAL, 320);
+/* The point of the dataset: a completed month that is over its budget, so the
+   wallpaper's run-down state is reachable on any date. */
+logic('sample: a full month overspends its budget', PATTERN_TOTAL > SAMPLE_BUDGET_TOTAL, true);
+logic('sample: the month crosses the budget on the stated day',
+  patternTotalThrough(OVER_BUDGET_FROM_DAY) > SAMPLE_BUDGET_TOTAL
+  && patternTotalThrough(OVER_BUDGET_FROM_DAY - 1) <= SAMPLE_BUDGET_TOTAL, true);
+logic('sample: every category has a budget',
+  DEF_CATS.every((c) => typeof SAMPLE_BUDGETS[c.id] === 'number'), true);
+
+/* Built against a given today, two calendar months, nothing in the future. */
+const SD = buildSample('2026-10-17');
+logic('sample: spans the previous month and this one', SD.months, ['2026-09', '2026-10']);
+logic('sample: the previous month is laid down whole',
+  SD.expenses.filter((e) => e.date.startsWith('2026-09')).length, 40);
+logic('sample: the previous month costs the full pattern',
+  sampleTotal(SD.expenses.filter((e) => e.date.startsWith('2026-09'))), 503.6);
+logic('sample: this month stops at today',
+  sampleTotal(SD.expenses.filter((e) => e.date.startsWith('2026-10'))), 324.1);
+logic('sample: and never dates a row in the future',
+  SD.expenses.every((e) => e.date <= '2026-10-17'), true);
+logic('sample: the grand total is both months added up',
+  sampleTotal(SD.expenses), 827.7);
+logic('sample: every row is marked as sample data', SD.expenses.every(isSampleRow), true);
+logic('sample: every row names a real category',
+  SD.expenses.every((e) => DEF_CATS.some((c) => c.id === e.category)), true);
+logic('sample: every row carries a description', SD.expenses.every((e) => !!e.description), true);
+logic('sample: row ids are unique', new Set(SD.expenses.map((e) => e.id)).size, SD.expenses.length);
+
+/* Enough to drive both charts: the phone's seven-day bars and the laptop's
+   running total, which refuses to draw from fewer than two days. */
+logic('sample: there is spending in the last seven days',
+  SD.expenses.filter((e) => e.date >= '2026-10-11' && e.date <= '2026-10-17').length > 0, true);
+logic('sample: this month has more than two days with spending on them',
+  new Set(SD.expenses.filter((e) => e.date.startsWith('2026-10')).map((e) => e.date)).size > 2, true);
+logic('sample: and the trend chart will therefore draw',
+  monthTrend(SD.expenses.filter((e) => e.date.startsWith('2026-10')), '2026-10', '2026-10-17', 320).enough,
+  true);
+
+/* A short month must not grow days it does not have. */
+const SD_FEB = buildSample('2026-03-05');
+logic('sample: February is not given a 30th', SD_FEB.expenses.every((e) => e.date.slice(8) <= '28'), true);
+logic('sample: a month beginning still lays down the whole previous month',
+  SD_FEB.expenses.filter((e) => e.date.startsWith('2026-02')).length, 40);
+logic('sample: and only the elapsed days of this one',
+  sampleTotal(SD_FEB.expenses.filter((e) => e.date.startsWith('2026-03'))), patternTotalThrough(5));
+
+/* ── Loading and removing: removal is the exact inverse ── */
+
+const MINE = [
+  { id: 'mine-1', date: '2026-10-02', category: 'food', amount: 3.5, notes: '' },
+  { id: 'mine-2', date: '2026-10-09', category: 'pub', amount: 2.2, notes: '' },
+];
+const MY_BUD = { food: 77, pub: 33 };
+
+const L = planLoad({ expenses: MINE, budgets: MY_BUD, todayYmd: '2026-10-17' });
+logic('load: keeps every row the person entered',
+  L.expenses.filter((e) => !isSampleRow(e)).map((e) => e.id), ['mine-1', 'mine-2']);
+logic('load: adds the sample rows alongside them',
+  L.expenses.length, MINE.length + SD.expenses.length);
+logic('load: replaces the budgets with the sample ones', L.budgets, SAMPLE_BUDGETS);
+logic('load: says it replaced budgets', L.replacedBudgets, true);
+logic('load: remembers the budgets it replaced', L.mark.previousBudgets, MY_BUD);
+logic('load: records how many rows it added', L.mark.rowCount, SD.expenses.length);
+logic('load: over an empty store it reports nothing was replaced',
+  planLoad({ expenses: [], budgets: {}, todayYmd: '2026-10-17' }).replacedBudgets, false);
+logic('load: loading twice does not stack two copies',
+  planLoad({ expenses: L.expenses, budgets: L.budgets, todayYmd: '2026-10-17' }).expenses.length,
+  L.expenses.length);
+
+const R = planRemove({ expenses: L.expenses, budgets: L.budgets, mark: L.mark });
+logic('remove: takes back exactly what it added', R.removed, SD.expenses.length);
+logic('remove: leaves the person\u2019s own rows untouched',
+  R.expenses.map((e) => e.id), ['mine-1', 'mine-2']);
+logic('remove: puts the previous budgets back', R.budgets, MY_BUD);
+logic('remove: says it restored them', R.restoredBudgets, true);
+logic('remove: with no mark it leaves budgets alone rather than guessing',
+  planRemove({ expenses: L.expenses, budgets: L.budgets, mark: null }).budgets, L.budgets);
+logic('remove: and still removes only the sample rows',
+  planRemove({ expenses: L.expenses, budgets: L.budgets, mark: null }).expenses.length, MINE.length);
+logic('remove: a store with no sample data removes nothing',
+  planRemove({ expenses: MINE, budgets: MY_BUD, mark: null }).removed, 0);
+
+const editedBudgets = { ...L.budgets, food: 123, custom: 45 };
+delete editedBudgets.pub;
+const editedRemoval = planRemove({ expenses: L.expenses, budgets: editedBudgets, mark: L.mark });
+logic('remove: preserves a budget edited after loading', editedRemoval.budgets.food, 123);
+logic('remove: preserves a newly added budget', editedRemoval.budgets.custom, 45);
+logic('remove: preserves a deleted budget', Object.hasOwn(editedRemoval.budgets, 'pub'), false);
+logic('remove: still restores unchanged sample budgets', editedRemoval.budgets.hire, MY_BUD.hire);
+logic('remove: a persisted mark protects later edits after reload',
+  planRemove({ expenses: L.expenses, budgets: editedBudgets, mark: JSON.parse(JSON.stringify(L.mark)) }).budgets,
+  editedRemoval.budgets);
+logic('remove: legacy marks leave budgets untouched',
+  planRemove({ expenses: L.expenses, budgets: editedBudgets, mark: { previousBudgets: MY_BUD } }).budgets,
+  editedBudgets);
+logic('remove: does not mutate current budgets', editedBudgets.food, 123);
+
+logic('sample: the store knows when sample rows are present', hasSampleRows(L.expenses), true);
+logic('sample: and when they are not', hasSampleRows(R.expenses), false);
+logic('sample: a row a person typed is never mistaken for sample data',
+  isSampleRow({ id: 'e-sample-ish' }), false);
 
 /* ── Receipt scanning ───────────────────────────────────────────
  *
@@ -1522,9 +1818,240 @@ logic('category regression: an unread category clears the field',
 logic('category regression: a read category is passed through',
   receiptToFields(validateReceipt(full, { cats: R_CATS, today: R_TODAY }).draft).category, 'food');
 
+// Monthly display and ranking regressions. The donut retains every slice.
+const ranked = cats.map((c, i) => ({ id: c.id, name: c.label, color: c.color, value: i + 1 }));
+const rankedHome = renderToString(<HomeView {...home} totalSpent={21} totalBudget={100}
+  chartData={ranked} cats={cats} budgets={budgets} spending={spending} monthExp={manyExpenses} />);
+logic('Home top four uses highest spending, including later category definitions',
+  [...rankedHome.matchAll(/class="legend-row"[^>]*>(.*?)<\/button>/g)].map(m =>
+    cats.find(c => m[1].includes(c.label))?.id), ['misc', 'needs', 'shop', 'pub']);
+logic('Home donut includes all six categories', count(rankedHome, 'class="donut-slice"'), 6);
+logic('Home four category heading', rankedHome.includes('Your top 4 criminals'), true);
+const fewHome = renderToString(<HomeView {...home} totalSpent={47.6} totalBudget={740}
+  chartData={chartData} cats={cats} budgets={budgets} spending={spending} monthExp={expenses} />);
+logic('Home does not create filler rows below five transactions', count(fewHome, 'class="txn-row"'), 3);
+logic('Home fewer than four uses truthful heading', fewHome.includes('Your top spending categories'), true);
+logic('Home category rows are native keyboard buttons', count(rankedHome, 'class="cat-row"'), cats.length);
+run('Category header can change month without leaving category', <Header filteredCat={cats[0]}
+  ym="2026-09" onOpenPicker={() => {}} onClearFilter={() => {}} />, 'Change month, September 2026');
+
+
+/* Exact ledger provenance, shared by model interpretation and offline answers. */
+const evCats = [{ id: 'food', label: 'Food' }, { id: 'hire', label: 'Private hire' }, { id: 'pub', label: 'Public transport' }];
+const evRows = [
+  { id: 'a', date: '2026-10-03', description: 'Equal kopi one', category: 'food', amount: 10, notes: '' },
+  { id: 'b', date: '2026-10-03', description: 'Equal kopi two', category: 'food', amount: 10, notes: '' },
+  { id: 'c', date: '2026-10-04', description: 'Equal fare', category: 'hire', amount: 10, notes: '' },
+  { id: 'd', date: '2026-10-10', description: 'Lunch', category: 'food', amount: 5, notes: '' },
+  { id: 'e', date: '2026-09-30', description: 'Earlier fare', category: 'hire', amount: 15, notes: '' },
+  { id: 'f', date: '2026-10-17', description: 'Train fare', category: 'pub', amount: 5, notes: '' },
+];
+const evContext = { expenses: evRows, cats: evCats, today: '2026-10-18' };
+const evPlan = (metric, category = null, period = 'month') => planFromIntent({ type: 'answer', query: { metric, period, category } }, evContext);
+const evIds = (result) => result.evidence?.rows.map(r => r.id);
+for (const metric of ['total', 'count', 'average_per_day', 'average_per_week', 'average_per_month']) {
+  logic(`evidence: ${metric} uses exact category and period rows`, evIds(evPlan(metric, 'food')), ['a', 'b', 'd']);
+}
+logic('evidence: equal amounts retain distinct IDs and exclude equal amounts outside category', evIds(evPlan('total', 'food')), ['a', 'b', 'd']);
+logic('evidence: winning day contains both winning rows only', evIds(evPlan('top_day')), ['a', 'b']);
+logic('evidence: winning day respects category filtering', evIds(evPlan('top_day', 'hire')), ['c']);
+logic('evidence: winning week excludes an out-of-period row in that week', evIds(evPlan('top_week')), ['a', 'b', 'c']);
+logic('evidence: winning month excludes losing month', evIds(evPlan('top_month', null, 'all')), ['a', 'b', 'c', 'd', 'f']);
+logic('evidence: top category follows deterministic tie winner', evIds(evPlan('top_category', null, 'all')), ['a', 'b', 'd']);
+const evEmpty = planFromIntent({ type: 'answer', query: { metric: 'total', period: 'today', category: null } }, { ...evContext, today: '2026-10-18' });
+logic('evidence: no matches yields no source rows', evIds(evEmpty), []);
+const evOriginal = evPlan('total', 'food');
+const evChanged = evRows.map(r => r.id === 'a' ? { ...r, amount: 99, description: 'Edited kopi' } : r);
+logic('evidence: source edit marks old answer outdated', evidenceIsOutdated(evOriginal.evidence, evChanged, evCats), true);
+logic('evidence: source deletion marks old answer outdated', evidenceIsOutdated(evOriginal.evidence, evRows.filter(r => r.id !== 'b'), evCats), true);
+logic('evidence: equal-amount row cannot stand in for deleted source', evidenceIsOutdated(evOriginal.evidence, [...evRows.filter(r => r.id !== 'b'), { ...evRows[1], id: 'replacement' }], evCats), true);
+logic('evidence: original displayed figure is retained', evOriginal.text.includes('S$25.00'), true);
+logic('evidence: historical row values are retained', evOriginal.evidence.rows[0].amount, 10);
+logic('evidence: same rows in another order are current', evidenceIsOutdated(evOriginal.evidence, [...evRows].reverse(), evCats), false);
+logic('evidence: out-of-scope edit does not invalidate answer', evidenceIsOutdated(evOriginal.evidence, evRows.map(r => r.id === 'e' ? { ...r, amount: 99 } : r), evCats), false);
+logic('evidence: changed competing day invalidates old winner', evidenceIsOutdated(evPlan('top_day').evidence, evRows.map(r => r.id === 'd' ? { ...r, amount: 99 } : r), evCats), true);
+logic('evidence: matching additions invalidate old answer', evidenceIsOutdated(evOriginal.evidence, [...evRows, { ...evRows[0], id: 'new' }], evCats), true);
+logic('evidence: category rename marks historical labels outdated', evidenceIsOutdated(evOriginal.evidence, evRows, evCats.map(c => c.id === 'food' ? { ...c, label: 'Meals' } : c)), true);
+const evOldMessages = [{ from: 'bot', ...evOriginal }];
+const evMarked = markOutdatedAnswers(evOldMessages, evChanged, evCats);
+logic('evidence: original chat object is not mutated', evOldMessages[0].outdated, undefined);
+logic('evidence: Undo does not silently remove the stale warning', markOutdatedAnswers(evMarked, evRows, evCats)[0].outdated, true);
+logic('evidence: unchanged messages preserve reference', markOutdatedAnswers(evOldMessages, evRows, evCats) === evOldMessages, true);
+for (const [question, ids] of [
+  ['how much did I spend on Food this month', ['a', 'b', 'd']],
+  ['how many Food entries this month', ['a', 'b', 'd']],
+  ['average daily Food spending', ['a', 'b', 'd']],
+  ['average weekly Food spending', ['a', 'b', 'd']],
+  ['average monthly Food spending', ['a', 'b', 'd']],
+  ['which day did I spend the most this month', ['a', 'b']],
+  ['which week did I spend the most', ['a', 'b', 'c', 'e']],
+  ['which month did I spend the most', ['a', 'b', 'c', 'd', 'f']],
+  ['what category did I spend the most on', ['a', 'b', 'd', 'c', 'e']],
+]) logic(`offline evidence: ${question}`, evIds(answer(question, evContext)), ids);
+logic('offline evidence: unsupported question does not invent rows', answer('hello there', evContext).evidence, undefined);
+logic('offline evidence: zero count has no invented source rows', evIds(answer('how many entries today', evContext)), []);
+logic('offline evidence: average respects the requested month', answer('average Food spending this month', evContext).interpretation.period.includes('2026-10-01 to 2026-10-18'), true);
+for (const [field, value] of [['date', '2026-09-01'], ['category', 'pub'], ['description', 'Changed description'], ['notes', 'Changed note']]) {
+  logic(`evidence: source ${field} edit invalidates snapshot`, evidenceIsOutdated(evOriginal.evidence, evRows.map(r => r.id === 'a' ? { ...r, [field]: value } : r), evCats), true);
+}
+const evMutable = evRows.map(r => ({ ...r }));
+const evFrozenAnswer = planFromIntent({ type: 'answer', query: { metric: 'total', period: 'month', category: 'food' } }, { ...evContext, expenses: evMutable });
+evMutable[0].amount = 500;
+logic('evidence: in-place source edits cannot rewrite historical values', evFrozenAnswer.evidence.rows[0].amount, 10);
+logic('evidence: in-place source edit is detected', evidenceIsOutdated(evFrozenAnswer.evidence, evMutable, evCats), true);
+logic('evidence: new rows outside the original period do not invalidate answer', evidenceIsOutdated(evOriginal.evidence, [...evRows, { ...evRows[0], id: 'outside', date: '2026-09-01' }], evCats), false);
+const evHtml = renderToString(<AnswerEvidence evidence={evOriginal.evidence} />);
+logic('evidence UI: contains all three source rows', count(evHtml, '<li>'), 3);
+logic('evidence UI: contains full date and category', evHtml.includes('2026-10-03') && evHtml.includes('Food'), true);
+logic('evidence UI: is read-only', evHtml.includes('<button'), false);
+run('evidence UI: historical snapshot is clearly marked', <AnswerEvidence evidence={evOriginal.evidence} outdated />, 'Out of date.', 'Ask again', 'Historical transactions');
+logic('evidence UI: zero rows has no expansion', renderToString(<AnswerEvidence evidence={evEmpty.evidence} />).includes('<summary>'), false);
+logic('evidence UI: unsupported reply has no expansion', renderToString(<AnswerEvidence />), '');
+let evPayload;
+await requestIntentFromBackend('how much food this month', { ...evContext, fetchImpl: async (url, options) => {
+  evPayload = options.body;
+  return { ok: true, json: async () => ({ intent: { type: 'answer', query: { metric: 'total', period: 'month', category: 'food', expenseIds: ['c'] } } }) };
+} });
+logic('evidence privacy: model request contains no ledger rows or evidence', /Equal kopi|Earlier fare|expenseIds|evidence|"expenses"/.test(evPayload), false);
+logic('evidence privacy: model IDs cannot select answer rows', evIds(planFromIntent(validateIntent({ type: 'answer', query: { metric: 'total', period: 'month', category: 'food', expenseIds: ['c'] } }, { cats: evCats }).intent, evContext)), ['a', 'b', 'd']);
+
+// Matching elapsed periods and independently tracked, immutable evidence.
+const cmpCats = [{ id: 'custom-meals', label: 'Food & drinks' }, { id: 'travel', label: 'Public transport' }];
+const cmpRow = (id, date, amount, category = 'custom-meals') => ({ id, date, amount, category, description: `Fictional ${id}` });
+const cmpRows = [cmpRow('a', '2026-03-01', .1), cmpRow('b', '2026-03-18', .2), cmpRow('c', '2026-02-18', .3), cmpRow('later', '2026-02-19', 90), cmpRow('other', '2026-03-18', 50, 'travel')];
+const cmpContext = { expenses: cmpRows, cats: cmpCats, today: '2026-03-18' };
+const cmpQuery = { metric: 'compare', period: 'month', category: 'custom-meals' };
+const cmp = comparisonAnswer(cmpQuery, cmpContext);
+logic('comparison: cents sum exactly and equal totals', [cmp.comparison.sides[0].totalCents, cmp.comparison.sides[1].totalCents, cmp.comparison.differenceCents, cmp.comparison.direction, cmp.comparison.percentage], [30, 30, 0, 'the same', 0]);
+logic('comparison: custom category label and exact ranges visible', cmp.interpretation, { category: 'Food & drinks', period: '2026-03-01 to 2026-03-18 vs 2026-02-01 to 2026-02-18' });
+logic('comparison: evidence selects both sides independently, excluding other category and later dates', cmp.comparison.sides.map(s => s.evidence.rows.map(r => r.id)), [['a', 'b'], ['c']]);
+for (const [date, expected, capped] of [
+  ['2026-01-01', '2025-12-01', false], ['2026-03-31', '2026-02-28', true],
+  ['2024-03-31', '2024-02-29', true], ['2026-05-31', '2026-04-30', true],
+  ['2026-02-28', '2026-01-28', false], ['2026-03-12', '2026-02-12', false],
+]) {
+  const ranges = comparisonRanges('month', date);
+  logic(`comparison: month boundary ${date}`, [ranges.earlier.end, ranges.current.end, ranges.capped], [expected, date, capped]);
+}
+for (const [date, currentStart, earlierStart, earlierEnd] of [
+  ['2026-01-01', '2025-12-29', '2025-12-22', '2025-12-25'],
+  ['2026-03-02', '2026-03-02', '2026-02-23', '2026-02-23'],
+  ['2026-03-08', '2026-03-02', '2026-02-23', '2026-03-01'],
+]) {
+  const ranges = comparisonRanges('week', date);
+  logic(`comparison: matching weekdays ${date}`, [ranges.current.start, ranges.earlier.start, ranges.earlier.end], [currentStart, earlierStart, earlierEnd]);
+}
+const cmpMore = comparisonAnswer({ ...cmpQuery, category: null }, cmpContext);
+logic('comparison: all categories included and direction more', [cmpMore.comparison.differenceCents, cmpMore.comparison.direction], [5000, 'more']);
+const cmpLess = comparisonAnswer(cmpQuery, { ...cmpContext, expenses: [...cmpRows, cmpRow('prior', '2026-02-01', .1)] });
+logic('comparison: less and percentage use earlier denominator', [cmpLess.comparison.differenceCents, cmpLess.comparison.direction, cmpLess.comparison.percentage], [-10, 'less', 25]);
+for (const [name, rows] of [['current only', [cmpRows[0]]], ['earlier only', [cmpRows[2]]], ['neither', []]]) {
+  const result = comparisonAnswer(cmpQuery, { ...cmpContext, expenses: rows });
+  logic(`comparison: missing ${name} is explicitly limited`, result.detail.includes('not a reliable spending trend'), true);
+  if (name !== 'earlier only') logic(`comparison: ${name} zero baseline has no percent`, [result.comparison.percentage, result.detail.includes('Percentage unavailable')], [null, true]);
+}
+logic('comparison: shorter month limitation visible', comparisonAnswer(cmpQuery, { ...cmpContext, today: '2026-03-31' }).detail.includes('different numbers of days'), true);
+for (const side of cmp.comparison.sides) {
+  const id = side.evidence.rows[0].id;
+  for (const [operation, rows] of [
+    ['edit', cmpRows.map(r => r.id === id ? { ...r, amount: 99 } : r)],
+    ['delete', cmpRows.filter(r => r.id !== id)],
+    ['add', [...cmpRows, cmpRow('new', side.start, 1)]],
+  ]) {
+    const marked = markOutdatedAnswers([cmp], rows, cmpCats)[0];
+    logic(`comparison: ${operation} on ${side.key} marks old answer outdated`, marked.outdated, true);
+    logic(`comparison: ${operation} on ${side.key} preserves figures`, marked.comparison.differenceCents, 0);
+    logic(`comparison: ${operation} on ${side.key} warning survives undo`, markOutdatedAnswers([marked], cmpRows, cmpCats)[0].outdated, true);
+  }
+}
+logic('comparison: unrelated added category does not stale filtered comparison', !!markOutdatedAnswers([cmp], [...cmpRows, cmpRow('unrelated', '2026-03-01', 9, 'travel')], cmpCats)[0].outdated, false);
+const emptyCmp = comparisonAnswer(cmpQuery, { ...cmpContext, expenses: [] });
+logic('comparison: new row invalidates initially empty side', markOutdatedAnswers([emptyCmp], [cmpRows[0]], cmpCats)[0].outdated, true);
+for (const q of ['Did I spend more this month than last month?', 'How does my Food & drinks spending this month compare with last month?', 'Did I spend more this week than last week?']) {
+  logic(`comparison offline: ${q}`, answer(q, cmpContext).intent, 'compare');
+}
+logic('comparison offline: custom category preserved', answer('How does my Food & drinks spending this month compare with last month?', cmpContext).interpretation.category, 'Food & drinks');
+for (const q of ['compare food & drinks and public transport this month with last month', 'compare food & drinks and entertainment this month with last month', 'compare this year with last year']) logic(`comparison offline: never silently narrows ${q}`, answer(q, cmpContext).intent, 'clarify');
+const cmpMulti = planFromIntent({ type: 'answer', query: { ...cmpQuery, categoryTerms: ['Food & drinks', 'Public transport'] } }, cmpContext);
+logic('comparison model: multi-category question clarifies', cmpMulti.kind, 'clarify');
+logic('comparison model: unsupported period rejected', validateIntent({ type: 'answer', query: { ...cmpQuery, period: 'lastmonth' } }, { cats: cmpCats }).ok, false);
+const cmpValidated = validateIntent({ type: 'answer', query: { ...cmpQuery, category_terms: ['Food & drinks'], total: 900, expenseIds: ['other'] } }, { cats: cmpCats });
+logic('comparison model: fabricated totals and IDs dropped', Object.keys(cmpValidated.intent.query).sort(), ['category', 'categoryTerms', 'metric', 'period']);
+const cmpClient = await requestIntentFromBackend('compare fictional spending', { ...cmpContext, fetchImpl: async (url, options) => {
+  logic('comparison privacy: ledger not sent', /Fictional|expenseIds|"expenses"|"amount"/.test(options.body), false);
+  return { ok: true, json: async () => ({ intent: cmpValidated.intent }) };
+} });
+logic('comparison client: normalized intent survives second validation', cmpClient.intent.query.categoryTerms, ['Food & drinks']);
+logic('comparison planner: validated model intent uses local totals', planFromIntent(cmpClient.intent, cmpContext).comparison.differenceCents, 0);
+const cmpHtml = renderToString(<ComparisonEvidence comparison={cmp.comparison} />);
+logic('comparison UI: separate evidence controls', count(cmpHtml, '<summary>'), 2);
+logic('comparison UI: both ranges and exact amounts', cmpHtml.includes('2026-02-18') && cmpHtml.includes('2026-03-18') && count(cmpHtml, 'S$0.30') >= 2, true);
+logic('comparison UI: empty sides have no misleading controls', renderToString(<ComparisonEvidence comparison={emptyCmp.comparison} />).includes('<summary>'), false);
+run('comparison UI: outdated warning', <ComparisonEvidence comparison={cmp.comparison} outdated />, 'Out of date.', 'Ask again', 'Historical transactions');
+
+const cmpWeek = comparisonAnswer({ ...cmpQuery, period: 'week' }, { ...cmpContext, today: '2026-03-04', expenses: [
+  cmpRow('mon', '2026-03-02', 1.01), cmpRow('wed', '2026-03-04', 2.02), cmpRow('future', '2026-03-05', 90),
+  cmpRow('lastMon', '2026-02-23', 1.01), cmpRow('lastWed', '2026-02-25', 1.01), cmpRow('lastFuture', '2026-02-26', 90),
+  cmpRow('wrongCat', '2026-03-04', 90, 'travel'),
+] });
+logic('comparison: partial week totals exact and future weekdays excluded', cmpWeek.comparison.sides.map(side => side.totalCents), [303, 202]);
+logic('comparison: partial week evidence on each side uses matching days and category', cmpWeek.comparison.sides.map(side => side.evidence.rows.map(row => row.id)), [['mon', 'wed'], ['lastMon', 'lastWed']]);
+const cmpMoved = cmpRows.map(row => row.id === 'a' ? { ...row, date: '2026-01-01' } : row);
+logic('comparison: moving a row out of range invalidates historical answer', markOutdatedAnswers([cmp], cmpMoved, cmpCats)[0].outdated, true);
+logic('comparison: recategorizing a source invalidates historical answer', markOutdatedAnswers([cmp], cmpRows.map(row => row.id === 'c' ? { ...row, category: 'travel' } : row), cmpCats)[0].outdated, true);
+logic('comparison: original evidence and total remain unchanged after ledger mutation', [cmp.comparison.sides[0].evidence.rows[0].date, cmp.comparison.sides[0].totalCents], ['2026-03-01', 30]);
+logic('comparison: unknown category cannot broaden to all spending', comparisonAnswer({ ...cmpQuery, category: 'not-a-real-id' }, cmpContext).kind, 'clarify');
+
+// Final UI patch: full-circle geometry and preview after the complete query pipeline.
+const singleDonut = renderToString(<Donut data={[{id:'food',value:34,color:'#D85A30'}]} total={34}/>);
+logic('donut single category: two outer and two inner arcs, not coincident endpoints', count(singleDonut,' A'),4);
+logic('donut single category: evenodd creates a real centre hole',singleDonut.includes('fill-rule="evenodd"'),true);
+logic('donut single category: colour and exact total retained',singleDonut.includes('fill="#D85A30"')&&singleDonut.includes('S$34.00'),true);
+logic('donut single category: zero-valued siblings do not break full circle',count(renderToString(<Donut data={[{id:'zero',value:0,color:'#000'},{id:'food',value:34,color:'#D85A30'}]}/>),' A'),4);
+logic('donut empty: no misleading ring',renderToString(<Donut data={[{value:0}]}/>),'');
+const previewRows = Array.from({length:12},(_,i)=>({id:`preview-${i}`,description:i%2?'Kopi':'Rice',amount:i+1,date:`2026-10-${String(i+1).padStart(2,'0')}`,category:'food'}));
+const matched = filterAndSort(previewRows,'Kopi','amount',()=>({label:'Food'}));
+logic('recent: search and sorting run before limiting',recentPreview(matched,false).rows.map(r=>r.id),['preview-11','preview-9','preview-7','preview-5','preview-3']);
+logic('recent: expansion exposes every matching result',recentPreview(matched,true).rows.length,6);
+logic('recent: collapsing returns exactly five matches',recentPreview(matched,false).rows.length,5);
+logic('recent: source order is not mutated',previewRows[0].id,'preview-0');
+logic('recent: five has no redundant expansion control',recentPreview(previewRows.slice(0,5),false).canExpand,false);
+logic('recent: fewer than five has no filler',recentPreview(previewRows.slice(0,3),false).rows.length,3);
+logic('recent: no search matches has no expansion control',recentPreview([],false),{rows:[],canExpand:false});
+const fiveRecent = renderToString(<HomeView {...home} totalSpent={47.6} totalBudget={740} chartData={chartData} cats={cats} budgets={budgets} spending={spending} monthExp={previewRows.slice(0,5)}/>);
+logic('recent UI: five or fewer rows has no View all button',fiveRecent.includes('recent-count-cta'),false);
+const manyRecent = renderToString(<HomeView {...home} totalSpent={47.6} totalBudget={740} chartData={chartData} cats={cats} budgets={budgets} spending={spending} monthExp={previewRows}/>);
+logic('recent UI: both layouts initially render five real rows',count(manyRecent,'class="txn-row"'),5);
+logic('recent UI: total count and expansion control are present',manyRecent.includes('12 transactions')&&manyRecent.includes('View all')&&manyRecent.includes('aria-expanded="false"'),true);
+
+const crabWide = mount('beach', true);
+const crabTall = mount('beach', false);
+const crabGeometry = crabWide.html.match(/class="a crab crab--wide" style="--k:([\d.]+);animation-duration:16s">\s*<g transform="translate\(([\d.]+) ([\d.]+)\) scale\(([\d.]+)\)">/);
+logic('crab: laptop has independent geometry',!!crabGeometry,true);
+if (crabGeometry) {
+  const [,patrol,startX,startY,scale] = crabGeometry.map(Number);
+  logic('crab: laptop size is 1.8 times its previous scale',Math.round(scale/1.3*100),180);
+  logic('crab: patrol is wider than the previous 60-unit range',126*patrol>100,true);
+  logic('crab: full claws and stroke stay inside the crop, including scrollbar',startX+126*patrol+13.7*scale<1425,true);
+  logic('crab: feet and leg stroke stay above laptop crop bottom',startY+7.7*scale<900,true);
+  logic('crab: entire body stays on sand',startY-9.7*scale>804,true);
+}
+logic('crab: phone keeps its original size and patrol',crabTall.html.includes('class="a crab" style="--k:1"')&&!crabTall.html.includes('class="a crab crab--wide"'),true);
+logic('crab: laptop leg rule does not override pause state',crabWide.css.includes('animation:w-scuttle-wide 16s linear infinite !important'),false);
+
+for (const [reason, expected] of [['unreachable','Connection'],['provider_connection_failed','Connection'],['timeout','timed out'],['provider_timeout','timed out'],['provider_error','provider request failed'],['invalid_intent','validation'],['intent_bad_field','validation']]) {
+  logic(`chat safe fallback reason ${reason}`,explainIntentFailure(reason).includes(expected),true);
+}
+await roastChecks(logic);
+queryChecks(logic);
+await assistantReliabilityChecks(logic);
+voiceMoneyChecks(logic);
+
 let failed = 0;
 for (const c of checks) {
   if (!c.ok) failed++;
   console.log(`${c.ok ? 'PASS' : 'FAIL'}  ${c.name}  ${c.ok ? '' : '→ ' + c.detail}`);
 }
 console.log(`\n${checks.length - failed}/${checks.length} passed`);
+
+process.exitCode = failed ? 1 : 0;

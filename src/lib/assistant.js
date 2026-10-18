@@ -1,3 +1,5 @@
+import { HELP_TEXT, HELP_QUESTIONS } from './assistantDialogue.js';
+import { executeQuery } from './queryEngine';
 /**
  * Turns a validated intent into a PLAN — never into a change.
  *
@@ -15,7 +17,9 @@
  * Pure: no React, no storage, no network, no clock beyond the `today` passed in.
  */
 
+import { comparisonAnswer } from './comparison';
 import * as St from './stats';
+import { captureEvidence, winningRows } from './answerEvidence';
 import { money, dayLabel, ymLabel } from './format';
 import { findDuplicate, normaliseDescription, validateExpense } from './actions';
 import { toCents } from './money';
@@ -74,6 +78,8 @@ function planAnswer(intent, { expenses, cats, today }) {
   const trouble = categoryTrouble(intent.query, cats);
   if (trouble) return trouble;
 
+  if (metric === 'compare') return comparisonAnswer(intent.query, { expenses, cats, today });
+
   const win = St.period(periodName, today);
 
   let rows = St.inRange(expenses, win.start, win.end);
@@ -89,15 +95,22 @@ function planAnswer(intent, { expenses, cats, today }) {
     period: win.label,
   };
 
+  const evidenceFor = (sources) => captureEvidence(sources, {
+    basis: rows, scope: { ...win, category: cat?.id }, cats,
+  });
+
   if (!rows.length) {
     return {
       kind: 'answer',
       text: `I don't have any expenses recorded for ${scope} yet.`,
       interpretation,
+      evidence: evidenceFor([]),
     };
   }
 
-  const say = (text, detail) => ({ kind: 'answer', text, detail, interpretation });
+  const say = (text, detail, sources = rows) => ({
+    kind: 'answer', text, detail, interpretation, evidence: evidenceFor(sources),
+  });
 
   switch (metric) {
     case 'total':
@@ -110,21 +123,21 @@ function planAnswer(intent, { expenses, cats, today }) {
     case 'top_day': {
       const peak = St.topDay(rows);
       return peak
-        ? say(`${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`, `Across ${scope}`)
+        ? say(`${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`, `Across ${scope}`, winningRows(metric, rows, peak.key))
         : say(`I don't have enough to compare days ${scope}.`);
     }
 
     case 'top_week': {
       const peak = St.topWeek(rows);
       return peak
-        ? say(`The week of ${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`)
+        ? say(`The week of ${dayLabel(peak.key)} was the most, at ${money(peak.total)}.`, undefined, winningRows(metric, rows, peak.key))
         : say(`I don't have enough to compare weeks ${scope}.`);
     }
 
     case 'top_month': {
       const peak = St.topMonth(rows);
       return peak
-        ? say(`${ymLabel(peak.key)} was the most, at ${money(peak.total)}.`)
+        ? say(`${ymLabel(peak.key)} was the most, at ${money(peak.total)}.`, undefined, winningRows(metric, rows, peak.key))
         : say(`I don't have enough to compare months ${scope}.`);
     }
 
@@ -132,7 +145,7 @@ function planAnswer(intent, { expenses, cats, today }) {
       const peak = St.topCategory(rows);
       if (!peak) return say(`I don't have enough to compare categories ${scope}.`);
       const label = cats.find((c) => c.id === peak.key)?.label ?? peak.key;
-      return say(`${label} is the most, at ${money(peak.total)} ${scope}.`);
+      return say(`${label} is the most, at ${money(peak.total)} ${scope}.`, undefined, winningRows(metric, rows, peak.key));
     }
 
     case 'average_per_day':
@@ -246,8 +259,11 @@ function planDelete(intent, { expenses, cats }) {
  * @returns a plan. `confirm_add` and `confirm_delete` carry
  *   `needsConfirmation: true` and change nothing on their own.
  */
-export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [] } = {}) {
+export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [], budgets = {} } = {}) {
   switch (intent.type) {
+    case 'help': return {kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS};
+    case 'analyze':
+      return executeQuery(intent.query, { expenses, cats, today, budgets });
     case 'answer':
       return planAnswer(intent, { expenses, cats, today });
 

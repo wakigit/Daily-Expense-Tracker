@@ -1,4 +1,7 @@
+import { completeQuestionChoices } from '../lib/assistantDialogue';
 import { useEffect, useRef, useState } from 'react';
+import ComparisonEvidence from '../components/ComparisonEvidence';
+import AnswerEvidence from '../components/AnswerEvidence';
 
 /**
  * Chat interface over the spending data.
@@ -38,14 +41,14 @@ export default function AskView({
         <div className="ask-intro">
           <p className="ask-intro-text">
             {hasData
-              ? 'Ask me anything about what you’ve spent.'
+              ? 'Ask for recorded totals, largest single expenses, transaction filters, weekday patterns, month/week comparisons, or a category budget pace estimate.'
               : 'Add a few expenses first, then ask me about them.'}
           </p>
         </div>
       ) : (
         <div className="ask-thread">
           {messages.map((m, i) => (
-            <div key={i} className={`bubble ${m.from}`}>
+            <div key={i} className={`bubble ${m.from}`} data-answer-source={m.source} data-assistant-endpoint={m.endpoint} data-http-status={m.httpStatus}>
               <p>{m.text}</p>
               {m.detail && <p className="bubble-detail">{m.detail}</p>}
               {/* How the question was read. The model's reporting of what it
@@ -56,13 +59,11 @@ export default function AskView({
                   Read as: <strong>{m.interpretation.category}</strong> · {m.interpretation.period}
                 </p>
               )}
-              {m.options?.length > 0 && (
-                <div className="bubble-options">
-                  {m.options.map((o) => (
-                    <button key={o} type="button" className="chip-option" onClick={() => send(o)}>{o}</button>
-                  ))}
-                </div>
-              )}
+              {m.clarificationDraft && <button type="button" className="btn-ghost" onClick={() => { setDraft(m.clarificationDraft); inputRef.current?.focus(); }}>Edit original question</button>}
+              {completeQuestionChoices(m.suggestions).length>0 && <div className="ask-suggestions" aria-label="Complete follow-up questions">{completeQuestionChoices(m.suggestions).map(question=><button key={question} type="button" className="btn-ghost" onClick={()=>send(question)}>{question}</button>)}</div>}
+              <AnswerEvidence evidence={m.evidence} outdated={m.outdated} />
+              <ComparisonEvidence comparison={m.comparison} outdated={m.outdated} />
+
             </div>
           ))}
 
@@ -106,6 +107,7 @@ export default function AskView({
         </div>
       )}
 
+      <details className="ask-capabilities"><summary>Supported questions and filters</summary><p>Try “Weekdays or weekends this month?”, “Highest average weekday?”, “Compare descriptions mentioning Grab this month with last month”, or “When will my Food budget run out?” Use one category, a description term, amount condition and a period or ISO date range.</p></details>
       <form
         className="ask-form"
         onSubmit={(ev) => { ev.preventDefault(); send(); }}
@@ -115,7 +117,7 @@ export default function AskView({
           type="text"
           value={draft}
           onChange={(ev) => setDraft(ev.target.value)}
-          placeholder="How much did I spend this week?"
+          placeholder="Show Food expenses over S$10 this month"
           aria-label="Ask a question about your spending"
           autoComplete="off"
         />

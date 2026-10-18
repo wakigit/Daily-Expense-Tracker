@@ -1,18 +1,18 @@
+import DateSearchNotice from '../components/DateSearchNotice';
 import TxnList from '../components/TxnList';
 import SearchBar from '../components/SearchBar';
 import { money, ymLabel } from '../lib/format';
 import { useCountUp } from '../hooks/useCountUp';
 import { useTxnFilter } from '../hooks/useTxnFilter';
 
-const SEARCH_THRESHOLD = 6;
 
-/** All-time drill-down for one category, grouped by month. */
+/** Drill-down for the header month. */
 export default function CategoryView({
-  cat, items, total, byMonth,
-  catById, onDelete, onEdit,
+  cat, items, total, byMonth, ym,
+  catById, onDelete, onEdit, onChangeMonth,
 }) {
   const shown = useCountUp(total);
-  const f = useTxnFilter(items, catById);
+  const f = useTxnFilter(items, catById, ym);
 
   return (
     <>
@@ -23,22 +23,24 @@ export default function CategoryView({
         </div>
         <div style={{ display: 'flex', gap: 30 }}>
           <div>
-            <p className="stat-cap">All-time total</p>
-            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
+            <p className="stat-cap">{ymLabel(ym)} total</p>
+            <div className="display money" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
               {money(shown)}
             </div>
           </div>
           <div>
             <p className="stat-cap">Transactions</p>
-            <div className="display" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
+            <div className="display money" style={{ fontSize: '1.7rem', color: 'var(--tx)', lineHeight: 1 }}>
               {items.length}
             </div>
           </div>
         </div>
       </section>
 
-      {items.length >= SEARCH_THRESHOLD && (
+      {(
         <section className="card" style={{ '--i': 1, paddingBottom: f.isFiltering ? '1.15rem' : '0.4rem' }}>
+          <p className="search-scope">Searching {cat?.label} · {ymLabel(ym)}<br />Dates: 17 Oct, D/M/YYYY or YYYY-MM-DD</p>
+          <DateSearchNotice parsed={f.dateSearch} ym={ym} onChangeMonth={onChangeMonth} />
           <SearchBar
             query={f.query}
             onQuery={f.setQuery}
@@ -69,7 +71,7 @@ export default function CategoryView({
       ) : items.length === 0 ? (
         <section className="card empty" style={{ '--i': 1 }}>
           
-          <p style={{ fontSize: 14, color: 'var(--tx-muted)' }}>No entries for this category yet</p>
+          <p style={{ fontSize: 14, color: 'var(--tx-muted)' }}>No {cat?.label} entries in {ymLabel(ym)}. Choose another month or add an expense.</p>
         </section>
       ) : (
         byMonth.map(([m, exps], i) => (

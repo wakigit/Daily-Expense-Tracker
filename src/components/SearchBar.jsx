@@ -18,7 +18,7 @@ export default function SearchBar({ query, onQuery, sort, onSort, matchCount, so
           type="search"
           value={query}
           onChange={(ev) => onQuery(ev.target.value)}
-          placeholder="Search description, notes, amount…"
+          placeholder="Search text, amount or date (17 Oct)…"
           aria-label="Search transactions"
           autoComplete="off"
         />

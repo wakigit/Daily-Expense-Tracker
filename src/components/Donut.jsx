@@ -8,15 +8,21 @@ import { money } from '../lib/format';
  * separation works on every theme without knowing the card's background.
  */
 export default function Donut({ data, size = 132, inner = 40, outer = 60, total, onSlice }) {
-  const sum = data.reduce((s, d) => s + d.value, 0);
+  const positive = data.filter(d => d.value > 0);
+  const sum = positive.reduce((s, d) => s + d.value, 0);
   if (!sum) return null;
 
   const cx = size / 2;
   const cy = size / 2;
-  const GAP = data.length > 1 ? 0.03 : 0; // radians trimmed from each side
+  const GAP = positive.length > 1 ? 0.03 : 0; // radians trimmed from each side
 
   let angle = -Math.PI / 2;
-  const slices = data.map((d) => {
+  const slices = positive.map((d) => {
+    // A complete circle cannot be represented by one arc with equal endpoints.
+    // Two semicircles for each contour make a visible annulus, with a true hole.
+    if (positive.length === 1) return { ...d, path:
+      `M${cx},${cy - outer} A${outer},${outer} 0 1 1 ${cx},${cy + outer} A${outer},${outer} 0 1 1 ${cx},${cy - outer} Z ` +
+      `M${cx},${cy - inner} A${inner},${inner} 0 1 1 ${cx},${cy + inner} A${inner},${inner} 0 1 1 ${cx},${cy - inner} Z` };
     const sweep = (d.value / sum) * 2 * Math.PI;
     const a0 = angle + GAP / 2;
     const a1 = angle + sweep - GAP / 2;
@@ -40,7 +46,7 @@ export default function Donut({ data, size = 132, inner = 40, outer = 60, total,
   return (
     <div className="donut-wrap" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img"
-           aria-label={`Spending split across ${data.length} categories`}>
+           aria-label={`Spending split across ${positive.length} ${positive.length === 1 ? 'category' : 'categories'}`}>
         {slices.map((s, i) =>
           s.path && (
             <path
@@ -49,6 +55,7 @@ export default function Donut({ data, size = 132, inner = 40, outer = 60, total,
               style={{ '--i': i }}
               d={s.path}
               fill={s.color}
+              fillRule="evenodd"
               onClick={onSlice ? () => onSlice(s.id) : undefined}
             />
           )

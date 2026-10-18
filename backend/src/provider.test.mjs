@@ -49,26 +49,35 @@ check('schema: every object property is required', () => {
 });
 
 check('schema: the category enum is the real ids plus null', () => {
-  assert.deepEqual(schema.properties.query.properties.category.enum, ['food', 'hire', null]);
+  assert.deepEqual(schema.properties.query.anyOf[0].properties.category.enum, ['food', 'hire', null]);
   assert.deepEqual(schema.properties.expense.properties.category.enum, ['food', 'hire', null]);
   assert.deepEqual(schema.properties.filter.properties.category.enum, ['food', 'hire', null]);
 });
 
 check('schema: a user-created category reaches the enum', () => {
-  assert.deepEqual(buildSchema(['food', 'cat_123']).properties.query.properties.category.enum,
+  assert.deepEqual(buildSchema(['food', 'cat_123']).properties.query.anyOf[0].properties.category.enum,
     ['food', 'cat_123', null]);
 });
 
 check('schema: query carries the unmapped category words', () => {
-  const q = schema.properties.query;
+  const q = schema.properties.query.anyOf[0];
   assert.ok(q.required.includes('category_terms'));
   assert.equal(q.properties.category_terms.type, 'array');
   assert.equal(q.properties.category_terms.items.type, 'string');
 });
 
-check('schema: the intent types match lib/intent.js', () => {
+check('schema: model intents use canonical reads and preserve actions', () => {
   assert.deepEqual(schema.properties.type.enum,
-    ['answer', 'propose_add', 'find_delete_candidates', 'undo', 'clarify']);
+    ['help', 'analyze', 'propose_add', 'find_delete_candidates', 'undo', 'clarify']);
+});
+
+check('schema: general query contract includes comparisons, filters and custom categories', () => {
+  const q = schema.properties.query.anyOf[0];
+  assert.ok(q.properties.operation.enum.includes('compare'));
+  assert.deepEqual(q.properties.category.enum, ['food', 'hire', null]);
+  assert.deepEqual(q.properties.amountOperator.enum, ['gt','lt','gte','lte',null]);
+  assert.ok(q.properties.groupBy.enum.includes('weekday'));
+  assert.equal(validateIntent({type:'analyze',query:{operation:'compare',period:'all'}},{cats:[]}).ok,false);
 });
 
 /* ── Anything the schema permits must survive lib/intent.js. ── */
