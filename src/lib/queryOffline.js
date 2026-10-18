@@ -15,12 +15,17 @@ export function interpretOffline(question, cats=[]) {
   else if(/\bweekdays?\b/.test(text)&&/\bweekends?\b/.test(text)) q.operation='day_types';
   else if(/day of (the )?week|\bweekday\b.*\b(most|highest)\b|\b(highest|most|biggest)\b.*\bweekday\b/.test(text)) {q.operation='highest';q.groupBy='weekday';q.aggregate=/\btotal\b/.test(text)?'total':'daily_average';q.period='all';}
   else if(comparisons) q.operation='compare';
+  // Recency before the largest/highest branches: "most recent" contains "most",
+  // which would otherwise fall through to a highest-spending grouping. "last"
+  // only counts when it is not naming a period ("last month", "last week").
+  else if(/\b(most recent|latest|newest)\b/.test(text)||/\blast\b(?!\s+(?:month|week|year))/.test(text)) q.operation='latest';
   else if(/\b(largest|biggest|highest|most expensive)\b/.test(text)&&/\b(single|individual|transaction|purchase)\b/.test(text)) q.operation='largest';
   else if(/\b(show|list|find)\b/.test(text)) q.operation='list';
   else if(/\b(how many|count|number of)\b/.test(text)) q.operation='count';
   else if(/\b(most|highest|biggest|top)\b/.test(text)) {q.operation='highest';q.groupBy=/\bcategory|categories|what.*on\b/.test(text)?'category':/\bmonth\b/.test(text.replace(/this month|last month/g,''))?'month':/\bweek\b/.test(text.replace(/this week|last week/g,''))?'week':'day';}
   else if(/\baverage\b|\busually\b/.test(text)) {q.operation='average';q.aggregate=/per transaction|per purchase/.test(text)?'per_transaction':/weekly|per week|a week/.test(text)?'calendar_week':/monthly|per month|for the month/.test(text)?'calendar_month':'daily_average';}
   if(q.operation==='average') q.period='all';
+  if(q.operation==='latest') q.period='all';
   if (q.operation==='highest' && q.groupBy!=='weekday') q.period='all';
   if (q.operation==='average' && /\bweekly|monthly|daily\b/.test(text)) text=text.replace(/\b(daily|weekly|monthly)\b/g,' ');
   if(q.operation==='compare') {
@@ -59,7 +64,7 @@ export function interpretOffline(question, cats=[]) {
   }
   text=text.replace(/day of (the )?week|at my current|based on my current|run out|at what pace|per calendar day|per day|per week|per month|for the month|per transaction|per purchase|this month|last month|this week|last week|all time|at most|at least/g,' ')
     .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/g,' ')
-    .replace(/\b(did|have|has|had|am|are|is|was|will|when|which|what|how|does|do|can|could|would|should|my|me|i|you|the|a|an|and|or|money|spend|spending|spent|purchases?|transactions?|expenses?|expenditure|entries|recorded|single|individual|largest|expensive|most|highest|biggest|top|total|totals|less|more|same|compare|compared|comparison|with|to|than|on|for|of|in|from|all|show|list|find|count|number|many|much|amount|average|usually|day|days|week|month|category|categories|weekdays?|weekends?|yesterday|today|overall|ever|budget|pace|current|based|out|exhaust|last|per|by|descriptions?|mentioning)\b/g,' ')
+    .replace(/\b(did|have|has|had|am|are|is|was|will|when|which|what|how|does|do|can|could|would|should|my|me|i|you|the|a|an|and|or|money|spend|spending|spent|purchases?|transactions?|expenses?|expenditure|entries|recorded|single|individual|largest|expensive|most|highest|biggest|top|total|totals|less|more|same|compare|compared|comparison|with|to|than|on|for|of|in|from|all|show|list|find|count|number|many|much|amount|average|usually|day|days|week|month|category|categories|weekdays?|weekends?|yesterday|today|overall|ever|budget|pace|current|based|out|exhaust|last|per|by|descriptions?|mentioning|recent|latest|newest)\b/g,' ')
     .replace(/[?.,!'’]/g,' ').replace(/\s+/g,' ').trim();
   if(text) {
     if(q.description || /\b(and|or)\b|\d|\b(year|tomorrow|fortnight|quarter)\b/.test(text)) return clarify('I could not safely interpret every filter. Please use one category and/or a quoted description term, an amount condition, and a supported period or ISO date range.');

@@ -1,5 +1,5 @@
 /** Shared, closed interpretation contract. Thresholds are inputs, never model totals. */
-export const OPERATIONS = ['total', 'count', 'average', 'list', 'highest', 'compare', 'day_types', 'projection', 'largest'];
+export const OPERATIONS = ['total', 'count', 'average', 'list', 'highest', 'compare', 'day_types', 'projection', 'largest', 'latest'];
 export const QUERY_PERIODS = ['today', 'yesterday', 'week', 'lastweek', 'month', 'lastmonth', 'all', 'range'];
 export const GROUPS = ['day', 'week', 'month', 'category', 'weekday'];
 export const DAY_FILTERS = ['all', 'weekday', 'weekend', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

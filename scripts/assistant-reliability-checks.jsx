@@ -44,6 +44,30 @@ export async function assistantReliabilityChecks(check) {
  check('largest future-dated candidate is excluded',ids(executeQuery({operation:'largest',period:'month'},{...ctx,expenses:[...ctx.expenses,{id:'future',date:'2026-10-19',description:'Future',amount:999,category:'food'}]})),['c','d']);
  check('largest empty does not invent winner',run({operation:'largest',description:'Not recorded'}).evidence.rows,[]);
  check('largest previous month tied support',ids(executeQuery({operation:'largest',period:'lastmonth'},ctx)),['g']);
+
+ // ---- latest: recency by date, which 'largest' silently answered before ----
+ // Fixture's newest row is f (2026-10-17 Chicken rice, Food, S$20); the largest
+ // is c/d at S$40. A recency question must never land on those.
+ const latest=executeQuery({operation:'latest',period:'all'},ctx);
+ check('latest single newest row by date',ids(latest),['f']);
+ check('latest names the row, date, category and amount',latest.text,'Most recent recorded transaction: Chicken rice · 2026-10-17 · Food · S$20.00.');
+ check('latest is not the largest row',ids(latest).some(id=>['c','d'].includes(id)),false);
+ const tied={...ctx,expenses:[...ctx.expenses,{id:'k',date:'2026-10-17',description:'Teh peng',amount:1.80,category:'food'}]};
+ check('latest tie on same date shows all rows',ids(executeQuery({operation:'latest',period:'all'},tied)),['f','k']);
+ check('latest tie says why it cannot rank them',executeQuery({operation:'latest',period:'all'},tied).detail.includes('no time of day'),true);
+ check('latest category filter',ids(executeQuery({operation:'latest',period:'all',category:'custom-art'},ctx)),['j']);
+ check('latest description filter',ids(executeQuery({operation:'latest',period:'all',description:'KFC'},ctx)),['e']);
+ check('latest empty ledger invents nothing',[executeQuery({operation:'latest',period:'all'},{...ctx,expenses:[]}).text,executeQuery({operation:'latest',period:'all'},{...ctx,expenses:[]}).evidence.rows],['No matching recorded expenses. There is no most recent transaction.',[]]);
+ check('latest future-dated row excluded',ids(executeQuery({operation:'latest',period:'all'},{...ctx,expenses:[...ctx.expenses,{id:'future',date:'2026-10-19',description:'Future',amount:9,category:'food'}]})),['f']);
+ check('latest evidence basis includes losing candidates',latest.evidence.basis.length,10);
+ check('latest strict raw/canonical second validation agree',(()=>{const raw={type:'analyze',query:{operation:'latest',period:'all',start:null,end:null,category:null,description:null,amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',category_terms:[]}};const first=validateIntent(raw,{cats:ctx.cats,message:'what is my most recent expense'});const second=validateIntent({type:'analyze',query:first.intent.query},{cats:ctx.cats,message:'what is my most recent expense'});return [first.ok,second.ok,ids(planFromIntent(second.intent,ctx))];})(),[true,true,['f']]);
+ for(const question of ['What was my most recent expense?','What is my latest transaction?','What was my newest purchase?','how much is my most recent expenditure']) {
+   const plan=answerOfflineQuery(question,ctx);
+   check(`offline recency maps to latest ${question}`,[plan.kind,plan.intent],['answer','latest']);
+   check(`offline recency never answers largest ${question}`,ids(plan),['f']);
+ }
+ check('offline most recent with category filter',ids(answerOfflineQuery('what was my last Food expense',ctx)),['f']);
+ check('offline last month still means the period, not recency',answerOfflineQuery('how much did I spend last month',ctx).intent,'total');
  const types=run({operation:'day_types'});
  check('fixture weekdays/weekends totals independent 8550/6000',types.comparison.sides.map(s=>s.totalCents),[8550,6000]);
  check('fixture calendar denominators 12/6 incl zero days',types.comparison.sides.map(s=>s.calendarDays),[12,6]);

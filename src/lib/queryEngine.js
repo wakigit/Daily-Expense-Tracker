@@ -74,6 +74,17 @@ export function executeQuery(raw, {expenses=[],cats=[],today,budgets={}}) {
     const summaries=winners.map(e=>`${e.description} · ${e.date} · ${cats.find(c=>c.id===e.category)?.label??e.category} · ${dollars(peak)}`);
     return {...result,text:`${winners.length>1?`Tied largest recorded transactions (${winners.length})`:'Largest recorded transaction'}: ${summaries.join('; ')}.`,evidence:evidence(winners)};
   }
+  if(q.operation==='latest') {
+    // Recency is by recorded DATE only. The data model has no creation
+    // timestamp, so rows sharing the latest date are all shown rather than
+    // ranked by an order the ledger does not actually record.
+    if(!rows.length) return {...result,text:'No matching recorded expenses. There is no most recent transaction.'};
+    const newest=rows.map(e=>e.date).sort().at(-1);
+    const winners=rows.filter(e=>e.date===newest).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+    const summaries=winners.map(e=>`${e.description} · ${e.date} · ${cats.find(c=>c.id===e.category)?.label??e.category} · ${dollars(toCents(e.amount))}`);
+    return {...result,text:`${winners.length>1?`Most recent recorded transactions (${winners.length}, same date)`:'Most recent recorded transaction'}: ${summaries.join('; ')}.`,
+      detail:result.detail+(winners.length>1?' These share the latest recorded date; the ledger stores no time of day to separate them.':''),evidence:evidence(winners)};
+  }
   if(q.operation==='highest') {
     const key=e=>q.groupBy==='weekday'?weekday(e.date):q.groupBy==='day'?e.date:q.groupBy==='week'?weekStart(e.date):q.groupBy==='month'?e.date.slice(0,7):e.category;
     const keys=q.groupBy==='weekday'?WEEKDAYS:[...new Set(rows.map(key))];
