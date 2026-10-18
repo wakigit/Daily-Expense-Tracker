@@ -55,7 +55,7 @@ for (const [name, mutate] of [
   const result = await handleRoast(input, { request: async () => { calls++; } });
   assert.equal(result.status, 400); assert.equal(calls, 0);
 });
-for (const raw of [null, { text: '' }, { text: 'x'.repeat(121) }, { text: 'One sentence. Two sentences.' }, { text: '<script>hi</script>' }, { text: 'https://example.com' }, { text: 'secret', key: 'raw' }, { text: 'bad\ntext' }]) test(`roast: malformed output ${JSON.stringify(raw).slice(0, 28)}`, async () => {
+for (const raw of [null, { text: '' }, { text: 'x'.repeat(201) }, { text: 'One. Two. Three sentences.' }, { text: '<script>hi</script>' }, { text: 'https://example.com' }, { text: 'secret', key: 'raw' }, { text: 'bad\ntext' }]) test(`roast: malformed output ${JSON.stringify(raw).slice(0, 28)}`, async () => {
   assert.equal(validateRoastOutput(raw).ok, false);
   assert.equal((await handleRoast(valid(), { request: async () => raw })).status, 502);
 });
@@ -70,12 +70,16 @@ test('roast: method guard', async () => {
   assert.equal(res.code, 405);
 });
 
-test('short roast contract accepts 120 characters, rejects 121 and incomplete sentences', () => {
-  assert.equal(validateRoastOutput({text:'x'.repeat(119)+'.'}).ok,true);
-  assert.equal(validateRoastOutput({text:'x'.repeat(120)+'.'}).ok,false);
+test('roast contract accepts 200 characters, rejects 201 and incomplete sentences', () => {
+  assert.equal(validateRoastOutput({text:'x'.repeat(199)+'.'}).ok,true);
+  assert.equal(validateRoastOutput({text:'x'.repeat(200)+'.'}).ok,false);
   assert.equal(validateRoastOutput({text:'This is unfinished'}).ok,false);
-  assert.match(ROAST_PROMPT,/8–18 words/);
-  assert.match(ROAST_PROMPT,/120 characters/);
+  // Two sentences are now allowed; three are not.
+  assert.equal(validateRoastOutput({text:'First part lands. Second part twists.'}).ok,true);
+  assert.equal(validateRoastOutput({text:'One. Two. Three.'}).ok,false);
+  assert.match(ROAST_PROMPT,/15–32 words/);
+  assert.match(ROAST_PROMPT,/200 characters/);
+  assert.match(ROAST_PROMPT,/one or two complete sentences/);
 });
 
 // Prompt checks enforce instruction boundaries, not subjective humour quality.
@@ -86,14 +90,18 @@ test('roast: concise purchase-first prompt includes grounded examples and prefer
   assert.match(ROAST_PROMPT, /SMU references require preferences.smu/);
   assert.match(ROAST_PROMPT, /Singlish require preferences.singapore/);
   assert.match(ROAST_PROMPT, /never transfer their facts/);
-  assert.match(ROAST_PROMPT, /not a question plus an answer/);
+  assert.match(ROAST_PROMPT, /never a question plus its answer/);
 });
 
 test('sentence diagnostics: decimals pass, genuine multiple or unfinished sentences fail', () => {
-  for (const text of ['S$6.50 for tea, those pearls had better pull their weight.', 'Tea for S$6.50, bold choice!', 'S$6.50 for tea?']) {
+  // Decimal points must never be read as sentence breaks. One and two
+  // sentences are both valid now; a third sentence and a missing terminator
+  // are not.
+  for (const text of ['S$6.50 for tea, those pearls had better pull their weight.', 'Tea for S$6.50, bold choice!', 'S$6.50 for tea?',
+    'S$6.50 for tea. Those pearls had better pull their weight.', 'Tea again? Those pearls are getting comfortable.']) {
     assert.equal(validateRoastOutput({text}).ok, true, text);
   }
-  for (const text of ['S$6.50 for tea. Those pearls had better pull their weight.', 'Tea again? Those pearls are getting comfortable.', 'Tea for S$6.50']) {
+  for (const text of ['S$6.50 for tea. Those pearls work hard. Too hard, really.', 'Tea for S$6.50']) {
     assert.deepEqual(validateRoastOutput({text}), {ok:false, reason:'sentences'}, text);
   }
 });

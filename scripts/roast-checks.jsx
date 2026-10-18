@@ -191,10 +191,20 @@ export async function roastChecks(logic) {
   logic('roast UI: dismiss control and transaction amount visible',html.includes('Dismiss roast')&&html.includes('S$2.50'),true);
   logic('roast UI: fallback clearly labelled',renderToString(<RoastCard roast={malformed.getCurrent()}/>).includes('Offline'),true);
   logic('roast UI: off has no card',renderToString(<RoastCard roast={null}/>),'');
-  for (const text of ['One sentence. Another sentence.', 'x'.repeat(121), 'An unfinished sentence without punctuation']) {
+  for (const text of ['One. Two. Three sentences.', 'x'.repeat(201), 'An unfinished sentence without punctuation']) {
     logic(`short roast rejects invalid output ${text.slice(0,20)}`,validateRoastOutput({text}).ok,false);
   }
-  logic('short roast accepts complete sentence at exact 120-character boundary',validateRoastOutput({text:'x'.repeat(119)+'.'}).ok,true);
+  logic('roast accepts complete sentence at exact 200-character boundary',validateRoastOutput({text:'x'.repeat(199)+'.'}).ok,true);
+  logic('roast rejects 201 characters',validateRoastOutput({text:'x'.repeat(200)+'.'}).ok,false);
+  logic('roast accepts two sentences, setup then punchline',validateRoastOutput({text:'Eight dollars for extra cheese. That sandwich out-earns you.'}).ok,true);
+  // A 200-character roast must render in full: the popup has no max-height and
+  // .roast-text wraps, so nothing may be clipped or truncated in the markup.
+  {
+    const long='Waki, four recorded bubble teas this week and S$26 gone to tapioca. '
+      +'The pearls are not a food group however hard you argue about it today.';
+    const html=renderToString(<RoastCard roast={{id:'r1',status:'done',source:'model',description:'Bubble tea',amount:6.4,text:long}}/>);
+    logic('roast UI: a 200-character roast renders in full',[long.length<=200,html.includes(long)],[true,true]);
+  }
   for(const source of [input,justFood,backdated,future]) logic(`offline quip satisfies short contract ${source.budget.band}`,validateRoastOutput({text:offlineRoast(source)}).ok,true);
   // Deterministic clock: slow model time is not counted as popup reading time.
   let clock=0, nextId=0, tasks=new Map(), stored, popup, finishRequest, paid=0;

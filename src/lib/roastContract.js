@@ -1,6 +1,6 @@
 /** Shared browser/server boundary. No ledger, notes, IDs or free-form fact text. */
 export const MAX_ROAST_BYTES = 4096;
-export const MAX_ROAST_TEXT = 120;
+export const MAX_ROAST_TEXT = 200;
 export const ROAST_ANGLES = ['dramatic_narration', 'absurd_accounting', 'corporate_report', 'singapore', 'smu'];
 export const ROAST_DEFAULTS = { enabled: true, name: '', singapore: false, smu: false };
 export function roastPreferences(value = {}) {
@@ -59,7 +59,8 @@ export function validateRoastOutput(raw, input) {
   if (/[\u0000-\u001f\u007f]/.test(raw.text)) return bad('control_characters');
   const value = raw.text.trim();
   if (/[<>]|https?:|www\./i.test(value)) return bad('unsafe_markup');
-  if (value.split(/[.!?]+(?:\s+|$)/).filter(Boolean).length !== 1 || !/[.!?]$/.test(value)) return bad('sentences');
+  const sentences = value.split(/[.!?]+(?:\s+|$)/).filter(Boolean).length;
+  if (sentences < 1 || sentences > 2 || !/[.!?]$/.test(value)) return bad('sentences');
   if (input && !supportedHistory(value, input)) return bad('unsupported_history');
   return { ok: true, text: value };
 }
