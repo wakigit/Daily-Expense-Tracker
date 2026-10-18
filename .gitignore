@@ -47,3 +47,4 @@ venv/
 
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/
+.vercel

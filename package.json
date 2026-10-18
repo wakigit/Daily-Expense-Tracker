@@ -10,6 +10,7 @@
     "smoke": "vite build --ssr scripts/smoke.jsx --outDir .smoke-build --logLevel error && node .smoke-build/smoke.js"
   },
   "dependencies": {
+    "openai": "^7.28.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
