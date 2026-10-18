@@ -9,6 +9,7 @@ import { renderToString } from 'react-dom/server';
 import { comparisonRanges, comparisonAnswer } from '../src/lib/comparison';
 import ComparisonEvidence from '../src/components/ComparisonEvidence';
 import HomeView from '../src/views/HomeView';
+import AskView from '../src/views/AskView';
 import CategoryView from '../src/views/CategoryView';
 import OverviewView from '../src/views/OverviewView';
 import AddView from '../src/views/AddView';
@@ -2043,6 +2044,42 @@ for (const [reason, expected] of [['unreachable','Connection'],['provider_connec
   logic(`chat safe fallback reason ${reason}`,explainIntentFailure(reason).includes(expected),true);
 }
 await roastChecks(logic);
+/* ── Onboarding: one-tap sample data on an empty ledger ────────── */
+{
+  const SAMPLE_CTA = 'Try it with sample data';
+  const homeHtml = (monthExp, allExpenses, onLoadSample) => renderToString(<HomeView
+    totalSpent={0} totalBudget={0} chartData={[]} cats={cats} budgets={{}} spending={{}}
+    monthExp={monthExp} allExpenses={allExpenses} onLoadSample={onLoadSample} {...home} />);
+
+  logic('onboarding: Home offers sample data on an empty ledger',
+    homeHtml([], [], () => {}).includes(SAMPLE_CTA), true);
+  // The guard that matters: an empty MONTH with entries elsewhere must not be
+  // offered a loader that would replace the budgets they set.
+  logic('onboarding: Home hides it when the ledger has entries in another month',
+    homeHtml([], expenses, () => {}).includes(SAMPLE_CTA), false);
+  logic('onboarding: Home hides it when the shown month has entries',
+    homeHtml(expenses, expenses, () => {}).includes(SAMPLE_CTA), false);
+  logic('onboarding: no handler means no button',
+    homeHtml([], [], undefined).includes(SAMPLE_CTA), false);
+
+  const askHtml = (hasData, onLoadSample) => renderToString(
+    <AskView messages={[]} hasData={hasData} onSend={() => {}} onLoadSample={onLoadSample} />);
+  logic('onboarding: Ask offers sample data on an empty ledger',
+    askHtml(false, () => {}).includes(SAMPLE_CTA), true);
+  logic('onboarding: Ask hides it once there is data',
+    askHtml(true, () => {}).includes(SAMPLE_CTA), false);
+
+  // Clicking it must load the real sample rows through the existing planner,
+  // and the current month must come out populated.
+  const plan = planLoad({ expenses: [], budgets: {}, todayYmd: '2026-10-18' });
+  logic('onboarding: loading sample data fills the ledger',
+    [plan.expenses.length > 0, plan.expenses.every(e => e.id.startsWith('sample-'))], [true, true]);
+  logic('onboarding: loading sample data populates the CURRENT month',
+    plan.expenses.some(e => e.date.startsWith('2026-10')), true);
+  logic('onboarding: loading sample data also sets budgets',
+    Object.keys(plan.budgets).length > 0, true);
+}
+
 queryChecks(logic);
 await assistantReliabilityChecks(logic);
 voiceMoneyChecks(logic);

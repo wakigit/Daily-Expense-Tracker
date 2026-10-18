@@ -34,8 +34,7 @@ export default function HomeView({
   /* Falls back to the displayed month when a caller has nothing wider to give.
      That is never wrong inside the month, only incomplete across the 1st — so
      App.jsx passes the full list and the window stays correct there. */
-  allExpenses = monthExp,
-}) {
+  allExpenses = monthExp, onLoadSample}) {
   const shownTotal = useCountUp(totalSpent);
   const topCategories = [...chartData].filter((c) => c.value > 0).sort((a, b) => b.value - a.value).slice(0, 4);
 
@@ -232,6 +231,14 @@ export default function HomeView({
           <button onClick={onAddFirst} className="btn-primary btn-block" style={{ marginTop: 16 }}>
             Add your first expense
           </button>
+          {/* Only offered while the WHOLE ledger is empty, not merely this
+              month, so it can never propose overwriting entries a person
+              typed into another month. */}
+          {onLoadSample && allExpenses.length === 0 && (
+            <button type="button" onClick={onLoadSample} className="btn-ghost btn-block" style={{ marginTop: 10 }}>
+              Try it with sample data
+            </button>
+          )}
         </section>
       ) : (
         <section className="card card--donut" style={{ '--i': 0 }}>

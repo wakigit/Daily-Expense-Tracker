@@ -561,6 +561,7 @@ export default function App() {
             totalBudget={totalBudget}
             ym={ym}
             onAddFirst={() => goTo('add')}
+            onLoadSample={loadSample}
             onAdd={() => goTo('add')}
             chartData={chartData}
             cats={cats}
@@ -607,6 +608,7 @@ export default function App() {
             messages={markOutdatedAnswers(chat, expenses, cats, budgets)}
             onSend={askQuestion}
             hasData={expenses.length > 0}
+            onLoadSample={loadSample}
             busy={asking}
             pending={pending}
             onConfirm={confirmPending}

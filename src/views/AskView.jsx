@@ -15,8 +15,7 @@ import AnswerEvidence from '../components/AnswerEvidence';
  * expense list has not moved.
  */
 export default function AskView({
-  messages, onSend, hasData, busy = false, pending = null, onConfirm, onCancel,
-}) {
+  messages, onSend, hasData, busy = false, pending = null, onConfirm, onCancel, onLoadSample}) {
   const [draft, setDraft] = useState('');
   const endRef = useRef(null);
   const inputRef = useRef(null);
@@ -44,6 +43,13 @@ export default function AskView({
               ? 'Ask for recorded totals, largest single expenses, transaction filters, weekday patterns, month/week comparisons, or a category budget pace estimate.'
               : 'Add a few expenses first, then ask me about them.'}
           </p>
+          {/* hasData is the whole ledger, not the selected month, so this
+              only ever appears on a genuinely empty store. */}
+          {!hasData && onLoadSample && (
+            <button type="button" onClick={onLoadSample} className="btn-ghost" style={{ marginTop: 12 }}>
+              Try it with sample data
+            </button>
+          )}
         </div>
       ) : (
         <div className="ask-thread">
