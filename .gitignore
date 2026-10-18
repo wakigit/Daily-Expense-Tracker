@@ -48,3 +48,8 @@ venv/
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/
 .vercel
+
+# Local ChromaDB demo tool: the venv and the vector database are machine-local
+# and rebuildable from requirements.txt and build_index.py.
+tools/chroma-demo/.venv/
+tools/chroma-demo/.chroma/

@@ -4,7 +4,7 @@ A personal finance tracker made for students, by a student.
 
 - Live app: https://ailodge-expensetracker.vercel.app
 - GitHub: https://github.com/wakigit/Daily-Expense-Tracker
-- Demo video: [YOUTUBE LINK]
+- Demo video: https://www.youtube.com/watch?v=JN2Ci5Oxj-Y
 
 Built solo by Wei Kai (SMU Information Systems) for the SMU BIA AI Lodge Hackathon, Vampire Lodge.
 
@@ -75,6 +75,9 @@ them.
 - Separate laptop and phone layouts, not one layout stretched.
 - A sample data loader in Settings, so the app can be understood without typing
   anything first.
+- A separate local ChromaDB tool (`tools/chroma-demo/`) that searches the sample
+  transactions by meaning, so "late night supper" finds `Supper prata`. It is a
+  prototype run from the command line, not part of the app.
 
 ## 4. AI Integration
 
@@ -108,6 +111,15 @@ offline quip is shown instead.
 **Voice entry is not OpenAI.** It uses the browser's Web Speech API
 (`src/lib/speech.js`), on the device.
 
+**Vector database (local prototype).** ChromaDB indexes the sample
+transactions' descriptions for meaning-based search, embedded with Chroma's
+default local model (`all-MiniLM-L6-v2` under onnxruntime), so it needs no API
+key and makes no paid call. It finds rows that share no words with the query,
+which the exact structured queries above cannot do. This is a command-line
+prototype in [tools/chroma-demo/](tools/chroma-demo/) and is not wired into the
+deployed app. The app's own data is still stored only in the browser, never in
+Chroma: the index holds the invented sample rows and nothing else.
+
 **Every OpenAI call is server-side**, through Vercel Functions in `api/` in
 production or a local Node server in `backend/` in development.
 `OPENAI_API_KEY` is read only through `process.env` in `backend/src/provider.js`
@@ -132,7 +144,9 @@ enforcing it.
 | Node.js 20.19+ | Local backend (`node:http`, no framework) and build tooling |
 | Vercel | Hosting for the static build and the serverless API routes |
 | Browser Web Speech API | Voice entry |
-| `localStorage` | All persistence |
+| `localStorage` | All persistence for the app itself |
+| ChromaDB 1.5.9 (Python) | Local vector store for the semantic search prototype |
+| `all-MiniLM-L6-v2` via onnxruntime | Chroma's default embedding model, running locally |
 
 There is no UI framework, no CSS library, no state library and no test
 framework: the frontend checks run as a server-side Vite build in
@@ -179,6 +193,12 @@ cd backend && npm test   # backend contract, transport and roast checks
 The backend also has `npm run verify` (is the key accepted, is the model
 available) and `npm run verify:live` (one real request end to end).
 
+### Optional: the local ChromaDB search tool
+
+The semantic search prototype is separate from the app and has its own Python
+setup, in [tools/chroma-demo/README.md](tools/chroma-demo/README.md). It is not
+needed to run TallyAI, and skipping it changes nothing about the app.
+
 **A key is optional.** The tracker itself (adding, editing, budgets, charts,
 search, backgrounds, voice entry) works with no key and no backend. The AI paths
 fall back: Ask answers through a local offline matcher with the same arithmetic
@@ -209,6 +229,11 @@ failing quietly.
 - **Some question combinations are unsupported.** The query contract is closed,
   so complex or ambiguous questions get a clarification prompt rather than a
   confident wrong answer.
+- **The Chroma search is local only, and semantic matches can be loose.** It
+  runs from the command line over the sample data, not in the app, and a
+  nearest-neighbour search always returns five rows even when none is a good
+  match. The distances are similarity scores, not a judgement that a row answers
+  the question.
 - **Public AI endpoints have best-effort rate limits, not a cost cap.** The
   per-IP limiter is per serverless instance with no shared memory, so cold
   starts and changing IPs can slip through. A hard spending ceiling has to be set
@@ -249,6 +274,10 @@ Automated suites, run on this branch on 18 Oct 2026:
 - `cd backend && npm test`: **120 passed, 0 failed** (28 from
   `provider.test.mjs`, plus 92 under `node --test` across the assistant,
   transport, provider-error, roast and roast-diagnostics suites).
+
+The ChromaDB searches were run locally on 18 Oct 2026 over 68 invented sample
+transactions, and the real output is saved in
+[tools/chroma-demo/RESULTS.md](tools/chroma-demo/RESULTS.md).
 
 Checked live against the production URL on 18 Oct 2026, against the hosted
 serverless routes: "How does this month compare to last month?" returned HTTP

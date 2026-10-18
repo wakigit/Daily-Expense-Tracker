@@ -1,0 +1,7 @@
+# Pinned to what was installed and actually run on 2026-10-18.
+# Python 3.14.7 (python.org framework build) on macOS 26.2, arm64.
+#
+# chromadb pulls onnxruntime and tokenizers itself; the default embedding
+# function (all-MiniLM-L6-v2) runs on onnxruntime locally, so no API key is
+# needed and no paid request is made.
+chromadb==1.5.9
