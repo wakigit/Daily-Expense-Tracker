@@ -4,13 +4,15 @@ export const PALETTE = [
   '#639922', '#E24B4A', '#5DCAA5', '#EF9F27', '#534AB7', '#E8709A', '#60B0E0',
 ];
 
+/** Fresh defaults only. Saved category lists are never migrated on reload. */
 export const DEF_CATS = [
-  { id: 'food',  label: 'Food',             color: '#D85A30' },
-  { id: 'hire',  label: 'Private hire',     color: '#1D9E75' },
-  { id: 'pub',   label: 'Public transport', color: '#378ADD' },
-  { id: 'shop',  label: 'Shopping',         color: '#7F77DD' },
-  { id: 'needs', label: 'Needs',            color: '#BA7517' },
-  { id: 'misc',  label: 'Miscellaneous',    color: '#888780' },
+  { id: 'food', label: 'Food & Drinks', color: '#D85A30' },
+  { id: 'entertainment', label: 'Entertainment', color: '#D4537E' },
+  { id: 'needs', label: 'Daily Needs', color: '#BA7517' },
+  { id: 'shop', label: 'Shopping', color: '#7F77DD' },
+  { id: 'pub', label: 'Public Transport', color: '#378ADD' },
+  { id: 'hire', label: 'Private Hire', color: '#1D9E75' },
+  { id: 'misc', label: 'Others', color: '#888780' },
 ];
 
 /**

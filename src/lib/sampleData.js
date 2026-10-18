@@ -20,6 +20,7 @@
 // Extension so this is runnable straight from Node as well as through Vite —
 // the suite checks the totals here directly.
 import { toCents, fromCents } from './money.js';
+import { DEF_CATS } from '../themes/themes.js';
 
 /** Marks a row as ours, so removal can take back exactly what it added. */
 export const SAMPLE_PREFIX = 'sample-';
@@ -40,19 +41,19 @@ const PATTERN = [
   [2, 'pub', 'EZ-Link top up', 20.00],
   [2, 'food', 'Chicken rice', 6.50],
   [3, 'food', 'Kopi and curry puff', 4.20],
-  [4, 'hire', 'Grab to campus', 14.20],
+  [4, 'hire', 'Grab ride to campus', 14.20],
   [4, 'food', 'Laksa', 8.60],
-  [5, 'shop', 'Notebook and pens', 18.40],
-  [5, 'food', 'Economy rice', 5.40],
+  [5, 'needs', 'Notebook and pens', 18.40],
+  [5, 'food', 'GrabFood lunch', 5.40],
   [6, 'food', 'Bubble tea', 6.20],
   [7, 'food', 'Dinner with friends', 32.00],
   [8, 'food', 'Mee pok', 5.00],
   [8, 'pub', 'Bus top up', 10.00],
   [9, 'food', 'Cai fan', 5.60],
-  [10, 'misc', 'Birthday gift', 25.00],
+  [10, 'misc', 'Unlabelled cash purchase', 25.00],
   [10, 'food', 'Kopi O', 1.60],
   [11, 'food', 'Katong laksa', 9.80],
-  [12, 'hire', 'Grab home late', 16.80],
+  [12, 'hire', 'Grab ride home', 16.80],
   [12, 'food', 'Supper prata', 4.40],
   [13, 'food', 'Lunch set', 11.50],
   [14, 'shop', 'T-shirt', 24.90],
@@ -63,9 +64,9 @@ const PATTERN = [
   [17, 'pub', 'MRT top up', 15.00],
   [17, 'food', 'Yong tau foo', 7.80],
   [18, 'food', 'Nasi lemak', 6.00],
-  [19, 'misc', 'Concert ticket', 48.00],
+  [19, 'entertainment', 'Concert ticket', 48.00],
   [20, 'food', 'Fishball noodles', 5.20],
-  [21, 'hire', 'Grab in the rain', 12.60],
+  [21, 'hire', 'Grab ride in the rain', 12.60],
   [21, 'food', 'Bubble tea', 6.20],
   [22, 'food', 'Chicken rice', 6.50],
   [23, 'shop', 'Phone case', 16.90],
@@ -77,33 +78,24 @@ const PATTERN = [
   [28, 'food', 'Mala xiang guo', 14.00],
 ];
 
-/**
- * The sample's own budgets.
- *
- * Set below what the pattern actually spends, because a demo of a budgeting
- * app that never meets its budget demonstrates nothing. A full month of the
- * pattern costs S$503.60 against S$300 of budget, so **the completed previous
- * month is always over** — which is the reliable way to see the wallpaper's
- * run-down state, whatever today's date is. The current month crosses S$320
- * on its 17th day; before that it is genuinely under, and the app says so.
+/** Demo budgets depend only on sample spending through the supplied date.
+ * Budgets are shared across displayed months, not a history of monthly budgets.
+ * Integer weights allocate every cent deterministically across all seven categories.
  */
-export const SAMPLE_BUDGETS = {
-  food: 120,   // pressed, and over by the middle of a month
-  hire: 50,    // comfortably on track, so not every bar is red
-  pub: 50,     // close to its limit
-  shop: 40,    // over once the month's shopping lands
-  needs: 40,   // reaches exactly 100% — the fifth status state
-  misc: 20,    // the one a single concert ticket blows
-};
+export const SAMPLE_TARGET_PCT = 76;
+const BUDGET_WEIGHTS = [36, 16, 16, 12, 10, 8, 2];
+export function sampleBudgets(currentRows) {
+  const spentCents = currentRows.reduce((sum, row) => sum + toCents(row.amount), 0);
+  const totalCents = Math.round(spentCents * 100 / SAMPLE_TARGET_PCT);
+  const shares = BUDGET_WEIGHTS.map(weight => Math.floor(totalCents * weight / 100));
+  const order = BUDGET_WEIGHTS.map((weight, i) => ({ i, remainder: totalCents * weight % 100 }))
+    .sort((a, b) => b.remainder - a.remainder || a.i - b.i);
+  for (let left = totalCents - shares.reduce((a, b) => a + b, 0), i = 0; left > 0; left--, i++) shares[order[i].i]++;
+  return Object.fromEntries(DEF_CATS.map((cat, i) => [cat.id, fromCents(shares[i])]));
+}
 
-/** The sum of every budget above. Asserted in the suite, not trusted. */
-export const SAMPLE_BUDGET_TOTAL = 320;
-
-/** What a whole 28-day pattern costs. Hand-summed, then asserted. */
+/** Independently hand-summed full pattern, asserted in checks. */
 export const PATTERN_TOTAL = 503.60;
-
-/** The first day of a month on which the pattern exceeds SAMPLE_BUDGET_TOTAL. */
-export const OVER_BUDGET_FROM_DAY = 17;
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -151,7 +143,7 @@ export function buildSample(todayYmd) {
     if (day <= today) push(ym, day, cat, desc, amount);
   }
 
-  return { expenses: rows, budgets: { ...SAMPLE_BUDGETS }, months: [prev, ym] };
+  return { expenses: rows, categories: DEF_CATS.map(cat => ({ ...cat })), budgets: sampleBudgets(rows.filter(row => row.date.startsWith(ym))), months: [prev, ym] };
 }
 
 /** Exact total of a row list, in integer cents throughout. */

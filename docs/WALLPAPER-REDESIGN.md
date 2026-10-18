@@ -52,7 +52,7 @@ Computed from `spent` and `totalBudget` for the selected month.
 | Zone | y range | Contents |
 |---|---|---|
 | Header | 0 to 58 | Month picker (Home) or screen title, settings gear |
-| Hero | 58 to 260, left 65% of width | Spent amount, budget, status chip, bar with 75% tick, left line, per day line |
+| Hero | 58 to 260, left 65% of width | Spent amount, budget, status chip, bar with 80% tick, left line, per day line |
 | Top right corner | | Reserved for the moon or sky detail. No text. |
 | Focal band | 260 to 392 | Deer, river, sun on horizon, train, street. **No text ever.** |
 | Cards | 392 down | Opaque cards |

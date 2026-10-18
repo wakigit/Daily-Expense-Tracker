@@ -4,12 +4,11 @@ import { recentPreview } from '../lib/recentPreview';
 import { useEffect, useState } from 'react';
 import Donut from '../components/Donut';
 import WeekBars from '../components/WeekBars';
-import MonthTrend from '../components/MonthTrend';
 import TxnList from '../components/TxnList';
 import SearchBar from '../components/SearchBar';
 import StatusChip from '../components/StatusChip';
 import { money, ymLabel, today, curYm } from '../lib/format';
-import { budgetStatus } from '../lib/status';
+import { budgetStatus, BUDGET_WARNING_PCT } from '../lib/status';
 import { useCountUp } from '../hooks/useCountUp';
 import { useTxnFilter } from '../hooks/useTxnFilter';
 
@@ -78,7 +77,7 @@ export default function HomeView({
         {totalBudget > 0 && (
           <div className="hero-bar">
             <div className={`hero-bar-fill ${st.key}`} style={{ width: `${barWidth}%` }} />
-            <div className="hero-tick" />
+            <div className="hero-tick" style={{ left: `${BUDGET_WARNING_PCT}%` }} />
           </div>
         )}
 
@@ -113,19 +112,9 @@ export default function HomeView({
       </section>
 
 
-      {/* Two charts, two questions, one shown at a time.
-
-          Laptop gets the running total, because "am I on pace" is the question
-          a budget poses and it is the one worth the width of a dashboard. The
-          phone keeps the seven-day bars, which fit a narrow column and answer
-          the narrower "what have I been spending lately". Only one is ever on
-          screen — CSS decides which — so Home never shows two versions of the
-          same answer. */}
-      <div className="only-wide trend-slot">
-        <MonthTrend expenses={monthExp} ym={ym} todayYmd={today()} budget={totalBudget} />
-      </div>
-      <div className="only-narrow">
-        <WeekBars cats={cats} expenses={allExpenses} anchor={weekAnchor} anchorIsToday={isCurrentMonth} />
+      {/* One daily spending chart, with the same ledger and window on every screen. */}
+      <div className="home-week-chart">
+        <WeekBars cats={cats} expenses={allExpenses} anchor={weekAnchor} />
       </div>
       {/* ── Recent ── */}
       {monthExp.length > 0 && (

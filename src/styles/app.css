@@ -329,10 +329,10 @@ button:active { transform: scale(0.96); }
 .hero-bar-fill.watch { background: var(--hb-watch); }
 .hero-bar-fill.over { background: var(--hb-over); }
 
-/* The 75% mark, where "close to limit" begins. */
+/* The 80% mark, where "close to limit" begins. */
 .hero-tick {
   position: absolute;
-  left: 75%;
+  /* Position comes from the shared status threshold in HomeView. */
   top: -3px;
   width: 2px;
   height: 14px;
@@ -1670,11 +1670,8 @@ button:active { transform: scale(0.96); }
   .app[data-view='home'] .hero-amount { font-size: 37px; }
   /* On a 800px-tall screen the budget figure has to come out of the hero to
      keep a transaction row above the fold. It is not lost: the chip beside it
-     carries the percentage and the graph's own subtitle names the budget. */
+     carries the percentage; category budgets remain available below. */
   .app[data-view='home'] .hero-of { display: none; }
-  /* The plot's own aspect ratio changes at this height — see H_SHORT in
-     MonthTrend.jsx — so it still fills the card rather than being scaled down
-     inside it. Nothing to clamp here. */
   /* 1280x800 is the tightest screen here. The ledger gets the pixels: one real
      transaction row above the fold beats a wider strip of scenery, and the
      scene still holds the sky window and a band under the cards. */
@@ -1703,8 +1700,8 @@ button:active { transform: scale(0.96); }
 }
 
 /* ═══ Month trend ══════════════════════════════════════════════
-   The laptop dashboard's main graph. Phone never renders it — see
-   .only-wide — so every measurement here is a laptop measurement. */
+   Retained for the standalone MonthTrend component and its tests.
+   Home uses one shared WeekBars instance at every width. */
 
 .trend-card { display: flex; flex-direction: column; gap: 12px; }
 
@@ -2017,7 +2014,6 @@ button.legend-row { display: flex; justify-content: space-between; min-height: 3
   .app[data-view='home'] > .col--main { grid-area: main; }
   .app[data-view='home'] > .col--side { grid-area: side; padding-top: 190px; }
   .app[data-view='home'] .col > * { grid-area: auto; width: 100%; margin: 0; }
-  .app[data-view='home'] .col > .only-narrow { display: none; }
   .home-donut-layout { flex-wrap: wrap; justify-content: center; }
   .home-top-categories { flex-basis: 150px; }
 }
@@ -2028,7 +2024,7 @@ button.legend-row { display: flex; justify-content: space-between; min-height: 3
   .app[data-view='home'] .hero { order: 1; }
   .app[data-view='home'] .roast-card { order: 2; }
   .app[data-view='home'] .card--donut { order: 3; }
-  .app[data-view='home'] .only-narrow { order: 4; }
+  .app[data-view='home'] .home-week-chart { order: 4; }
   .app[data-view='home'] .card--budgets { order: 5; }
   .app[data-view='home'] .card--recent { order: 6; }
 }
@@ -2088,3 +2084,62 @@ body:has(.toast) .roast-popup { bottom: calc(140px + env(safe-area-inset-bottom,
 /* Complete clarification questions wrap rather than becoming one-word replies. */
 .ask-suggestions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .ask-suggestions button { max-width:100%; white-space:normal; text-align:left; overflow-wrap:anywhere; }
+
+/* Longer default category names need their own line beside the phone donut.
+   Amounts remain visible below, rather than squeezing labels into broken words. */
+@media (max-width: 1023px) {
+  .home-top-categories button.legend-row { flex-wrap: wrap; gap: 2px; }
+  .home-top-categories .legend-row > div:first-child { flex: 1 0 100%; }
+  .home-top-categories .legend-row > div:last-child { padding-left: 16px; }
+  .home-top-categories .home-category-label { overflow-wrap: normal; word-break: normal; }
+}
+
+/* The exact window belongs to the daily chart, not the monthly hero total. */
+.week-range { margin: -6px 0 8px; color: var(--tx-sub); font-size: 12px; line-height: 1.5; }
+@media (min-width: 1024px) {
+  .home-week-chart .week-plot { height: 204px; gap: 12px; }
+  .home-week-chart .week-bar { max-width: 46px; }
+  .home-week-chart .week-day { font-size: 12px; line-height: 17px; }
+  .home-week-chart .week-average-label { font-size: 12px; margin-bottom: 14px; }
+}
+
+/* Complete assistant breakdowns share the existing collapsed evidence control. */
+.answer-breakdown { margin-top: 14px; min-width: 0; }
+.breakdown-groups { list-style: none; padding: 0; margin: 0; }
+.breakdown-groups > li { padding: 12px 0; border-top: 1px solid var(--card-line); min-width: 0; }
+.breakdown-heading { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; }
+.breakdown-heading > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.breakdown-heading .money { flex-shrink: 0; }
+
+/* Session-only assistant controls, kept outside the scrolling evidence. */
+.ask-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ask-heading > .lbl { margin-bottom: 0; }
+.ask-heading > button { font-size: 12px; padding: 5px 8px; }
+
+/* Explicit related-spending review, never an automatic ledger mutation. */
+.scope-review { min-width: 0; overflow-wrap: anywhere; }
+.scope-review h3 { margin: 0 0 12px; font-size: 18px; }
+.scope-rules ul { padding-left: 20px; margin: 8px 0; }
+.scope-rules li { margin: 6px 0; }
+.scope-rules p, .scope-review > p { font-size: 13px; line-height: 1.55; }
+.scope-preview { padding: 0; list-style: none; margin: 12px 0; }
+.scope-preview li { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--card-line); }
+.scope-preview li > span { min-width: 0; }
+.scope-preview small { display: block; font-size: 11px; opacity: .7; margin-top: 4px; }
+.scope-preview strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scope-review .proposal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.scope-editor { display: grid; gap: 12px; margin-top: 12px; }
+.scope-editor > label { display: grid; gap: 6px; font-size: 13px; }
+.scope-editor textarea, .scope-editor > label > input { width: 100%; min-width: 0; padding: 10px; color: inherit; background: var(--field); border: 1px solid var(--card-line); border-radius: 8px; font: inherit; }
+.scope-editor fieldset { display: grid; gap: 8px; border: 1px solid var(--card-line); min-width: 0; border-radius: 8px; }
+.scope-editor fieldset label { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.scope-editor input[type=checkbox] { width: 18px; height: 18px; flex: 0 0 18px; }
+.scope-notice { font-weight: 600; }
+.approved-scope { margin: 12px 0; font-size: 13px; }
+.approved-scope summary { cursor: pointer; padding: 8px 0; }
+.scope-review button:focus-visible, .scope-editor input:focus-visible, .scope-editor textarea:focus-visible, .approved-scope summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.scope-category-ack { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+.scope-category-ack input { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 2px; }
+.scope-review button:disabled { opacity: .45; cursor: not-allowed; }
+
+.scope-review input[type=checkbox] { appearance: auto; -webkit-appearance: checkbox; accent-color: var(--accent); min-height: 18px; width: 18px; height: 18px; padding: 0; border-radius: 3px; }

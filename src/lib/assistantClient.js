@@ -44,12 +44,13 @@ export function explainIntentFailure(reason) {
  * @returns {Promise<{ok: true, intent: object} | {ok: false, reason: string}>}
  *   Never throws. A rejected promise here would mean an unanswered message.
  */
-export async function requestIntent(message, { cats, today, expenses, fetchImpl, url } = {}) {
-  const local=dialogueIntent(message);
+export async function requestIntent(message, { cats, today, expenses, fetchImpl, url, signal } = {}) {
+  const local=dialogueIntent(message, cats);
   if(local) {
     const checked=validateIntent(local,{cats,message});
     if(checked.ok) return {ok:true,intent:checked.intent,source:'builtin'};
   }
+  if (signal?.aborted) return {ok:false,reason:'cancelled'};
   const endpoint = `${url ?? ASSISTANT_URL}/assistant/intent`;
   const doFetch = fetchImpl ?? (typeof fetch === 'function' ? fetch : null);
   if (!doFetch) return { ok: false, reason: 'no_fetch' };
@@ -58,6 +59,8 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
   const context = buildContext({ cats, today, expenses });
 
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const cancel = () => controller?.abort();
+  signal?.addEventListener('abort', cancel, { once: true });
   const timer = controller ? setTimeout(() => controller.abort(), TIMEOUT_MS) : null;
 
   try {
@@ -90,8 +93,9 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
 
     return { ok: true, intent: checked.intent, endpoint, httpStatus: res.status };
   } catch (err) {
-    return { ok: false, reason: err?.name === 'AbortError' ? 'timeout' : 'unreachable' };
+    return { ok: false, reason: signal?.aborted ? 'cancelled' : err?.name === 'AbortError' ? 'timeout' : 'unreachable' };
   } finally {
     if (timer) clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
   }
 }

@@ -4,6 +4,7 @@ import { byDay, addDays, sum } from '../lib/stats';
 import { money } from '../lib/format';
 import { weekday } from '../lib/queryContract.js';
 const fullDate=date=>new Date(`${date}T00:00:00Z`).toLocaleDateString('en-SG',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+const rangeDate=date=>new Date(`${date}T00:00:00Z`).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
 function DayDetails({date,expenses,cats,onClose}) {
   const dialog=useRef(null),close=useRef(null);
   useEffect(()=>{dialog.current.showModal();close.current.focus();return()=>dialog.current?.close();},[]);
@@ -23,8 +24,9 @@ export default function WeekBars({expenses=[],cats=[],anchor,days=7}) {
   const close=()=>{setSelected(null);requestAnimationFrame(()=>trigger.current?.focus());};
   return <section className="card week-bars" style={{'--i':1}}>
     <div className="week-head"><p className="lbl">Last {days} days</p><p className="lbl money week-total">{money(windowTotal)}</p></div>
+    <p className="week-range"><time dateTime={dates[0]}>{rangeDate(dates[0])}</time> to <time dateTime={dates[dates.length-1]}>{rangeDate(dates[dates.length-1])}</time></p>
     <p className="week-average-label money">Daily average {money(avg)} · Select a day</p>
-    <div className="week-plot" role="group" aria-label={`Daily spending for the last ${days} days`}>
+    <div className="week-plot" role="group" aria-label={`Daily spending from ${dates[0]} to ${dates[dates.length-1]}`}>
       {peak>0&&<div className="week-avg" style={{'--wk-ratio':avg/peak}}/>}
       {bars.map(b=><button type="button" key={b.date} className="week-col" aria-label={`${fullDate(b.date)}, ${money(b.total)}. Show transactions`} onClick={e=>{trigger.current=e.currentTarget;setSelected(b.date);}}>
         <span className={`week-bar${peak>0&&b.total===peak?' top':''}${b.total===0?' none':''}`} style={{height:`${peak?Math.max(b.total/peak*100,b.total>0?4:1.5):1.5}%`}}><span className="week-tip money">{money(b.total)}</span></span>

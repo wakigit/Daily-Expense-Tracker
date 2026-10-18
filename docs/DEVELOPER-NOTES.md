@@ -91,7 +91,7 @@ Everything in this section is in the code and verified working.
   reverses its own last change. Every answer states how it was interpreted.
 - **Three live wallpapers** — Moonlit Forest, Sunset Beach, Rainy City — that
   **run down as you spend**. Three states, driven by the same thresholds as the
-  status pill: *healthy* under 75%, *strained* from 75 to 100, *run down* past
+  status pill: *healthy* under 80%, *strained* from 80 to 100, *run down* past
   it. The forest fogs over, loses its fish and its deer and the moon wanes to a
   crescent; the beach cools to night, the surfer and crab leave and litter
   arrives; the city's windows go cold, the rain thickens and the building stops

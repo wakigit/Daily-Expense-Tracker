@@ -98,7 +98,7 @@ Three properties distinguish this from the many LLM-plus-spreadsheet demos:
   act on a row.
 - Custom categories with colours. Deleting one warns that its expenses go too.
 - Monthly budget per category. Five-state status model — *No budget set · On
-  track · Close to limit (≥75%) · Budget reached (=100%) · Over budget (>100%)*
+  track · Close to limit (≥80%) · Budget reached (=100%) · Over budget (>100%)*
   — defined once in `src/lib/status.js` and shared by every screen, so they
   cannot disagree.
 - Month total, per-category donut, last-7-days bar chart, full transaction list
@@ -113,8 +113,8 @@ Three scenes (Moonlit Forest, Sunset Beach, Rainy City), each drawn in **two
 compositions** — 390×844 for the phone and 1440×900 for the laptop — sharing one
 set of class names so a single stylesheet drives both.
 
-They **decay in three steps** as the month is spent — *healthy* under 75%,
-*strained* 75–100%, *run down* past it — from `decayLevel()` in
+They **decay in three steps** as the month is spent — *healthy* under 80%,
+*strained* 80–100%, *run down* past it — from `decayLevel()` in
 `src/lib/status.js`, which is a projection of `budgetStatus()` rather than a
 second set of thresholds. Decay is fully reversible; loops never restart
 visibly. Loops pause off the Home tab and when the page is hidden.
@@ -376,10 +376,15 @@ Account billing controls and platform protection are separate release checks.
 
 ### 5.5 Sample demo data
 
-A seeded dataset that makes every feature visible in under two minutes:
-budgets set, enough history for month-over-month comparison, at least one
-category over budget so the decay and the status model are both legible, and
-rows recent enough that the 7-day chart is populated.
+A fictional dataset with the seven fresh default categories, previous-month
+history and current spending through today. Sample-only current spending is
+about 76% of date-scaled demo budgets, below the shared 80% warning threshold.
+Prices remain fixed; budgets are shared across displayed months, not historical
+monthly budgets. Previous-month status is calculated honestly and may vary.
+Existing categories are reused only when compatible; missing ones receive
+collision-safe IDs and ownership snapshots for safe removal. Personal rows,
+category edits and later budget edits are preserved. Existing loaded samples
+are not rewritten; remove and reload to obtain the new sample version.
 
 It must be **explicitly loadable and clearable from Settings**, must never
 overwrite real rows without saying so, and must be obviously sample data rather

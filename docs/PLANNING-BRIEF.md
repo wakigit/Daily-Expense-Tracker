@@ -61,7 +61,7 @@ Asia/Singapore calendar day, so a 1 a.m. supper is dated today.
 **Three live wallpapers, in two compositions each.** Forest, beach, city, drawn
 at 390×844 for the phone and 1440×900 for the laptop, sharing one set of class
 names so a single stylesheet drives both. They run down across **three** states
-— healthy under 75%, strained 75–100%, run down past it — from `decayLevel()`
+— healthy under 80%, strained 80–100%, run down past it — from `decayLevel()`
 in `src/lib/status.js`, which is a *projection* of `budgetStatus()` rather than
 a second set of thresholds. Every level reversible; loops never restart visibly;
 loops pause off Home and when the page is hidden. Reduced motion honoured, with

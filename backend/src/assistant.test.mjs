@@ -88,3 +88,92 @@ test('assistant: latest carries category and description filters through validat
   assert.equal(reply.body.intent.query.operation,'latest');
  }
 });
+
+// Real category vocabulary, without changing the query shape or making provider calls.
+test('category vocabulary: generic transport clarifies before provider, explicit types stay separate', async()=>{
+ const {DEF_CATS}=await import('../../src/themes/themes.js');
+ const context={today:'2026-10-19',categories:DEF_CATS.map(({id,label})=>({id,label}))};
+ let calls=0;
+ const reply=await handleIntent({message:'Transport spending last month?',context},{request:async()=>{calls++;throw 0;}});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');assert.equal(calls,0);
+ assert.match(reply.body.intent.question,/Public Transport and Private Hire/);
+ for(const [label,id] of [['Food','food'],['Public transport','pub'],['Private hire','hire']]) {
+   const result=await handleIntent({message:`${label} spending this month`,context},{request:async()=>({type:'analyze',query:{operation:'total',period:'month',category:id,category_terms:[label]}})});
+   assert.equal(result.status,200);assert.equal(validateIntent(result.body.intent,{cats:DEF_CATS,message:`${label} spending this month`}).ok,true);
+ }
+});
+test('receipt vocabulary: all seven actual IDs available and fresh Food draft validates',async()=>{
+ const {DEF_CATS}=await import('../../src/themes/themes.js');
+ const {buildReceiptSchema}=await import('./provider.js');
+ const {validateReceipt}=await import('../../src/lib/receipt.js');
+ assert.deepEqual(buildReceiptSchema(DEF_CATS.map(c=>c.id)).properties.category.enum,[...DEF_CATS.map(c=>c.id),null]);
+ const result=validateReceipt({isReceipt:true,description:'Fictional GrabFood lunch',amount:'5.40',currency:'SGD',date:'2026-10-19',category:'food'},{cats:DEF_CATS,today:'2026-10-19'});
+ assert.equal(result.ok,true);assert.equal(result.draft.category,'food');
+});
+
+
+test('assistant: complete breakdown contract preserves relative dates through handler and client',async()=>{
+ const message='Break down descriptions mentioning Acme by category over the last 90 days';
+ const input={...query,operation:'breakdown',groupBy:'category',period:'last_days',dayCount:90,category:null,category_terms:[],description:'Acme'};
+ const response=await handleIntent({message,context},{request:async()=>({type:'analyze',query:input})});
+ assert.equal(response.status,200);
+ const checked=validateIntent(response.body.intent,{message,cats:context.categories});
+ assert.equal(checked.ok,true);assert.equal(checked.intent.query.dayCount,90);
+ assert.equal(checked.intent.query.description,'Acme');assert.equal(checked.intent.query.groupBy,'category');
+ const schema=buildSchema(['custom']).properties.query.anyOf[0];
+ assert.ok(schema.properties.operation.enum.includes('breakdown'));
+ assert.ok(schema.properties.period.enum.includes('last_days'));
+ assert.ok(schema.properties.period.enum.includes('year'));
+ assert.ok(schema.required.includes('dayCount'));
+});
+test('assistant: malformed relative fields fail safely rather than broadening range',async()=>{
+ for(const dayCount of [null,0,-1,1.5,'90',3661]) {
+  const response=await handleIntent({message:'Spending by month last 90 days',context},{request:async()=>({type:'analyze',query:{...query,operation:'breakdown',groupBy:'month',period:'last_days',dayCount}})});
+  assert.equal(response.status,502);assert.equal(response.body.detail.field,'query.dayCount');
+ }
+});
+test('assistant: referential request clarifies without a paid request',async()=>{
+ let calls=0;
+ const response=await handleIntent({message:'Show those transactions',context},{request:async()=>{calls++;throw 0;}});
+ assert.equal(response.status,200);assert.equal(response.body.intent.type,'clarify');assert.equal(calls,0);
+});
+
+test('reviewed scope: strict schema and both normalization boundaries retain all rules',async()=>{
+ const cats=[{id:'transport',label:'Transport'},{id:'insurance',label:'Insurance'}];
+ const context={today:'2026-10-19',categories:cats};
+ const spendingScope={label:'Car-related',includeCategories:['transport'],includeTerms:[' CAR   INSURANCE '],excludeCategories:[],excludeTerms:['MRT']};
+ const query={operation:'breakdown',groupBy:'month',period:'year',spendingScope};
+ const message='Car-related spending including whole Transport category and car insurance this year';
+ const reply=await handleIntent({message,context},{request:async()=>({type:'propose_scope',query})});
+ assert.equal(reply.status,200);
+ const second=validateIntent(reply.body.intent,{message,cats});
+ assert.deepEqual(second.intent,reply.body.intent);
+ assert.deepEqual(second.intent.query.spendingScope,{label:'Car-related',includeCategories:['transport'],includeTerms:['car insurance'],excludeCategories:[],excludeTerms:['mrt']});
+ const schema=buildSchema(cats.map(c=>c.id));
+ assert.ok(schema.properties.type.enum.includes('propose_scope'));
+ const scopeSchema=schema.properties.query.anyOf[0].properties.spendingScope.anyOf[1];
+ assert.equal(scopeSchema.additionalProperties,false);
+ assert.deepEqual(scopeSchema.required,Object.keys(scopeSchema.properties));
+ assert.deepEqual(scopeSchema.properties.includeCategories.items.enum,['transport','insurance']);
+});
+test('reviewed scope: model cannot bypass review with analyze; invalid category fails safely',async()=>{
+ const spendingScope={label:'Scope',includeCategories:['custom'],includeTerms:[],excludeCategories:[],excludeTerms:[]};
+ const q={operation:'total',period:'year',spendingScope};
+ const reply=await handleIntent({message:'Review Creative hobbies spending scope',context},{request:async()=>({type:'analyze',query:q})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'propose_scope');
+ const invalid=await handleIntent({message:'Review this scope',context},{request:async()=>({type:'propose_scope',query:{...q,spendingScope:{...spendingScope,excludeCategories:['PRIVATE_CANARY']}}})});
+ assert.equal(invalid.status,502);
+ assert.deepEqual(invalid.body,{error:'invalid_intent',detail:{code:'intent_bad_field',field:'query.spendingScope'}});
+ assert.equal(JSON.stringify(invalid).includes('PRIVATE_CANARY'),false);
+});
+test('reviewed scope: broad related request cannot silently become one substring total',async()=>{
+ const reply=await handleIntent({message:'Car-related expenses including fuel insurance and repair this year',context},{request:async()=>({type:'analyze',query:{operation:'total',period:'year',description:'fuel'}})});
+ assert.equal(reply.status,502);assert.equal(reply.body.detail.field,'query.spendingScope');
+});
+test('reviewed scope: unmentioned whole categories remain review-only, never an automatic read',async()=>{
+ const query={operation:'total',period:'year',spendingScope:{label:'Related',includeCategories:['custom'],includeTerms:['coffee'],excludeCategories:[],excludeTerms:[]}};
+ const reply=await handleIntent({message:'Related purchases including coffee this year',context},{request:async()=>({type:'propose_scope',query})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'propose_scope');
+ assert.deepEqual(reply.body.intent.query.spendingScope.includeCategories,['custom']);
+ assert.equal(validateIntent(reply.body.intent,{message:'Related purchases including coffee this year',cats:context.categories}).ok,true);
+});

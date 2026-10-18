@@ -1,10 +1,13 @@
+import { previewSpendingScope, confirmSpendingScope } from './lib/spendingScope';
+import { createAssistantSession, resolveFollowup } from './lib/assistantFollowup';
+import { interpretOffline } from './lib/queryOffline';
+import { executeQuery } from './lib/queryEngine';
 import RoastCard from './components/RoastCard';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppData } from './hooks/useAppData';
 import { useRoaster } from './hooks/useRoaster';
 import { useTheme } from './hooks/useTheme';
 import { curYm, shiftYm, today } from './lib/format';
-import { answer } from './lib/ask';
 import {
   addExpense, deleteExpenseById, validateExpense, revert, undoLast, pushAction,
 } from './lib/actions';
@@ -14,7 +17,7 @@ import { planFromIntent } from './lib/assistant';
 import { markOutdatedAnswers } from './lib/answerEvidence';
 import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
-import { planLoad, planRemove, hasSampleRows, ownRows } from './lib/sampleState';
+import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
 import { ymLabel as sampleYmLabel } from './lib/format';
 
 import Header from './components/Header';
@@ -84,14 +87,21 @@ export default function App() {
   // Conversation lives here rather than in the view so switching tabs and
   // coming back doesn't wipe the thread.
   const [chat, setChat] = useState([]);
+  const sessionRef = useRef(null);
+  if (!sessionRef.current) sessionRef.current = createAssistantSession();
+  const ledgerRef = useRef(null);
+  ledgerRef.current = { expenses, cats, budgets, today: today() };
+  useEffect(() => () => sessionRef.current.cancel(), []);
   useEffect(() => {
     setChat((messages) => markOutdatedAnswers(messages, expenses, cats, budgets));
+    sessionRef.current.noteLedger(ledgerRef.current);
   }, [expenses, cats, budgets, chat]);
   // Every change to `expenses` is recorded here so it can be reversed. Session
   // state on purpose: undo that outlived a reload would be a surprise.
   const [actionLog, setActionLog] = useState([]);
   // A proposal waiting on Confirm. Nothing in `expenses` moves until it is
   // accepted, so the model can never change data on its own.
+  const [scopeProposal, setScopeProposal] = useState(null);
   const [pending, setPending] = useState(null);
   const [asking, setAsking] = useState(false);
 
@@ -285,21 +295,30 @@ export default function App() {
   /* Sample data. Both actions are planned in lib/sampleState.js so the rules —
      keep what the person typed, remember what was replaced — are testable
      without a browser. The view does the asking; this does the writing. */
-  const loadSample = () => {
-    const plan = planLoad({ expenses, budgets, todayYmd: today() });
+  const loadSample = (confirmed = false) => {
+    // Home/Ask shortcuts must not bypass Settings' existing budget confirmation.
+    if (confirmed !== true && sampleLoadNeedsConfirmation({ expenses, budgets })) {
+      setBudDraft(toDraft(budgets));
+      setTab('settings');
+      setToast({ message: 'Review sample data in Settings before replacing category budgets.' });
+      return;
+    }
+    const plan = planLoad({ expenses, budgets, cats, mark: sampleMark, todayYmd: today() });
     setExpenses(plan.expenses);
+    setCats(plan.categories);
     setBudgets(plan.budgets);
-    setBudDraft(Object.fromEntries(cats.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
+    setBudDraft(Object.fromEntries(plan.categories.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
     setSampleMark(plan.mark);
     setYm(curYm());
-    setToast({ message: 'Sample data loaded' });
+    setToast({ message: plan.alreadyLoaded ? 'Sample data is already loaded. Remove it in Settings before loading a new version.' : 'Sample data loaded' });
   };
 
   const removeSample = () => {
-    const plan = planRemove({ expenses, budgets, mark: sampleMark });
+    const plan = planRemove({ expenses, budgets, cats, mark: sampleMark });
     setExpenses(plan.expenses);
+    setCats(plan.categories);
     setBudgets(plan.budgets);
-    setBudDraft(Object.fromEntries(cats.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
+    setBudDraft(Object.fromEntries(plan.categories.map((c) => [c.id, plan.budgets[c.id] ?? ''])));
     setSampleMark(null);
     setToast({ message: `Removed ${plan.removed} sample entries` });
   };
@@ -347,41 +366,61 @@ export default function App() {
    */
   const say = (msg) => setChat((c) => [...c, msg]);
 
-  /** The offline path: regex intent matching over lib/stats.js. Always works. */
-  const answerLocally = (text, note) => {
-    const reply = answer(text, { expenses, cats, today: today(), budgets });
-    say({ from: 'bot', source: 'offline', text: reply.text, suggestions: reply.suggestions, detail: [note, reply.detail].filter(Boolean).join(' '), comparison: reply.comparison, evidence: reply.evidence, interpretation: reply.interpretation, budgetEvidence: reply.budgetEvidence, clarificationDraft: reply.kind === 'clarify' ? text : null });
+  const publishAnswer = (plan, meta, ticket, query = null, remember = true) => {
+    if (!sessionRef.current.current(ticket)) return;
+    const answerId = remember ? sessionRef.current.accept(ticket, query, plan, ledgerRef.current) : null;
+    if (remember && !query && (plan.evidence || plan.comparison)) sessionRef.current.failed(ticket, true);
+    say({ from: 'bot', ...meta, answerId, text: plan.text, suggestions: plan.suggestions,
+      detail: plan.detail, interpretation: plan.interpretation, breakdown: plan.breakdown,
+      comparison: plan.comparison, evidence: plan.evidence, budgetEvidence: plan.budgetEvidence,
+      outdated: plan.outdated, followup: plan.followup, approvedScope: plan.approvedScope, scopeCategories: plan.approvedScope ? ledgerRef.current.cats.map(c=>({id:c.id,label:c.label})) : null });
   };
 
-  /**
-   * Ask the model what the sentence means, then do the work here.
-   *
-   * The model returns an intent and nothing else — no figures, no ids. Every
-   * number comes from lib/stats.js over the real rows, and anything that would
-   * change data is parked in `pending` until confirmed.
-   *
-   * If the backend is unreachable or has no provider configured, this falls
-   * through to the offline matcher and the user still gets an answer.
-   */
-  const askQuestion = async (text) => {
-    say({ from: 'me', text });
-    setPending(null);
-    setAsking(true);
+  const clearChat = () => {
+    sessionRef.current.reset(); setChat([]); setPending(null); setScopeProposal(null); setAsking(false);
+  };
+  const stopAsking = () => {
+    sessionRef.current.cancel(); setScopeProposal(null); setAsking(false);
+    say({from:'bot',source:'builtin',text:'Stopped waiting for interpretation. Nothing was changed.'});
+  };
 
-    const res = await requestIntent(text, { cats, today: today(), expenses });
-    if (!res.ok) {
-      answerLocally(text, explainIntentFailure(res.reason));
+  const askQuestion = async (text) => {
+    const ticket = sessionRef.current.begin();
+    say({ from: 'me', text }); setPending(null); setScopeProposal(null); setAsking(true);
+    const followup = resolveFollowup(text, sessionRef.current.getContext(), ledgerRef.current);
+    if (followup.handled) {
       setAsking(false);
+      if (followup.proposal) { setScopeProposal({ticket,query:followup.query,preview:followup.preview,referenceDate:followup.referenceDate,meta:{source:'builtin'}}); return; }
+      if (followup.plan.kind === 'answer') publishAnswer(followup.plan, {source:'builtin'}, ticket, followup.query, !followup.snapshot);
+      else say({from:'bot',source:'builtin',text:followup.plan.question,clarificationDraft:text});
       return;
     }
-
-    const plan = planFromIntent(res.intent, { expenses, cats, today: today(), actionLog, budgets });
-    setAsking(false);
-
-    if (plan.kind === 'answer') {
-      return say({ from: 'bot', source: res.source ?? 'model', suggestions: plan.suggestions, endpoint: res.endpoint, httpStatus: res.httpStatus, text: plan.text, detail: plan.detail, interpretation: plan.interpretation, comparison: plan.comparison, evidence: plan.evidence, budgetEvidence: plan.budgetEvidence });
+    const res = await requestIntent(text, { ...ledgerRef.current, signal: ticket.signal });
+    if (!sessionRef.current.current(ticket)) return;
+    if (!res.ok) {
+      const ctx = ledgerRef.current;
+      const parsed = interpretOffline(text, ctx.cats);
+      const reply = parsed.query ? executeQuery(parsed.query, ctx) : parsed;
+      sessionRef.current.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
+      setAsking(false);
+      if (reply.kind === 'answer') publishAnswer({...reply,detail:[explainIntentFailure(res.reason),reply.detail].filter(Boolean).join(' ')}, {source:'offline'}, ticket, parsed.query, !sessionRef.current.getContext());
+      else say({from:'bot',source:'offline',text:reply.question ?? reply.text,detail:explainIntentFailure(res.reason),clarificationDraft:text});
+      return;
     }
-    if (plan.kind === 'clarify') return say({ from: 'bot', source: res.source ?? 'model', endpoint:res.endpoint, httpStatus:res.httpStatus, text: plan.question, suggestions:plan.options, clarificationDraft: text });
+    if (res.intent.type === 'propose_scope') {
+      const preview=previewSpendingScope(res.intent.query,ledgerRef.current);
+      setAsking(false);
+      const meta={source:res.source??'model',endpoint:res.endpoint,httpStatus:res.httpStatus};
+      if (!preview.ok) return say({from:'bot',...meta,text:preview.question,clarificationDraft:text});
+      say({from:'bot',...meta,text:'Review these proposed literal rules before I calculate related spending. They may not find every related purchase.'});
+      setScopeProposal({ticket,query:preview.query,preview,referenceDate:ledgerRef.current.today,meta});
+      return;
+    }
+    const plan = planFromIntent(res.intent, { ...ledgerRef.current, actionLog });
+    setAsking(false);
+    const meta = {source:res.source ?? 'model',endpoint:res.endpoint,httpStatus:res.httpStatus};
+    if (plan.kind === 'answer') return publishAnswer(plan, meta, ticket, res.intent.type === 'analyze' ? res.intent.query : null);
+    if (plan.kind === 'clarify') return say({from:'bot',...meta,text:plan.question,suggestions:plan.options,clarificationDraft:text});
 
     if (plan.kind === 'undo') {
       const undone = undoLast(expenses, actionLog, { source: 'assistant' });
@@ -399,6 +438,22 @@ export default function App() {
     say({ from: 'bot', text: plan.text, plan });
     setPending(plan);
   };
+
+  const reviseScope = (scope) => {
+    if (!scopeProposal || !sessionRef.current.current(scopeProposal.ticket)) return;
+    const cleaned={...scope,includeTerms:scope.includeTerms.filter(t=>t.trim()),excludeTerms:scope.excludeTerms.filter(t=>t.trim())};
+    const preview=previewSpendingScope({...scopeProposal.query,spendingScope:cleaned},{...ledgerRef.current,today:scopeProposal.referenceDate});
+    setScopeProposal(p=>preview.ok?{...p,query:preview.query,preview,notice:'Revised preview. Review and approve these rules.'}:{...p,notice:preview.question});
+  };
+  const approveScope = () => {
+    if (!scopeProposal || !sessionRef.current.current(scopeProposal.ticket)) return;
+    const result=confirmSpendingScope(scopeProposal,{...ledgerRef.current,today:scopeProposal.referenceDate});
+    if (result.kind==='refresh') return setScopeProposal(p=>({...p,preview:result.preview,notice:'Records or categories changed. The preview has refreshed. Review it and approve again.'}));
+    if (result.kind==='invalid') return setScopeProposal(p=>({...p,notice:result.question}));
+    setScopeProposal(null);
+    publishAnswer({...result.plan,referenceDate:scopeProposal.referenceDate},scopeProposal.meta,scopeProposal.ticket,result.query);
+  };
+  const cancelScope = () => { setScopeProposal(null); say({from:'bot',source:'builtin',text:'Scope cancelled. No related-spending total was calculated and no records were changed.'}); };
 
   /** Applies a parked proposal. The only path from a model to the data. */
   const confirmPending = (choiceId) => {
@@ -595,8 +650,11 @@ export default function App() {
 
         {tab === 'ask' && (
           <AskView
+            scopeProposal={scopeProposal} cats={cats} onScopeConfirm={approveScope} onScopeCancel={cancelScope} onScopeRevise={reviseScope}
             messages={markOutdatedAnswers(chat, expenses, cats, budgets)}
             onSend={askQuestion}
+            onClear={clearChat}
+            onStop={stopAsking}
             hasData={expenses.length > 0}
             onLoadSample={loadSample}
             busy={asking}
@@ -628,13 +686,13 @@ export default function App() {
             onNewCat={setNewCat}
             onAddCat={addCat}
             sample={{
-              loaded: hasSampleRows(expenses),
+              loaded: hasSampleRows(expenses, sampleMark),
               rowCount: expenses.length - ownRows(expenses).length,
               ownRows: ownRows(expenses).length,
               hasBudgets: Object.keys(budgets).length > 0,
               canRestoreBudgets: !!sampleMark?.previousBudgets && !!sampleMark?.appliedBudgets,
               months: (sampleMark?.months ?? []).map(sampleYmLabel).join(' and '),
-              onLoad: loadSample,
+              onLoad: () => loadSample(true),
               onRemove: removeSample,
             }}
           />

@@ -1,3 +1,7 @@
+import { scopeChecks } from './scope-checks';
+import { followupChecks } from './followup-checks';
+import { breakdownChecks } from './breakdown-checks';
+import { sampleCategoryChecks } from './sample-category-checks';
 import { assistantReliabilityChecks } from './assistant-reliability-checks';
 import { voiceMoneyChecks } from './voice-money-checks';
 import { queryChecks } from './query-checks';
@@ -36,7 +40,7 @@ import MonthTrend from '../src/components/MonthTrend';
 import { monthTrend, daysInMonth, niceCeil, axisTicks } from '../src/lib/trend';
 import {
   buildSample, patternTotalThrough, sampleTotal, isSampleRow,
-  SAMPLE_BUDGETS, SAMPLE_BUDGET_TOTAL, PATTERN_TOTAL, OVER_BUDGET_FROM_DAY,
+  PATTERN_TOTAL,
 } from '../src/lib/sampleData';
 import { planLoad, planRemove, hasSampleRows } from '../src/lib/sampleState';
 import {
@@ -173,7 +177,7 @@ run('SettingsView sample not loaded', <SettingsView
   newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
   sample={{ loaded: false, rowCount: 0, ownRows: 2, hasBudgets: true }} />,
   'Load sample data', 'Demonstration figures only', 'can be removed again',
-  'run-down state', 'S$320.00');
+  'about 76%', 'Budgets are shared between months');
 
 run('SettingsView sample loaded', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
@@ -922,9 +926,9 @@ logic('top_day: nothing recorded says so, with no amount',
 }
 
 logic('status: no budget set', budgetStatus(50, 0).label, 'No budget set');
-logic('status: on track below 75%', budgetStatus(100, 200).label, 'On track');
+logic('status: on track below 80%', budgetStatus(100, 200).label, 'On track');
 logic('status: 74% is still on track', budgetStatus(74, 100).label, 'On track');
-logic('status: 75% is close to limit', budgetStatus(75, 100).label, 'Close to limit');
+logic('status: 80% is close to limit', budgetStatus(80, 100).label, 'Close to limit');
 logic('status: 99% is close to limit', budgetStatus(99, 100).label, 'Close to limit');
 // Exactly on budget is its own state — it is not yet over.
 logic('status: exactly 100% is budget reached', budgetStatus(100, 100).label, 'Budget reached');
@@ -937,7 +941,7 @@ logic('status: keys follow the labels',
    failure mode is silent: a scene that decays while the chip says "On track". */
 logic('decay: no budget is healthy', decayLevel(budgetStatus(50, 0).key), 0);
 logic('decay: 74% is healthy', decayLevel(budgetStatus(74, 100).key), 0);
-logic('decay: 75% is strained', decayLevel(budgetStatus(75, 100).key), 1);
+logic('decay: 80% is strained', decayLevel(budgetStatus(80, 100).key), 1);
 logic('decay: 99% is strained', decayLevel(budgetStatus(99, 100).key), 1);
 logic('decay: exactly 100% is strained, not run down',
   decayLevel(budgetStatus(100, 100).key), 1);
@@ -1510,20 +1514,10 @@ logic('sample: the running total never goes down',
   Array.from({ length: 28 }, (_, i) => patternTotalThrough(i + 1))
     .every((v, i, a) => i === 0 || v >= a[i - 1]), true);
 
-logic('sample: the budgets add up to the stated total',
-  Object.values(SAMPLE_BUDGETS).reduce((a, b) => a + b, 0), SAMPLE_BUDGET_TOTAL);
-logic('sample: and that total is 320', SAMPLE_BUDGET_TOTAL, 320);
-/* The point of the dataset: a completed month that is over its budget, so the
-   wallpaper's run-down state is reachable on any date. */
-logic('sample: a full month overspends its budget', PATTERN_TOTAL > SAMPLE_BUDGET_TOTAL, true);
-logic('sample: the month crosses the budget on the stated day',
-  patternTotalThrough(OVER_BUDGET_FROM_DAY) > SAMPLE_BUDGET_TOTAL
-  && patternTotalThrough(OVER_BUDGET_FROM_DAY - 1) <= SAMPLE_BUDGET_TOTAL, true);
-logic('sample: every category has a budget',
-  DEF_CATS.every((c) => typeof SAMPLE_BUDGETS[c.id] === 'number'), true);
-
 /* Built against a given today, two calendar months, nothing in the future. */
 const SD = buildSample('2026-10-17');
+const SAMPLE_BUDGETS = SD.budgets;
+logic('sample: all seven categories have demo budgets', DEF_CATS.every(c => typeof SD.budgets[c.id] === 'number'), true);
 logic('sample: spans the previous month and this one', SD.months, ['2026-09', '2026-10']);
 logic('sample: the previous month is laid down whole',
   SD.expenses.filter((e) => e.date.startsWith('2026-09')).length, 40);
@@ -1567,12 +1561,12 @@ const MINE = [
 ];
 const MY_BUD = { food: 77, pub: 33 };
 
-const L = planLoad({ expenses: MINE, budgets: MY_BUD, todayYmd: '2026-10-17' });
+const L = planLoad({ expenses: MINE, budgets: MY_BUD, cats: DEF_CATS, todayYmd: '2026-10-17' });
 logic('load: keeps every row the person entered',
   L.expenses.filter((e) => !isSampleRow(e)).map((e) => e.id), ['mine-1', 'mine-2']);
 logic('load: adds the sample rows alongside them',
   L.expenses.length, MINE.length + SD.expenses.length);
-logic('load: replaces the budgets with the sample ones', L.budgets, SAMPLE_BUDGETS);
+logic('load: applies date-specific sample category budgets', Object.entries(L.budgets).sort(), Object.entries(SAMPLE_BUDGETS).sort());
 logic('load: says it replaced budgets', L.replacedBudgets, true);
 logic('load: remembers the budgets it replaced', L.mark.previousBudgets, MY_BUD);
 logic('load: records how many rows it added', L.mark.rowCount, SD.expenses.length);
@@ -1822,12 +1816,12 @@ logic('category regression: a read category is passed through',
 
 // Monthly display and ranking regressions. The donut retains every slice.
 const ranked = cats.map((c, i) => ({ id: c.id, name: c.label, color: c.color, value: i + 1 }));
-const rankedHome = renderToString(<HomeView {...home} totalSpent={21} totalBudget={100}
+const rankedHome = renderToString(<HomeView {...home} totalSpent={28} totalBudget={100}
   chartData={ranked} cats={cats} budgets={budgets} spending={spending} monthExp={manyExpenses} />);
 logic('Home top four uses highest spending, including later category definitions',
   [...rankedHome.matchAll(/class="legend-row"[^>]*>(.*?)<\/button>/g)].map(m =>
-    cats.find(c => m[1].includes(c.label))?.id), ['misc', 'needs', 'shop', 'pub']);
-logic('Home donut includes all six categories', count(rankedHome, 'class="donut-slice"'), 6);
+    cats.find(c => m[1].includes(c.label))?.id), ['misc', 'hire', 'pub', 'shop']);
+logic('Home donut includes all seven categories', count(rankedHome, 'class="donut-slice"'), 7);
 logic('Home four category heading', rankedHome.includes('Your top 4 criminals'), true);
 const fewHome = renderToString(<HomeView {...home} totalSpent={47.6} totalBudget={740}
   chartData={chartData} cats={cats} budgets={budgets} spending={spending} monthExp={expenses} />);
@@ -2081,9 +2075,14 @@ await roastChecks(logic);
     Object.keys(plan.budgets).length > 0, true);
 }
 
+scopeChecks(logic);
 queryChecks(logic);
+breakdownChecks(logic);
+await followupChecks(logic);
 await assistantReliabilityChecks(logic);
 voiceMoneyChecks(logic);
+
+await sampleCategoryChecks(logic);
 
 let failed = 0;
 for (const c of checks) {

@@ -68,7 +68,7 @@ check('schema: query carries the unmapped category words', () => {
 
 check('schema: model intents use canonical reads and preserve actions', () => {
   assert.deepEqual(schema.properties.type.enum,
-    ['help', 'analyze', 'propose_add', 'find_delete_candidates', 'undo', 'clarify']);
+    ['help', 'analyze', 'propose_scope', 'propose_add', 'find_delete_candidates', 'undo', 'clarify']);
 });
 
 check('schema: general query contract includes comparisons, filters and custom categories', () => {

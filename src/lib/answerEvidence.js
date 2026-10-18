@@ -1,4 +1,4 @@
-import { rowMatches } from './queryContract.js';
+import { matchingRows } from './queryContract.js';
 import { toCents } from './money';
 import { weekStart } from './stats';
 
@@ -20,7 +20,7 @@ const snapshot = (row, cats) => ({
   description: row.description,
   date: row.date,
   category: row.category,
-  categoryLabel: cats.find((cat) => cat.id === row.category)?.label ?? row.category,
+  categoryLabel: cats.find((cat) => cat.id === row.category)?.label ?? (row.category == null ? 'Uncategorised' : `Unknown category (${row.category})`),
   amount: row.amount,
   notes: row.notes ?? '',
 });
@@ -32,17 +32,19 @@ export function captureEvidence(rows, { basis = rows, scope = {}, cats = [] } = 
   return {
     rows: rows.map((row) => snapshot(row, cats)),
     basis: basis.map((row) => snapshot(row, cats)),
-    scope: { ...scope, category: scope.category ?? null },
+    scopeCategories: scope.spendingScope ? [...new Set([...scope.spendingScope.includeCategories,...scope.spendingScope.excludeCategories])].sort().map(id=>[id,cats.find(c=>c.id===id)?.label??null]) : null,
+    scope: JSON.parse(JSON.stringify({ ...scope, category: scope.category ?? null })),
   };
 }
 
 export function evidenceIsOutdated(evidence, expenses, cats = []) {
   if (!evidence) return false;
+  if (evidence.scopeCategories?.some(([id,label]) => (cats.find(c=>c.id===id)?.label??null)!==label)) return true;
   if (evidence.scope.historyStart) {
     const first = expenses.filter(e => e.date <= evidence.scope.end).map(e => e.date).sort()[0] ?? evidence.scope.end;
     if (first !== evidence.scope.historyStart) return true;
   }
-  const current = expenses.filter((row) => rowMatches(row, evidence.scope));
+  const current = matchingRows(expenses, evidence.scope);
   if (current.length !== evidence.basis.length) return true;
   const byId = new Map(current.map((row) => [row.id, snapshot(row, cats)]));
   return evidence.basis.some((row) => JSON.stringify(byId.get(row.id)) !== JSON.stringify(row));
@@ -52,7 +54,7 @@ export function evidenceIsOutdated(evidence, expenses, cats = []) {
 export function markOutdatedAnswers(messages, expenses, cats, budgets = {}) {
   let changed = false;
   const next = messages.map((message) => {
-    const evidence = [message.evidence, ...(message.comparison?.sides ?? []).map(side => side.evidence)];
+    const evidence = [message.evidence, ...(message.breakdown?.groups ?? []).map(group => group.evidence), ...(message.comparison?.sides ?? []).map(side => side.evidence)];
     const budgetChanged = message.budgetEvidence && toCents(budgets[message.budgetEvidence.category] ?? 0) !== message.budgetEvidence.amountCents;
     if (message.outdated || (!budgetChanged && !evidence.some(item => evidenceIsOutdated(item, expenses, cats)))) return message;
     changed = true;

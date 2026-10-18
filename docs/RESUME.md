@@ -38,7 +38,7 @@ the tree as six commits and redeployed the live site.
    navigation rail, a centre column and a transaction ledger. One component set
    — `BottomNav` becomes a vertical rail purely in CSS. There is exactly one
    layout breakpoint, at 1024px.
-2. **Three-step wallpaper decay.** `healthy` under 75%, `strained` 75–100%,
+2. **Three-step wallpaper decay.** `healthy` under 80%, `strained` 80–100%,
    `run down` past it, from `decayLevel()` in `src/lib/status.js` — a projection
    of `budgetStatus()`, not a second set of thresholds. Reversible; loops never
    restart (measured, not eyeballed).

@@ -1,12 +1,17 @@
+import { transportClarification } from './categoryVocabulary.js';
 /** Deterministic conversation boundaries, no ledger access or financial calculation. */
 export const HELP_TEXT = 'Hi! I can help with recorded spending totals, filtered transactions, largest expenses, comparisons and category budget pace estimates.';
 export const HELP_QUESTIONS = ['How much did I spend this month?', 'What was my largest single expense this month?', 'Show transactions over S$20 this month.'];
 export function stripGreeting(message) {
   return String(message ?? '').trim().replace(/^(?:hello|hi|hey|hiya|yo|good morning|good afternoon|good evening)\b(?:\s+(?:there|tallyai))?[,!:.\s]*/i,'').trim();
 }
-export function dialogueIntent(message) {
+export function dialogueIntent(message, cats = []) {
+  const transport = transportClarification(message, cats);
+  if (transport) return transport;
   const original=String(message ?? '').trim();
   const plain=original.toLowerCase().replace(/[?!.,]/g,'').replace(/\s+/g,' ').trim();
+  const referential=stripGreeting(original).toLowerCase().replace(/[?!.,]/g,'').replace(/\s+/g,' ').trim();
+  if (/^(?:please )?(?:(?:show|list)(?: me)? (?:all )?(?:those|these|them)\b|break (?:that|this|it) down\b|exclude\s)/i.test(referential)) return {type:'clarify',question:'I do not have a reusable previous-query context. Please resubmit the complete question with its description or category filter, date range and desired breakdown.',options:[]};
   if (/^(?:(?:hello|hi|hey|hiya|yo|good morning|good afternoon|good evening)(?: (?:there|tallyai))?(?: how are you)?|help|what can (?:you do|i ask)|how can you help(?: me)?)$/.test(plain)) return {type:'help'};
   let text=stripGreeting(original).toLowerCase();
   if (!/\b(highest|largest|biggest|most expensive)\b/.test(text) || !/\b(expenditure|expenses?|spending|spend|spent|purchases?|transactions?)\b/.test(text)) return null;

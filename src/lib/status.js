@@ -1,3 +1,4 @@
+import { toCents, fromCents } from './money.js';
 /**
  * The budget status model — §2 of the wallpaper redesign spec.
  *
@@ -13,6 +14,7 @@
  */
 
 /** The three cue keys. Colour is the THIRD cue, after the word and the shape. */
+export const BUDGET_WARNING_PCT = 80;
 export const CALM = 'calm';
 export const WATCH = 'watch';
 export const OVER = 'over';
@@ -23,14 +25,14 @@ export const OVER = 'over';
  *   clamp it themselves when sizing a bar.
  */
 export function budgetStatus(spent = 0, budget = 0) {
-  const s = Number(spent) || 0;
-  const b = Number(budget) || 0;
-  const base = { pct: b > 0 ? Math.round((s / b) * 100) : 0, over: Math.max(0, s - b), left: b - s };
+  const s = toCents(spent);
+  const b = toCents(budget);
+  const base = { pct: b > 0 ? Math.round((s / b) * 100) : 0, over: fromCents(Math.max(0, s - b)), left: fromCents(b - s) };
 
   if (b <= 0) return { ...base, key: CALM, label: 'No budget set' };
   if (s > b) return { ...base, key: OVER, label: 'Over budget' };
   if (s === b) return { ...base, key: WATCH, label: 'Budget reached' };
-  if (s >= b * 0.75) return { ...base, key: WATCH, label: 'Close to limit' };
+  if (s * 100 >= b * BUDGET_WARNING_PCT) return { ...base, key: WATCH, label: 'Close to limit' };
   return { ...base, key: CALM, label: 'On track' };
 }
 

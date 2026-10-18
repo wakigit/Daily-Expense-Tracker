@@ -154,8 +154,20 @@ framework: the frontend checks run as a server-side Vite build in
 
 **Datasets: none.** No real financial data is used anywhere. The demo data is
 invented in code, in `src/lib/sampleData.js`, generated relative to today's date
-so the charts are never empty, and labelled as sample data in the app wherever
+so its dates remain current, and labelled as sample data in the app wherever
 it appears. No bank statement, card or account is involved.
+
+Fresh defaults are Food & Drinks, Entertainment, Daily Needs, Shopping, Public
+Transport, Private Hire and Others. Saved categories are not migrated. The
+sample calculates shared demo budgets from sample-only spending through the
+load date, targeting about 76% usage. Below 80% is healthy; 80–100% is strained
+(including exactly budget reached); above 100% is run-down. Previous-month
+status varies because budgets are shared, not monthly history. Personal rows
+can change the combined status. Sample-category budgets temporarily replace
+matching budgets only after the existing confirmation; other custom budgets
+remain. Removing samples restores unchanged budgets, keeps later edits, and
+removes only untouched introduced categories unused by personal rows. Existing
+samples stay unchanged until you remove and reload them.
 
 ## 6. Installation & Setup
 

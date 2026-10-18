@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { money } from '../lib/format';
 import { THEMES, PALETTE } from '../themes/themes';
 import Icon from '../components/Icon';
-import { SAMPLE_BUDGET_TOTAL } from '../lib/sampleData';
 
 export default function SettingsView({
   roastPrefs = ROAST_DEFAULTS, onRoastPrefs = () => {},
@@ -170,7 +169,7 @@ export default function SettingsView({
           <>
             <p className="set-note">
               <strong>Sample data is loaded.</strong> {sampleState.rowCount} invented
-              transactions across {sampleState.months}, with a set of budgets to match.
+              transactions across {sampleState.months}. Sample-only spending starts near 76% of its demo budget; personal spending changes the combined status.
               None of it is real.
             </p>
             {sampleState.ownRows > 0 && (
@@ -212,14 +211,14 @@ export default function SettingsView({
           <>
             <p className="set-note">
               Fills the app with an invented Singapore student's spending — this
-              month so far and the whole of last month, with budgets totalling{' '}
-              {money(SAMPLE_BUDGET_TOTAL)}. Last month runs over its budget, so the
-              wallpaper's run-down state is one step back on the month picker.
+              month so far and the whole of last month, across seven spending categories.
+              Sample budgets are calculated for about 76% usage this month in an empty app.
+              Budgets are shared between months; last month's status depends on its actual total.
             </p>
             <p className="set-note set-note--quiet">
               Demonstration figures only. Nothing here comes from a real account,
               card or statement, and it can be removed again without touching
-              anything you have entered.
+              anything you have entered. Compatible categories are reused; missing sample categories are added. Removal keeps categories you edited or used for personal entries.
             </p>
 
             {ask === 'confirm-load' ? (
@@ -230,7 +229,7 @@ export default function SettingsView({
                   {sampleState.hasBudgets ? ' and a set of budgets' : ''}. Your entries
                   will be kept alongside the sample
                   {sampleState.hasBudgets
-                    ? ', but the sample\u2019s budgets will replace yours — removing the sample restores yours and keeps later budget edits.'
+                    ? '. Sample-category budgets will temporarily replace matching budgets; other budgets are kept. Removal restores unchanged budgets and keeps later edits.'
                     : '.'}
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>

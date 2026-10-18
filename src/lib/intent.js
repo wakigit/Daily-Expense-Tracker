@@ -1,3 +1,4 @@
+import { categoryNames } from './categoryVocabulary.js';
 import { dialogueIntent } from './assistantDialogue.js';
 import { validateQuery } from './queryContract.js';
 /**
@@ -23,6 +24,7 @@ export const INTENT_TYPES = [
   'help',
   'answer',
   'analyze',
+  'propose_scope',
   'propose_add',
   'find_delete_candidates',
   'undo',
@@ -74,7 +76,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
   if (!isPlainObject(raw)) return bad(INTENT_ERR.NOT_OBJECT);
 
   // Greetings and genuinely ambiguous highest requests cannot turn into arbitrary totals.
-  const dialogue=dialogueIntent(message);
+  const dialogue=dialogueIntent(message, cats);
   if(dialogue) return {ok:true,intent:dialogue};
   const type = trimmed(raw.type);
   if (!INTENT_TYPES.includes(type)) return bad(INTENT_ERR.UNKNOWN_TYPE, { type: raw.type ?? null });
@@ -84,16 +86,21 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
   const catIds = cats.map((c) => c.id);
   const say = trimmed(raw.say);
 
-  if (type === 'analyze') {
+  if (type === 'analyze' || type === 'propose_scope') {
     const unquoted = message.toLowerCase().replace(/[“\"][^”\"]*[”\"]/g, ' ');
     const mentioned = cats.filter(c => {
-      const escaped = c.label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'u').test(unquoted);
+      return categoryNames(c).some(label => {
+        const escaped = label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'u').test(unquoted);
+      });
     });
-    if (mentioned.length > 1) return bad(INTENT_ERR.BAD_FIELD, { field: 'multiple_categories' });
+    if (!raw.query?.spendingScope && mentioned.length > 1) return bad(INTENT_ERR.BAD_FIELD, { field: 'multiple_categories' });
+    if (!raw.query?.spendingScope && /\brelated\b|\bincluding\b/i.test(message)) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
     const { amountCents: ignored, ...q } = raw.query ?? {};
     const checked = validateQuery(q, cats);
-    return checked.ok ? { ok: true, intent: { type, query: checked.query, say } } : bad(INTENT_ERR.BAD_FIELD, { field: `query.${checked.field}` });
+    if (!checked.ok) return bad(INTENT_ERR.BAD_FIELD,{field:`query.${checked.field}`});
+    if (checked.ok && type === 'propose_scope' && !checked.query.spendingScope) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
+    return checked.ok ? { ok: true, intent: { type:checked.query.spendingScope?'propose_scope':type, query: checked.query, say } } : bad(INTENT_ERR.BAD_FIELD, { field: `query.${checked.field}` });
   }
 
   if (type === 'answer') {
@@ -212,6 +219,6 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
 
 /** Public diagnostics contain fixed codes/field names, never model values or category labels. */
 export function intentDiagnostic(error) {
-  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','multiple_categories','expense','filter','question','scope','period'];
+  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period'];
   return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

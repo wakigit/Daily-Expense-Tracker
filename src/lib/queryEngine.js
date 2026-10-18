@@ -1,5 +1,5 @@
-import { validateQuery, rowMatches, weekday, WEEKDAYS } from './queryContract.js';
-import { addDays, weekStart } from './stats';
+import { validateQuery, validDate, rowMatches, matchingRows, weekday, WEEKDAYS } from './queryContract.js';
+import { shiftCalendarDate as addDays, calendarWeekStart as weekStart } from './queryDates.js';
 import { sumCents, toCents } from './money';
 import { money } from './format';
 import { captureEvidence } from './answerEvidence';
@@ -9,6 +9,8 @@ const clarify = question => ({kind:'clarify',question,text:question});
 export function queryRange(q, today, expenses) {
   const ym = today.slice(0,7);
   if (q.period === 'range') return { start:q.start, end:q.end < today ? q.end : today };
+  if (q.period === 'last_days') return {start:addDays(today,1-q.dayCount),end:today};
+  if (q.period === 'year') return {start:`${today.slice(0,4)}-01-01`,end:today};
   if (q.period === 'today') return {start:today,end:today};
   if (q.period === 'yesterday') return {start:addDays(today,-1),end:addDays(today,-1)};
   if (q.period === 'week') return {start:weekStart(today),end:today};
@@ -22,22 +24,45 @@ function calendarDays(start,end) {
   const n = Math.round((Date.parse(`${end}T00:00:00Z`)-Date.parse(`${start}T00:00:00Z`))/86400000)+1;
   return Array.from({length:n},(_,i)=>addDays(start,i));
 }
-export function executeQuery(raw, {expenses=[],cats=[],today,budgets={}}) {
+export function executeQuery(raw, {expenses=[],cats=[],today,budgets={},approvedScope=null}) {
   // Canonical queries can be validated twice without trusting derived cents.
   const { amountCents: ignored, ...input } = raw;
   const checked=validateQuery(input,cats);
   if (!checked.ok) return clarify(checked.question);
+  if (!validDate(today)) return clarify('A valid Singapore reference date is required. Please try again.');
   const q=checked.query, range=queryRange(q,today,expenses);
+  if (q.spendingScope && JSON.stringify(q.spendingScope)!==JSON.stringify(approvedScope)) return clarify('Review and confirm the proposed spending rules before calculating this scope.');
+  if (!validDate(range.start) || !validDate(range.end)) return clarify('The resolved date range is outside supported calendar dates (1900 to 2200).');
   if (range.start > range.end) return clarify('That range is entirely in the future. Choose recorded dates through today.');
-  const scope={...range,start:q.period==='all'?'1900-01-01':range.start,historyStart:q.period==='all'?range.start:null,category:q.category,description:q.description,amountOperator:q.amountOperator,amountCents:q.amountCents,day:q.day};
-  const rows=expenses.filter(e=>rowMatches(e,scope));
+  const scope={...range,start:q.period==='all'?'1900-01-01':range.start,historyStart:q.period==='all'?range.start:null,category:q.category,description:q.description,amountOperator:q.amountOperator,amountCents:q.amountCents,day:q.day,spendingScope:q.spendingScope};
+  const rows=matchingRows(expenses,scope);
   const cat=cats.find(c=>c.id===q.category);
   const filters=[cat?.label ?? 'All categories',q.description && `all descriptions mentioning “${q.description}” (case-insensitive substring)`,q.amountOperator && `${({gt:'over',lt:'under',gte:'at least',lte:'at most'})[q.amountOperator]} ${dollars(q.amountCents)}`,q.day!=='all' && q.day].filter(Boolean).join(' · ');
   const interpretation={category:filters,period:`${range.start} to ${range.end} (inclusive, Singapore calendar dates)`};
   const evidence=(selected=rows,basis=rows,overrides={})=>captureEvidence(selected,{basis,scope:{...scope,...overrides},cats});
   const total=sumCents(rows), days=calendarDays(range.start,range.end).filter(date=>rowMatches({date,description:'',category:q.category,amount:0},{day:q.day}));
-  const result={kind:'answer',intent:q.operation,interpretation,evidence:evidence(),detail:'Recorded spending only. Missing logs can affect the result.'};
+  const result={kind:'answer',approvedScope:q.spendingScope?JSON.parse(JSON.stringify(q.spendingScope)):null,intent:q.operation,interpretation,evidence:evidence(),detail:'Recorded spending only. Missing logs can affect the result.'};
+  if(q.spendingScope) result.detail+=' Approved literal rules define this answer, not every real-world related purchase.';
   if (q.period==='range' && q.end>today) result.detail+=' Future dates are excluded; the range ends today.';
+  if(q.operation==='breakdown') {
+    const grouped=new Map();
+    for (const row of rows) {
+      const key=q.groupBy==='month'?row.date.slice(0,7):row.category ?? null;
+      if (!grouped.has(key)) grouped.set(key,[]);
+      grouped.get(key).push(row);
+    }
+    const groups=[...grouped].map(([key,selected])=>({
+      key,
+      label:q.groupBy==='month'?new Intl.DateTimeFormat('en-SG',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(`${key}-01T00:00:00Z`)):cats.find(c=>c.id===key)?.label ?? (key===null?'Uncategorised':`Unknown category (${key})`),
+      totalCents:sumCents(selected),count:selected.length,
+      // Keep the complete candidate basis: regrouping or new matches invalidate
+      // every historical partition without changing its frozen displayed rows.
+      evidence:evidence(selected)
+    })).sort((a,b)=>q.groupBy==='month'?a.key.localeCompare(b.key):a.label.localeCompare(b.label,'en-SG')||String(a.key).localeCompare(String(b.key)));
+    return {...result,text:rows.length?`${dollars(total)} recorded spending across ${rows.length} ${rows.length===1?'transaction':'transactions'}, broken down by ${q.groupBy}.`:'No matching recorded expenses. Total S$0.00 across 0 transactions.',
+      detail:result.detail+' All amounts are SGD. Every non-empty group is included.',
+      breakdown:{groupBy:q.groupBy,totalCents:total,count:rows.length,groups}};
+  }
   if(q.operation==='compare') {
     const ranges=comparisonRanges(q.period,today);
     const sides=['current','earlier'].map(key=>{const s={...scope,...ranges[key]};const r=expenses.filter(e=>rowMatches(e,s));return {key,label:key==='current'?`This ${q.period} to date`:`Previous ${q.period}, matching dates`,...ranges[key],totalCents:sumCents(r),evidence:captureEvidence(r,{scope:s,cats})};});

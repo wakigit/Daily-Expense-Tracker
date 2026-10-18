@@ -262,6 +262,7 @@ function planDelete(intent, { expenses, cats }) {
 export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [], budgets = {} } = {}) {
   switch (intent.type) {
     case 'help': return {kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS};
+    case 'propose_scope': return {kind:'clarify',question:'Review and approve the proposed spending scope before calculation.'};
     case 'analyze':
       return executeQuery(intent.query, { expenses, cats, today, budgets });
     case 'answer':
