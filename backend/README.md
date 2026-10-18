@@ -15,8 +15,8 @@ The server-side half of **TallyAI** — the half that holds the API key.
 | OpenAI provider, Structured Outputs | **Built** |
 | Accounts, sessions, database | **Not built.** See `docs/PRD.md` §6 — a solo-built account system holding real financial data, shipped in a week, would be irresponsible |
 | Statement (CSV / PDF) ingestion endpoints | **Removed from the product**, not deferred. See `docs/PRD.md` §7 |
-| Roaster endpoint | **Not built.** Planned as Stage 6 in `docs/ROADMAP.md`, which is also that roadmap's cut line |
-| A hosted deployment of this server | **Not built, and deliberately not planned for this build.** Option B is in force as of 2026-10-17: the public site runs with no backend, and live AI and OCR come from this server running locally. See *If this is ever hosted* below |
+| Roaster endpoint | **Built.** `POST /assistant/roast` and `/api/assistant/roast`, shared validation, bounded request and response, offline client fallback. |
+| A hosted deployment of this server | **Prepared, not yet live.** The same route handlers now also run as Vercel Functions in `/api` — see *Running on Vercel* below. The GitHub Pages site is unchanged and still has no backend |
 
 The frontend works without this server **with one exception**: the Assistant
 falls back to a local matcher, and receipt scanning has no fallback at all. The
@@ -121,8 +121,7 @@ partial scan adds to the form instead of blanking it.
 **This route is the one place user content leaves the device.** The image is
 sent to the model provider because a photograph cannot be read without being
 read. Nothing accompanies it but the category names and today's date; it is
-never written to disk, never logged, and is opt-in per photo. The expense rows
-still never leave. See `docs/PRD.md` §4.6.
+never written to disk, never logged, and is opt-in per photo. The full ledger is not included with a receipt. The roaster's separate, minimal payload is documented below. See `docs/PRD.md` §4.6.
 
 The amount is the figure **after** service charge and GST — the prompt is
 explicit about not taking the subtotal or the cash tendered, which is the most
@@ -230,6 +229,36 @@ raise the cost of casual abuse and are not a substitute for items 4 and 5.
 An unprotected hosted instance of this server is a free OCR and LLM service with
 the owner's billing attached. That is the whole risk, stated once.
 
+## Running on Vercel
+
+`backend/src/routes.js` holds what the two routes actually do, with no HTTP in
+it. Two things call it:
+
+- `backend/src/server.js` — this `node:http` server, for local development.
+- `api/assistant/intent.js` and `api/assistant/receipt.js` — Vercel Functions,
+  which are four lines each because everything that decides an answer, enforces
+  a size cap or checks a MIME type is in the shared module. A second copy of
+  that logic is how one half of a security check gets fixed and the other half
+  does not.
+
+Three things to know:
+
+1. **The dependency lives in the root manifest.** Vercel builds from
+   `package.json` at the repository root, so `openai` is declared there as well
+   as here. This directory keeps its own copy so `npm start` still works
+   standalone.
+2. **The frontend is built with `VITE_ASSISTANT_URL=/api`**, set in
+   `vite.config.js` when `VERCEL` is in the environment. It is deliberately not
+   left to `vercel.json`'s `build.env`: a first deploy proved that route does
+   not reach Vite, and the bundle shipped pointing at `127.0.0.1:8787` — which
+   on a visitor's phone is the visitor's own phone.
+3. **This server answers to `/api/assistant/...` as well as the bare path**, so
+   one client works against either backend without knowing which it has.
+
+`OPENAI_API_KEY` goes in Vercel's environment variables, server-side, exactly
+as it goes in `.env` here. It must never be given a `VITE_` prefix: Vite inlines
+every `VITE_*` variable into the public bundle.
+
 ## Secrets belong here, in the environment — never in the repo
 
 This repository is **public**. The frontend is a static bundle: everything in it
@@ -254,7 +283,7 @@ the history forever, even after it is deleted.
 3. **In production it goes in the host's secret store** — the environment
    variable settings of whatever runs this, not a file in the image.
 4. **The browser never sees it.** The browser calls this server; this server
-   calls OpenAI and returns only a validated intent. That is the whole reason
+   calls OpenAI and returns only a validated intent, receipt draft or roast. That is the whole reason
    this folder exists.
 
 If a key is ever committed by accident, rotate it. Removing the commit is not
@@ -316,3 +345,38 @@ falls back to its offline matcher.
 ## What is deliberately not here yet
 
 No database, no accounts, no auth. Each arrives when something needs it.
+
+
+### Roaster
+
+`POST /assistant/roast` accepts only the shared `roastContract.js` shape: current
+purchase description/amount cents/category, up to three aggregates with ranges,
+budget band/intensity, angle and optional enabled preferences. No ledger rows,
+notes, receipt image or client IDs. Both local and Vercel handlers use
+`handleRoast`. Input: 4096 bytes; output: 120 characters, one complete sentence;
+provider: 100 output tokens, 8-second timeout, retries disabled. Errors return
+fixed codes only. The browser adds a 10-second deadline and a 2-KiB response cap.
+
+Vercel has a best-effort per-instance IP limiter (10/minute), not a distributed
+quota or authentication. Public callers can forge aggregate facts and spend API
+credits. Configure account billing controls and platform protection separately;
+this code does not enforce an account-wide cost cap.
+
+
+### Safe roast diagnostics
+
+The provider, shared route and browser preserve fixed diagnostic codes plus
+numeric HTTP status (upstream when known), elapsed milliseconds, completion
+status, and allowlisted incomplete/validation reasons. Logs contain this
+metadata only, never credentials, request bodies, raw responses or exception
+messages. UI failures still use the labelled offline quip.
+
+Codes distinguish configuration, credentials, model permissions/availability,
+quota/rate limits, timeout/connection failure, incomplete output, JSON parsing,
+and server/client output validation. The provider remains at 8 seconds, client
+at 10 seconds, Vercel at 30 seconds, with zero automatic provider retries.
+
+Run the controlled fictional check with `scripts/roast-live.js` via the same
+Vite SSR build pattern as the smoke suite; it prints diagnostics and only the
+validated final roast. A successful retry cannot establish why an older call
+failed when that call discarded its diagnostics.

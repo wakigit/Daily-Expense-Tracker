@@ -105,16 +105,17 @@ Everything in this section is in the code and verified working.
 Money is summed in integer cents. Dates follow the Asia/Singapore calendar day,
 so a 1 a.m. supper is dated today, not yesterday.
 
+## Recently completed
+
+- Sample data is available from Settings; loading it does not trigger roasts.
+- Spending comparisons and source transaction evidence are built. Charts inside Assistant answers and budget forecasts are outside this release.
+- **Personalised purchase roasts are built and on by default**, with a persistent off switch. Preferred name, Singapore references and SMU references are optional local settings. Roasts run after a successful new save, use verified aggregates, and fall back to a labelled offline quip.
+
 ## What does not work yet
 
 - **No accounts, no login, no sync, no server storage.** Everything is in
   `localStorage` on one device. Clearing site data loses it, and there is no
   export yet. Nothing in the app presents accounts as existing.
-- **No sample data yet** — a first-time opener sees an empty shell. Planned.
-- **No spending comparisons** ("more than last month?"), **no source-row
-  explanations** ("which transactions make that up?"), **no charts inside
-  Assistant answers**, and **no budget forecast**. All planned; see the roadmap.
-- **No roaster.** Planned, opt-in, off by default.
 - **No voice in the Assistant.** Speech fills the Add *form* only; you cannot
   speak a question.
 - **Reduce Motion stops the wallpapers entirely**, by design. The decay still
@@ -204,3 +205,49 @@ every `VITE_`-prefixed variable into the client bundle, so the name matters: a
 | [`docs/WALLPAPER-REDESIGN.md`](docs/WALLPAPER-REDESIGN.md) | Wallpaper spec |
 | [`docs/design-canvas/`](docs/design-canvas/) | Source artwork for the scenes |
 | [`backend/README.md`](backend/README.md) | Server, API key handling, verification |
+
+
+## Personalised roasts
+
+New confirmed form saves (manual, voice-filled or receipt-filled) and assistant
+adds can generate a short, transient roast popup. Saving happens first; roasting cannot
+modify expenses. Edits, sample loading, reloads, deletes and undo do not request
+roasts. Results and interrupted attempts are cached by transaction ID locally;
+editing or removing the purchase clears its obsolete card. Turning roasting off
+in Settings dismisses it and stops new requests.
+
+Only that purchase's description, SGD cents and category label, up to two
+locally calculated exact-repeat facts with inclusive date ranges, a bounded budget band,
+a rotating angle and enabled preferences reach `/assistant/roast`. Notes, images
+and ledger rows are excluded. Repeats require identical normalised description
+and category, with separate IDs counted separately; future-dated rows are excluded.
+Category transaction counts and totals are not sent in new roast requests; category
+spending stays local to calculate configured budget usage. Backdated purchases
+carry no claim about historical budget settings.
+
+The shared backend/Vercel route caps input at 4 KiB, validates output to 120
+characters and exactly one complete sentence, uses 100 output tokens and an 8-second
+provider timeout with no retries. The browser caps responses at 2 KiB and waits
+at most 10 seconds. Failure produces an **Offline** quip without losing the save.
+Model humour and factual grounding are prompted and manually reviewed, not a
+semantic guarantee: syntactic validation cannot prove every personal claim true.
+
+**Public demo cost limitation:** the Vercel limiter is best-effort (10 calls per
+minute per IP per instance). There is no authentication or distributed quota.
+Forged requests, changing IPs and cold starts can still incur provider costs.
+Provider billing controls and platform firewall/rate limits require separate
+account configuration; this implementation is not a hard spending ceiling.
+
+### Validated spending queries
+
+Ask supports recorded totals/counts/averages, filtered transaction lists, largest individual transactions (including ties), highest-spending groups, weekday/weekend analysis, current month/week comparisons and category budget pace estimates. A shared closed query contract combines a supported period (or inclusive ISO date range), one real category, a case-insensitive description substring, a cent-exact amount condition and a weekday filter where applicable. The model interprets only; the local ledger supplies every figure and evidence row. Merchant identity is not inferred from descriptions. Unsupported or ambiguous queries ask for a complete clarification using **Edit original question**.
+
+“Usually” by weekday means average recorded spending per calendar occurrence, including zero-spend days, from the first recorded expense through today unless a range is specified. Comparisons use matching elapsed dates. Budget estimates use actual category budgets, require seven elapsed days and three spending dates before giving a date estimate, and become stale when the budget changes. Historical figures stay fixed and relevant ledger changes mark their evidence out of date.
+
+Home uses independent desktop columns, five matching Recent rows initially, explicit category overspending amounts, strict date search, and read-only daily details on the phone's seven-day bars. The laptop graph remains cumulative.
+
+Physical microphone and receipt verification must be performed by the user, see [hardware checklist](docs/HARDWARE-CHECKLIST.md). Receipt extraction is receipt-level, not item-level. Local Wi-Fi HTTP does not provide a secure phone microphone context. Public AI routes still have only best-effort per-instance rate limiting; public release needs an explicit cost/abuse policy.
+
+Roast popups use plain, blunt language, one complete sentence, at most 120 characters. They dismiss after eight seconds of completed, unpaused display time; hover or keyboard focus pauses the timer. A new purchase resets it. Popups do not replay after reload; paid-attempt caches remain intact. The popup stays out of Add and Settings forms, and away from Undo. Voice parsing identifies monetary spans in the original transcript, preserves numbers in descriptions, and clears an unresolved amount for review without saving.
+
+Greeting-only/help messages use built-in help without a paid call or ledger total. Ambiguous “highest expenditure” asks whether you mean an individual transaction, category total or daily total. Choices submit complete scoped questions. A greeting followed by a financial question still reaches the interpreter. Safe validation diagnostics report fixed codes and field names; failed AI interpretation remains labelled offline.

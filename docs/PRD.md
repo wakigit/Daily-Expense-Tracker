@@ -258,11 +258,11 @@ summarised:**
 
 | Feature | Status | Note |
 |---|---|---|
-| Spending comparisons ("vs last month") | **PLANNED** | Stage 3. Needs a comparison metric and answer templates; no new data. |
-| "Which transactions make that up?" | **PLANNED** | Stage 3. Answers must carry the row ids they summed. |
+| Spending comparisons ("vs last month") | **BUILT** | Matching elapsed month/week ranges, local cent arithmetic and separate evidence for each side. |
+| "Which transactions make that up?" | **BUILT** | Immutable source rows, with out-of-date warnings after relevant ledger changes. |
 | Charts inside Assistant answers | **PLANNED** | Stage 4. Reuses the existing chart components. |
 | Budget forecast | **PLANNED** | Stage 5. Arithmetic projection, explicitly qualified — see §5.3. |
-| AI roaster | **PLANNED** | Stage 6, and the roadmap's cut line — the first thing to drop. Opt-in, off by default, bounded tiers. |
+| AI roaster | **BUILT** | Default on; Settings off switch and optional local personalisation. Runs after confirmed new saves, bounded intensity, cache, offline fallback. |
 | Sample demo data | **PLANNED** | Stage 1. A first-time opener currently sees an empty shell. |
 | Voice *into the Assistant* | **LATER** | The Add-form path exists and is the foundation. |
 | Accounts, login, sync, server storage | **LATER** | See §6. Not presented as existing anywhere. |
@@ -277,7 +277,7 @@ summarised:**
 
 ---
 
-## 5. Planned capability detail
+## 5. Capability detail
 
 ### 5.1 Spending comparisons
 
@@ -329,49 +329,50 @@ so it carries the heaviest labelling requirement in the product.
 
 ### 5.4 AI roaster
 
-Opt-in, **off by default**, with a user-set intensity ceiling.
+**Built, enabled by default.** A persistent Settings switch stops requests and
+dismisses the card. Preferred name starts blank. Singapore and SMU references
+start disabled and are optional local preferences, not inferred identity.
 
-**Bounded, testable tiers** — the "exponential severity" idea is rejected: it is
-unbounded (so untestable), backwards (harshest exactly when the user is most
-financially stressed), and unsafe (escalation without a cap is how a joke
-generator starts producing contempt).
+**Triggers:** only successful new form saves (manual, voice-filled and confirmed
+receipt drafts) and confirmed assistant adds. The ledger is flushed first. Never
+on edit, sample loading, reload, delete or undo. Roasting has no mutation path
+back to the ledger. A loading card confirms that saving has already completed.
 
-```
-tier = min(userCeiling, bandOf(budgetRemainingPct))
+**Verified facts:** exact normalised description plus category for weekly/monthly
+repeats, their integer-cent totals, and category month spending. Facts include
+inclusive date ranges and the new expense exactly once by ID. Distinct saved IDs
+count separately even if they look identical. Similar names and all Food expenses
+are never merged into a merchant habit. Future dates are excluded.
 
-bandOf:  > 50% remaining  → 0  (gentle)
-         50–20%           → 1  (wry)
-         20–0%            → 2  (pointed)
-         over budget      → 2  (pointed — deliberately NOT 3)
+**Bounded budget tone:** current-day purchases use overall current month spending
+after saving: below 75% is light (0), 75% through 100% is sharper (1), above
+100% is dramatic absurdity (2), never cruelty. No budget is neutral (0).
+Backdated purchases use a historical/unavailable band (0), with no category
+budget percentage or implied historical budget setting.
 
-userCeiling: 0 Off · 1 Gentle · 2 Wry · 3 Pointed   (default 0, off)
-```
+**Rotation:** dramatic narration, absurd accounting, mock corporate reporting,
+and Singapore/SMU angles only when enabled. The preferred name is supplied only
+occasionally. One short sentence (preferably 8–18 words) targets the purchase or supported habit,
+never identity, worth, hardship, family, academic results or invented motives.
+No made-up offers, prices, investment returns or personal circumstances.
 
-Tier is a pure function of (budget band, user ceiling), so it is unit testable
-at every boundary, and it **de-escalates in tone when over budget** — the
-comedic angle shifts to absurdist or self-deprecating rather than
-pointed-at-the-user.
+**Privacy and model boundary:** only current purchase description, SGD cents and
+category label, up to three aggregate facts with ranges, band/intensity, angle,
+and enabled preferences are sent. No full ledger, notes, receipt or IDs. Name and
+description are untrusted data, never instructions. Model output is prose only;
+all factual inputs are calculated locally. Semantic grounding remains a model
+limitation, not something syntactic validation can guarantee.
 
-**Angle rotation** avoids a single persona: absurdist, deadpan,
-nature-documentary, sports commentary, mock-infomercial, noir. The last N angles
-used are excluded so the joke shape does not repeat.
+**Reliability:** shared local/Vercel `/assistant/roast` validation, 4-KiB input,
+120-character/single-sentence output, 100 output tokens, 8-second provider deadline
+without retries, 10-second browser deadline and 2-KiB response cap. Fixed safe
+errors produce a labelled offline quip. Cache by transaction ID survives reload,
+including interrupted attempts without retry. Late responses cannot replace a
+newer purchase. Edit, delete or undo of the purchase clears obsolete content.
 
-**What is sent to the model:** description, amount, category label, time-of-day
-bucket, budget-remaining *band* (not the exact figure), tier, angle. **Not
-sent:** the ledger, other transactions, the user's name, or exact balances.
-
-**When generated:** on demand after a transaction is confirmed — never during
-typing. Cached against the transaction id so re-rendering does not re-bill.
-
-**Fallback:** a local template bank keyed by tier and angle, used when the
-backend is unavailable. The feature degrades to something still mildly funny
-rather than to an error — which also means it works on the Pages build.
-
-**Hard content rules.** No jokes about identity, family, academic performance,
-poverty, body, health, or any personal vulnerability. **No invented investment
-returns** — a line like "that $6 could have been $600 in the S&P 500" is a
-fabricated financial claim and must not appear, in jest or otherwise; the model
-is instructed against it and the output is filtered for it.
+**Public demo limitation:** per-instance Vercel IP throttling is best-effort,
+10 calls per minute, with no authentication or distributed spending quota.
+Account billing controls and platform protection are separate release checks.
 
 ### 5.5 Sample demo data
 
@@ -619,3 +620,13 @@ has.
    risks and a recommendation; the decision has not been made.
 3. Whether to rename the product strings before judging (Stage 7) or leave
    "Expense Tracker" in the UI.
+
+### Capability stage, 18 October 2026
+
+The active read-intent contract is now the shared `queryContract.js` schema, operation `analyze`. New model interpretations and the conservative offline grammar run through `queryEngine.js`: combined date/category/description/amount/day filters, totals/counts/averages/lists, highest groups, weekday/weekend calendar-day analysis, matched-elapsed comparisons and category budget pace estimates. Legacy `answer` intents remain validated for compatibility; the provider emits canonical reads. Queries do not accept ledger IDs, calculated totals, SQL or code. Multi-category aggregation and arbitrary comparison periods remain unsupported and require clarification.
+
+Each new read displays the interpreted scope and date range with immutable evidence. Relevant additions, edits and deletions invalidate snapshots. Category budget changes invalidate projections without rewriting their displayed figures. The clarification control edits the complete original question, rather than sending a contextless category reply.
+
+Home has independent desktop stacks: Recent on the left, Budget and immediately below it Where it went on the right. Category excess is displayed explicitly in cents. The phone retains a five-row preview, and daily buttons open a read-only panel, including empty dates. Search accepts validated ISO, day/month/year and named-month dates, scoped to the selected month/category.
+
+Hardware verification is not automated verification. Follow `HARDWARE-CHECKLIST.md`; do not count parsed transcripts or a 390px browser viewport as a physical microphone test. Receipt extraction remains receipt-level. No item-level extraction is claimed.
