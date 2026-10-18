@@ -107,14 +107,16 @@ export const THEMES = [
   },
 ];
 
-export const DEFAULT_THEME = 'forest';
+/** New visitors start in the Rainy City. A saved choice always wins. */
+export const DEFAULT_THEME = 'city';
 
 /**
- * Falls back to the forest rather than throwing. A saved id can outlive the
+ * Falls back to the default theme rather than throwing. A saved id can outlive the
  * theme it names — Pink Bow, Midnight and Mahjong Fortune were all removed in
  * the redesign, and anyone who had one selected has it in localStorage.
  */
-export const themeById = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
+export const themeById = (id) =>
+  THEMES.find((t) => t.id === id) || THEMES.find((t) => t.id === DEFAULT_THEME) || THEMES[0];
 
 /** True only for ids this build can actually render. */
 export const isKnownTheme = (id) => THEMES.some((t) => t.id === id);

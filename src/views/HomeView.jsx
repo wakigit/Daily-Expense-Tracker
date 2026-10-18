@@ -94,8 +94,8 @@ export default function HomeView({
             {daysLeft > 0 && st.left > 0 && (
               <p className="hero-pace money">
                 {daysLeft === 1
-                  ? `About ${money(st.left)} for the last day of ${monthName}`
-                  : `About ${money(st.left / daysLeft)} a day for the ${daysLeft} days left in ${monthName}`}
+                  ? `About ${money(st.left)} for today, the last day of ${monthName}`
+                  : `About ${money(st.left / daysLeft)} a day for the ${daysLeft} days left in ${monthName}, including today`}
               </p>
             )}
           </>

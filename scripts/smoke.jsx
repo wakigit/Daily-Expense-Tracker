@@ -961,7 +961,8 @@ logic('every theme has an empty-state title', THEMES.every((t) => !!t.title), tr
 // A saved id can outlive its theme; those three went in the redesign.
 logic('removed theme ids are not known',
   ['pink', 'midnight', 'mahjong'].some(isKnownTheme), false);
-logic('a removed id falls back to the forest', themeById('mahjong').id, DEFAULT_THEME);
+logic('a removed id falls back to the default theme', themeById('mahjong').id, DEFAULT_THEME);
+logic('new visitors default to the Rainy City', DEFAULT_THEME, 'city');
 logic('a known id is kept', themeById('city').id, 'city');
 
 /* ── Scene engine (stubbed DOM, no browser) ────────────────────── */

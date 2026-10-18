@@ -480,6 +480,33 @@ const SCENE_CSS = `
   96%{opacity:0.95;transform:translate(-96px,58px)}
   100%{opacity:0;transform:translate(-124px,75px)}
 }
+/* Forest only: brighter, more frequent shooting stars with a star-shaped head,
+   and sparkles that grow in and fade out. Hidden when still (opacity 0) so a
+   paused or reduced-motion scene never shows a frozen streak mid-sky. */
+#bg .fshoot{opacity:0;animation:w-fshoot 12s cubic-bezier(.3,0,.7,1) infinite}
+@keyframes w-fshoot{
+  0%,78%{opacity:0;transform:translate(0,0)}
+  80%{opacity:1;transform:translate(-8px,5px)}
+  93%{opacity:1;transform:translate(-150px,90px)}
+  100%{opacity:0;transform:translate(-190px,114px)}
+}
+#bg .fshoot--wide{animation-name:w-fshoot-wide}
+@keyframes w-fshoot-wide{
+  0%,78%{opacity:0;transform:translate(0,0)}
+  80%{opacity:1;transform:translate(-14px,8px)}
+  93%{opacity:1;transform:translate(-300px,180px)}
+  100%{opacity:0;transform:translate(-380px,228px)}
+}
+#bg .fsparkle{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-fsparkle 7s ease-in-out infinite}
+@keyframes w-fsparkle{
+  0%,100%{opacity:0;transform:scale(.15) rotate(0deg)}
+  40%{opacity:1;transform:scale(1) rotate(35deg)}
+  58%{opacity:.85;transform:scale(.85) rotate(50deg)}
+  82%{opacity:0;transform:scale(.15) rotate(80deg)}
+}
+@media (prefers-reduced-motion: reduce){
+  :root:not([data-motion="on"]) #bg .scene .fsparkle{opacity:.7;transform:none}
+}
 #bg .fish{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-fish 11s ease-out infinite}
 @keyframes w-fish{0%,84%{opacity:0;transform:translate(0,0) rotate(-40deg)}86%{opacity:1;transform:translate(-6px,-16px) rotate(-22deg)}90%{opacity:1;transform:translate(-13px,-22px) rotate(12deg)}94%{opacity:1;transform:translate(-20px,-6px) rotate(48deg)}96%,100%{opacity:0;transform:translate(-22px,0) rotate(60deg)}}
 #bg .ripple{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:w-ripple 11s ease-out infinite}
@@ -561,6 +588,33 @@ function pine(x, base, h, w) {
   for (let i = L.length - 1; i >= 1; i--) pts.push([2 * x - L[i][0], L[i][1]]);
   return pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
 }
+
+/** A four-point star: concave sides, so it reads as a sparkle, not a cross. */
+const sparklePath = (cx, cy, r) => {
+  const c = (n) => n.toFixed(1);
+  return `M${c(cx)},${c(cy - r)} Q${c(cx)},${c(cy)} ${c(cx + r)},${c(cy)} Q${c(cx)},${c(cy)} ${c(cx)},${c(cy + r)} ` +
+    `Q${c(cx)},${c(cy)} ${c(cx - r)},${c(cy)} Q${c(cx)},${c(cy)} ${c(cx)},${c(cy - r)} Z`;
+};
+
+/** Sparkle that grows in, turns a little and fades. */
+const sparkle = (cx, cy, r, dur, delay) =>
+  `<g class="a fsparkle" style="animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s">` +
+  `<circle cx="${cx.toFixed(0)}" cy="${cy.toFixed(0)}" r="${(r * 0.55).toFixed(1)}" fill="#F3F7FF" opacity="0.25"/>` +
+  `<path d="${sparklePath(cx, cy, r)}" fill="#F7F9FF"/></g>`;
+
+/**
+ * Shooting star: a tapered tail fading away from a star-shaped head. The head
+ * is at (x, y) and the tail trails up and to the right, the way it travels.
+ */
+const shootingStar = (x, y, len, dur, delay, gradId, wide) =>
+  `<g class="a fshoot${wide ? ' fshoot--wide' : ''}" style="animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s">` +
+  `<line x1="${x.toFixed(0)}" y1="${y.toFixed(0)}" x2="${(x + len).toFixed(0)}" y2="${(y - len * 0.6).toFixed(0)}" stroke="url(#${gradId})" stroke-width="${wide ? 3.2 : 2}" stroke-linecap="round"/>` +
+  `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${wide ? 7 : 3.6}" fill="#F3F7FF" opacity="0.35"/>` +
+  `<path d="${sparklePath(x, y, wide ? 9 : 4.5)}" fill="#FFFFFF"/></g>`;
+
+/** Tail gradient: bright at the head (bottom-left of the line box), gone at the end. */
+const shootGradient = (id) =>
+  `<linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/><stop offset="0.35" stop-color="#DCE6FF" stop-opacity="0.65"/><stop offset="1" stop-color="#DCE6FF" stop-opacity="0"/></linearGradient>`;
 
 function forestScene() {
   // Stars skip the top-right corner — that is where the moon sits, and a star
@@ -645,22 +699,25 @@ function forestScene() {
     `<ellipse class="a leaffall" cx="${rr(i, 76, 20, 370).toFixed(0)}" cy="${rr(i, 77, 262, 300).toFixed(0)}" rx="2.6" ry="1.2" style="animation-delay:${(-rr(i, 78, 0, 14)).toFixed(1)}s;animation-duration:${rr(i, 79, 9, 16).toFixed(1)}s"/>`
   ).join('');
 
-  const shootCount = rnd(0, 51) > 0.45 ? 2 : 1;
-  const shooting = Array.from({ length: shootCount }, (_, i) => {
-    const x = rr(i, 52, 150, 360).toFixed(0);
-    const y = rr(i, 53, 24, 150).toFixed(0);
-    const len = rr(i, 54, 16, 30).toFixed(0);
-    const dur = rr(i, 55, 26, 48).toFixed(0);
-    const delay = (-rr(i, 56, 0, 40)).toFixed(0);
-    return `<g class="a shoot" style="animation-duration:${dur}s;animation-delay:${delay}s">` +
-      `<line x1="${x}" y1="${y}" x2="${Number(x) + Number(len)}" y2="${Number(y) - len * 0.6}" ` +
-      `stroke="#F3F7FF" stroke-width="1.5" stroke-linecap="round"/></g>`;
+  // Four shooting stars on 10-17s cycles: across them, one crosses the sky
+  // every few seconds. Each is visible for about a fifth of its own cycle.
+  const shooting = Array.from({ length: 4 }, (_, i) =>
+    shootingStar(rr(i, 352, 170, 380), rr(i, 353, 20, 140), rr(i, 354, 38, 62),
+      rr(i, 355, 10, 17), -rr(i, 356, 0, 17), 'fshootgrad', false)
+  ).join('');
+
+  // Star-shaped sparkles that grow in and fade out, away from the moon.
+  const sparkles = Array.from({ length: 9 }, (_, i) => {
+    const x = rr(i, 361, 12, 378), y = rr(i, 362, 14, 230);
+    if (x > 255 && y < 150) return '';
+    return sparkle(x, y, rr(i, 363, 3.2, 5.6), rr(i, 364, 5, 9), -rr(i, 365, 0, 9));
   }).join('');
 
   return `<svg class="scene" data-decay="0" viewBox="0 0 ${VB_W} ${VB_H}" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <linearGradient id="fsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050918"/><stop offset="0.16" stop-color="#0C1532"/><stop offset="0.33" stop-color="#1A2A4C"/><stop offset="0.42" stop-color="#16243F"/><stop offset="1" stop-color="#070C16"/></linearGradient>
 <radialGradient id="fglow"><stop offset="0" stop-color="#F6E7B8" stop-opacity="0.5"/><stop offset="1" stop-color="#F6E7B8" stop-opacity="0"/></radialGradient>
+${shootGradient('fshootgrad')}
 <linearGradient id="friv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C4A6E"/><stop offset="1" stop-color="#132338"/></linearGradient>
 ${[['0', 392], ['1', 356], ['2', 322]].map(([n, cx]) =>
   `<mask id="fmoon${n}"><rect x="250" y="40" width="130" height="130" fill="#fff"/><circle cx="${cx}" cy="94" r="29" fill="#000"/></mask>`
@@ -669,6 +726,7 @@ ${[['0', 392], ['1', 356], ['2', 322]].map(([n, cx]) =>
 </defs>
 <rect width="${VB_W}" height="${VB_H}" fill="url(#fsky)"/>
 <g>${stars.join('')}</g>
+<g>${sparkles}</g>
 ${shooting}
 <circle class="trc moon-glow" cx="310" cy="100" r="96" fill="url(#fglow)"/>
 <!-- The moon's phase is three discs cross-faded, not one shade circle moved.
@@ -1192,16 +1250,22 @@ function forestWide() {
     return `<path d="${d}"/>`;
   }).join('');
 
-  const shooting = Array.from({ length: 2 }, (_, i) => {
-    const x = rr(i, 152, 500, 1300).toFixed(0), y = rr(i, 153, 40, 240).toFixed(0), len = rr(i, 154, 22, 40).toFixed(0);
-    return `<g class="a shoot" style="animation-duration:${rr(i, 155, 26, 48).toFixed(0)}s;animation-delay:${(-rr(i, 156, 0, 40)).toFixed(0)}s">` +
-      `<line x1="${x}" y1="${y}" x2="${Number(x) + Number(len)}" y2="${Number(y) - len * 0.6}" stroke="#F3F7FF" stroke-width="1.6" stroke-linecap="round"/></g>`;
+  const shooting = Array.from({ length: 5 }, (_, i) =>
+    shootingStar(rr(i, 452, 520, 1380), rr(i, 453, 30, 230), rr(i, 454, 70, 120),
+      rr(i, 455, 10, 17), -rr(i, 456, 0, 17), 'fwshootgrad', true)
+  ).join('');
+
+  const sparkles = Array.from({ length: 16 }, (_, i) => {
+    const x = rr(i, 461, 20, VW_W - 20), y = rr(i, 462, 20, 400);
+    if (Math.abs(x - MOON_X) < 190 && y < 330) return '';
+    return sparkle(x, y, rr(i, 463, 8, 13), rr(i, 464, 5, 9), -rr(i, 465, 0, 9));
   }).join('');
 
   return `<svg class="scene" data-decay="0" viewBox="0 0 ${VW_W} ${VW_H}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <linearGradient id="fwsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050918"/><stop offset="0.22" stop-color="#0C1532"/><stop offset="0.48" stop-color="#1A2A4C"/><stop offset="0.62" stop-color="#16243F"/><stop offset="1" stop-color="#070C16"/></linearGradient>
 <radialGradient id="fwglow"><stop offset="0" stop-color="#F6E7B8" stop-opacity="0.5"/><stop offset="1" stop-color="#F6E7B8" stop-opacity="0"/></radialGradient>
+${shootGradient('fwshootgrad')}
 <linearGradient id="fwriv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C4A6E"/><stop offset="1" stop-color="#132338"/></linearGradient>
 <linearGradient id="fwfog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FB4CE" stop-opacity="0"/><stop offset="0.45" stop-color="#9FB4CE" stop-opacity="0.5"/><stop offset="1" stop-color="#9FB4CE" stop-opacity="0"/></linearGradient>
 ${[['0', 108], ['1', 56], ['2', 16]].map(([n, dx]) =>
@@ -1210,6 +1274,7 @@ ${[['0', 108], ['1', 56], ['2', 16]].map(([n, dx]) =>
 </defs>
 <rect width="${VW_W}" height="${VW_H}" fill="url(#fwsky)"/>
 <g>${stars}</g>
+<g>${sparkles}</g>
 ${shooting}
 <circle class="trc moon-glow" cx="${MOON_X}" cy="${MOON_Y}" r="150" fill="url(#fwglow)"/>
 ${['0', '1', '2'].map((n) => `<circle class="trc moon-${n}" cx="${MOON_X}" cy="${MOON_Y}" r="41" fill="#F4ECD2" mask="url(#fwmoon${n})"/>`).join('')}

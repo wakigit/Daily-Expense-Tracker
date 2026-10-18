@@ -165,15 +165,6 @@ export default function App() {
 
   const catTotal = useMemo(() => sumAmounts(catItems), [catItems]);
 
-  const catByMonth = useMemo(() => {
-    const g = {};
-    catItems.forEach((exp) => {
-      const m = exp.date.slice(0, 7);
-      (g[m] = g[m] || []).push(exp);
-    });
-    return Object.entries(g).sort(([a], [b]) => b.localeCompare(a));
-  }, [catItems]);
-
   /* ── Derived: current month ──────────────────────────────────── */
 
   const monthExp = useMemo(
@@ -549,7 +540,6 @@ export default function App() {
             onChangeMonth={setYm}
             items={catItems}
             total={catTotal}
-            byMonth={catByMonth}
             {...txnProps}
           />
         )}

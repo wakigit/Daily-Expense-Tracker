@@ -8,7 +8,7 @@ import { useTxnFilter } from '../hooks/useTxnFilter';
 
 /** Drill-down for the header month. */
 export default function CategoryView({
-  cat, items, total, byMonth, ym,
+  cat, items, total, ym,
   catById, onDelete, onEdit, onChangeMonth,
 }) {
   const shown = useCountUp(total);
@@ -74,12 +74,13 @@ export default function CategoryView({
           <p style={{ fontSize: 14, color: 'var(--tx-muted)' }}>No {cat?.label} entries in {ymLabel(ym)}. Choose another month or add an expense.</p>
         </section>
       ) : (
-        byMonth.map(([m, exps], i) => (
-          <section key={m} className="card" style={{ '--i': i + 2 }}>
-            <p className="lbl">{ymLabel(m)}</p>
-            <TxnList items={exps} catById={catById} onDelete={onDelete} onEdit={onEdit} />
-          </section>
-        ))
+        /* The month's rows come from the same filter hook as search results, so
+           Newest / Highest / Lowest reorder the list straight away. Rendering
+           the pre-grouped byMonth here ignored the sort until a query was typed. */
+        <section className="card" style={{ '--i': 2 }}>
+          <p className="lbl">{ymLabel(ym)}</p>
+          <TxnList items={f.filtered} catById={catById} onDelete={onDelete} onEdit={onEdit} />
+        </section>
       )}
     </>
   );
