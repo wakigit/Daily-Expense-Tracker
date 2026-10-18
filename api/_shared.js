@@ -114,10 +114,34 @@ function safeParse(text) {
 export function sendJson(res, status, body) {
   res.status(status);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  // Same-origin on Vercel, so there is no CORS to grant — and granting none is
-  // the right default for an endpoint that costs money to call.
+  // CORS is granted only to the origins in CORS_ORIGINS (see allowCors).
   res.setHeader('Cache-Control', 'no-store');
   res.send(JSON.stringify(body));
+}
+
+/**
+ * Browser origins other than this deployment that may call the API. The
+ * GitHub Pages copy of the app lives on a different origin, so without this
+ * its Ask, receipt and roast requests are blocked by the browser.
+ *
+ * This is NOT access control: curl ignores CORS entirely, and the cost
+ * controls are the ones listed at the top of this file. It only decides which
+ * web pages a browser lets read the answers. Override with CORS_ORIGINS
+ * (comma separated, exact origins, no wildcard).
+ */
+export const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? 'https://wakigit.github.io')
+  .split(',').map((o) => o.trim()).filter(Boolean);
+
+/** Sets the CORS headers for an allowed origin. Returns whether it was allowed. */
+export function allowCors(req, res) {
+  res.setHeader('Vary', 'Origin');
+  const origin = req.headers?.origin;
+  if (!origin || !CORS_ORIGINS.includes(origin)) return false;
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '600');
+  return true;
 }
 
 /**
@@ -126,6 +150,13 @@ export function sendJson(res, status, body) {
  */
 export function withGuards({ maxBytes, limit, handler }) {
   return async function vercelHandler(req, res) {
+    const corsAllowed = allowCors(req, res);
+    // Browser preflight for a cross-origin JSON POST. Answered without a body,
+    // without touching the limiter and never reaching the provider.
+    if (req.method === 'OPTIONS' && corsAllowed) {
+      res.status(204);
+      return res.send('');
+    }
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'POST');
       return sendJson(res, 405, { error: 'method_not_allowed', allow: ['POST'] });
