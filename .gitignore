@@ -16,6 +16,8 @@ dist-ssr/
 # Logs
 logs/
 *.log
+# ...except the paid-call ledger, which is a deliberate audit record.
+!scripts/eval/calls.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -44,6 +46,7 @@ venv/
 # Smoke-test build output
 .smoke-build/
 .matrix-build/
+.eval-build/
 
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/

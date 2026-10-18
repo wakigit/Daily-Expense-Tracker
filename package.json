@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "smoke": "vite build --ssr scripts/smoke.jsx --outDir .smoke-build --logLevel error && node .smoke-build/smoke.js"
+    "smoke": "vite build --ssr scripts/smoke.jsx --outDir .smoke-build --logLevel error && node .smoke-build/smoke.js",
+    "eval": "vite build --ssr scripts/eval/run.mjs --outDir .eval-build --logLevel error && node .eval-build/run.js",
+    "eval:self-check": "node scripts/eval/self-check.mjs",
+    "eval:fixture-checks": "node scripts/eval/fixture-checks.mjs"
   },
   "dependencies": {
     "openai": "^7.28.0",

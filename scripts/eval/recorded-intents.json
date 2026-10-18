@@ -1,0 +1,1645 @@
+{
+  "M01": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's your spending total for this month."
+      }
+    }
+  },
+  "M02": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "lastmonth",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's your total spending from last month."
+      }
+    }
+  },
+  "M03": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M04": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here is your total spending across all time."
+      }
+    }
+  },
+  "M05": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "today",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M06": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "yesterday",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M07": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 30,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's your total spending in the last 30 days."
+      }
+    }
+  },
+  "M08": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 90,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M09": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "food"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here's the total spending on Food & Drinks this month."
+      }
+    }
+  },
+  "M10": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "Grab",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M11": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "GrabFood",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M12": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "Starbucks",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's the total spending for all purchases mentioning Starbucks for all time."
+      }
+    }
+  },
+  "M13": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "2 chicken rice",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Calculating total spending on all descriptions mentioning \"2 chicken rice\" for all time."
+      }
+    }
+  },
+  "M14": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "Gojek",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M15": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "bbt",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "bbt"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M16": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "transport",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "transport"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M17": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "largest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M18": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "largest",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Checking your largest single expense this month."
+      }
+    }
+  },
+  "M19": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "highest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "day",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M20": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "highest",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "category",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M21": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "highest",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M22": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "latest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M23": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "highest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "weekday",
+          "groupBy": "weekday",
+          "aggregate": "daily_average",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M24": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "category",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M25": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M26": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 90,
+          "category": null,
+          "description": "Grab",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "category",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M27": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "lastmonth",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "category",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M28": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "bbt",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [
+            "bbt"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here is the breakdown of your Bubble Tea spending by month for all time."
+      }
+    }
+  },
+  "M29": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": "gt",
+          "amount": "20",
+          "amountCents": 2000,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Listing all transactions over S$20 for the current month."
+      }
+    }
+  },
+  "M30": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": "gte",
+          "amount": "20",
+          "amountCents": 2000,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M31": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": "lt",
+          "amount": "5.00",
+          "amountCents": 500,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here are transactions under S$5 this month."
+      }
+    }
+  },
+  "M32": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": "lte",
+          "amount": "0.01",
+          "amountCents": 1,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Listing all transactions of at most S$0.01 over all time."
+      }
+    }
+  },
+  "M33": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "day_types",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Comparing spending on weekdays versus weekends this year."
+      }
+    }
+  },
+  "M34": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "weekend",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Your spending at weekends this month."
+      }
+    }
+  },
+  "M35": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "Monday",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M36": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M37": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M38": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M39": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M40": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M41.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "food"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here's your spending on Food & Drinks this month."
+      }
+    }
+  },
+  "M42.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "Grab",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M43.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M44.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "largest",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M45": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "propose_scope",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": {
+            "label": "Supper and Late-Night Food",
+            "includeCategories": [],
+            "includeTerms": [
+              "late food",
+              "late-night",
+              "latenight",
+              "midnight",
+              "night snack",
+              "nightfood",
+              "prata",
+              "supper"
+            ],
+            "excludeCategories": [],
+            "excludeTerms": []
+          }
+        },
+        "say": "Proposing a related spending scope for supper and late-night food this month."
+      }
+    }
+  },
+  "M46": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.spendingScope"
+      }
+    }
+  },
+  "M48.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "propose_scope",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": {
+            "label": "Supper and late-night food",
+            "includeCategories": [],
+            "includeTerms": [
+              "late night",
+              "late supper",
+              "late-night",
+              "midnight",
+              "midnight snack",
+              "night food",
+              "night snack",
+              "supper"
+            ],
+            "excludeCategories": [],
+            "excludeTerms": []
+          }
+        },
+        "say": "I can help define your supper and late-night food spending category for this month."
+      }
+    }
+  },
+  "M50": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "multiple_categories"
+      }
+    }
+  },
+  "M51": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "What comparison type do you want between Food & Drinks this month and Entertainment last month?",
+        "options": [
+          "total spending",
+          "average daily spending",
+          "number of transactions"
+        ],
+        "say": "You want to compare Food & Drinks spending this month with Entertainment spending last month. Should the comparison be total spending, average spending per day, or another measure?"
+      }
+    }
+  },
+  "M52": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "Groceries",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M53": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "What kind of spending projection for next month do you want? Total or by category?",
+        "options": [
+          "Total spending projection for next month",
+          "Spending projection by category for next month"
+        ],
+        "say": "Do you want a projection of your total spending next month or spending for a specific category?"
+      }
+    }
+  },
+  "M54": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "message"
+      }
+    }
+  },
+  "M55": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "message"
+      }
+    }
+  },
+  "M56": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "message"
+      }
+    }
+  },
+  "M57": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "misc",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "misc"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here's the spending on Others category for this month."
+      }
+    }
+  },
+  "M58": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": "ignore",
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Showing total spending for all descriptions containing 'ignore' over all time."
+      }
+    }
+  },
+  "M59": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "food"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here's your spending on Food & Drinks this month."
+      }
+    }
+  },
+  "M60": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Calculating your total spending for this month."
+      }
+    }
+  },
+  "M61": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Calculating your total spending for this month."
+      }
+    }
+  },
+  "M62": {
+    "status": 400,
+    "body": {
+      "error": "message_required"
+    }
+  },
+  "M63": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "message"
+      }
+    }
+  },
+  "M64": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "message"
+      }
+    }
+  },
+  "M65": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      }
+    }
+  },
+  "M66": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "multiple_categories"
+      }
+    }
+  },
+  "M67": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Comparing spending between September and July."
+      }
+    }
+  },
+  "M68": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "multiple_categories"
+      }
+    }
+  },
+  "M69": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "category",
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M70": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "bbt",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [
+            "bbt"
+          ],
+          "spendingScope": null
+        },
+        "say": "Here's your month-by-month Bubble Tea spending for this year."
+      }
+    }
+  },
+  "M71": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "average",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "calendar_week",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here is your average weekly spending for this year."
+      }
+    }
+  },
+  "M72": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "largest",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "M73": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      }
+    }
+  },
+  "M74": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "Please provide your average monthly spending or budget details to assess saving S$500 in 4 months.",
+        "options": [],
+        "say": "How much do you currently spend on average each month?"
+      }
+    }
+  },
+  "M75": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "Should the comparison be total spending from September to October? For top purchases, should I list the two largest single transactions in October within the identified category?",
+        "options": [],
+        "say": "Do you want the category with the highest spending increase comparing September to October, and then the two largest single purchases in October within that category?"
+      }
+    }
+  },
+  "M76": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "food"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  }
+}
