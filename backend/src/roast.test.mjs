@@ -77,7 +77,7 @@ test('roast contract accepts 200 characters, rejects 201 and incomplete sentence
   // Two sentences are now allowed; three are not.
   assert.equal(validateRoastOutput({text:'First part lands. Second part twists.'}).ok,true);
   assert.equal(validateRoastOutput({text:'One. Two. Three.'}).ok,false);
-  assert.match(ROAST_PROMPT,/15–32 words/);
+  assert.match(ROAST_PROMPT,/12–26 words/);
   assert.match(ROAST_PROMPT,/200 characters/);
   assert.match(ROAST_PROMPT,/one or two complete sentences/);
 });
@@ -135,4 +135,12 @@ test('roast: prompt explains every angle the client can send and no longer bans 
   }
   assert.doesNotMatch(ROAST_PROMPT, /corporate jokes/);
   assert.doesNotMatch(ROAST_PROMPT, /saved category Food/);
+});
+
+test('roast: prompt asks for one smart detail and plain, readable wording', () => {
+  assert.match(ROAST_PROMPT, /Pick ONE smart detail/);
+  assert.match(ROAST_PROMPT, /categoryUsagePct as a percent when it is not null/);
+  assert.match(ROAST_PROMPT, /get it in one read/);
+  assert.match(ROAST_PROMPT, /never state a price, count or fact that is not in the input/);
+  assert.doesNotMatch(ROAST_PROMPT, /\u2014/, 'no em dashes in the prompt');
 });
