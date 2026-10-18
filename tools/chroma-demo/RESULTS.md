@@ -4,7 +4,7 @@ Run on 2026-10-18 against 68 invented sample transactions (`tools/chroma-demo/sa
 
 Embedding model: Chroma's default `DefaultEmbeddingFunction`, which is `all-MiniLM-L6-v2` running locally under onnxruntime. No API key and no paid call is involved.
 
-Distance is cosine distance: lower is a closer match. A low distance means the sentence embeddings are near each other, not that the row is necessarily a correct answer to the question.
+Distance is squared L2 distance, Chroma's default space (the collection reports hnsw.space = l2, and build_index.py does not override it): lower is a closer match. A low distance means the sentence embeddings are near each other, not that the row is necessarily a correct answer to the question.
 
 ## "late night supper"
 

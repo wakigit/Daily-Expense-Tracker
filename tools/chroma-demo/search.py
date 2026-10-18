@@ -6,9 +6,10 @@
 With no argument it runs the demo queries and rewrites RESULTS.md. With a
 query argument it prints that one search and leaves RESULTS.md alone.
 
-Distances are cosine distances from Chroma's default local embedding model:
-lower is a closer match. They are similarity scores, not a judgement that a
-row actually belongs to the query.
+Distances are squared L2 distances, Chroma's default space: lower is a closer
+match. build_index.py does not set hnsw:space, so the collection uses l2 rather
+than cosine. They are similarity scores, not a judgement that a row actually
+belongs to the query.
 """
 
 from __future__ import annotations
@@ -114,9 +115,10 @@ def main(argv: list[str]) -> int:
         "`all-MiniLM-L6-v2` running locally under onnxruntime. No API key and no "
         "paid call is involved.",
         "",
-        "Distance is cosine distance: lower is a closer match. A low distance "
-        "means the sentence embeddings are near each other, not that the row is "
-        "necessarily a correct answer to the question.",
+        "Distance is squared L2 distance, Chroma's default space (the collection "
+        "reports hnsw.space = l2, and build_index.py does not override it): lower "
+        "is a closer match. A low distance means the sentence embeddings are near "
+        "each other, not that the row is necessarily a correct answer to the question.",
         "",
     ]
 
