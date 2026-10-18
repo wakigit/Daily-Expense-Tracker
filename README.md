@@ -1,253 +1,282 @@
 # TallyAI
 
-**Ask where your money went.** Every figure computed from your records, never
-guessed by a model.
+A personal finance tracker made for students, by a student.
 
-A mobile-first daily expense tracker for spending in Singapore dollars, with an
-AI Assistant and three live wallpapers that react to your budget.
+- Live app: https://ailodge-expensetracker.vercel.app
+- GitHub: https://github.com/wakigit/Daily-Expense-Tracker
+- Demo video: [YOUTUBE LINK]
 
-> **Naming:** the product is TallyAI and the assistant is simply **the AI
-> Assistant** — a section of the app, not a character. The repository, the git
-> remote and the deployed URL still say `Daily-Expense-Tracker`, and the UI still
-> says "Expense Tracker". Renaming the product strings is planned; renaming the
-> repository is deliberately not, because it breaks the public URL.
+Built solo by Wei Kai (SMU Information Systems) for the SMU BIA AI Lodge Hackathon, Vampire Lodge.
 
 ---
 
-## Running it
+## 1. Problem Statement
 
-```sh
-npm install
-npm run dev     # http://localhost:5173/Daily-Expense-Tracker/
-npm run build
-npm run smoke   # 518 render + logic checks
-```
+Students do not spend in big, memorable amounts. We spend in many small ones: a
+$4.50 lunch, a $2.20 bus ride, a $12 Grab back to campus, 80 cents of printing
+before a submission. Each is too small to think about, and together they are
+most of the month's money, so you find out where it went only once it is gone.
 
-The Assistant and the receipt scanner need the backend as well — see
-[`backend/README.md`](backend/README.md):
+The people who feel this are students on an allowance or a part-time income, who
+have a real budget but no system for it. Most trackers are built for working
+adults: they assume salaries, bills, categories like mortgage and insurance, and
+that you will sit down and do data entry. Logging feels like a chore, so after a
+week or two people stop, and a half-filled tracker is worse than none because it
+quietly tells you the wrong number.
 
-```sh
-cd backend && npm install && npm start
-```
+The problem worth solving is therefore not analysis. It is the cost of logging,
+and the gap between a list of transactions and an answer about your own spending.
 
-**The app works without the backend, with one exception.** The Assistant falls
-back to a local matcher that answers with the same arithmetic — that is also how
-the deployed build runs, having no server. **Receipt scanning has no fallback**:
-a vision model cannot be substituted locally, so the button says so rather than
-failing silently.
+## 2. Solution Overview
 
-### Two ways to run it, and they show different things
+TallyAI attacks the chore and the gap separately.
 
-The frontend looks for the backend at `http://127.0.0.1:8787` unless
-`VITE_ASSISTANT_URL` is set at build time. **`127.0.0.1` is whatever device the
-page is open on** — so on your phone it is your phone, not someone else's
-laptop. **No backend is hosted**, so the public URL has nothing to reach.
+**Make logging cheap.** Three ways in: type it, speak it, or photograph the
+receipt. Voice and receipt scanning both produce an editable draft in the Add
+form rather than saving anything, so a wrong guess costs a tap to fix instead of
+a wrong row in your history.
 
-| | **Public URL** — no hosted backend | **Locally** — `backend && npm start` |
-|---|---|---|
-| Tracker: add, edit, delete, undo, categories, budgets | ✅ | ✅ |
-| Charts, search, month navigation, drill-down | ✅ | ✅ |
-| Three live wallpapers and the decay | ✅ | ✅ |
-| Phone and laptop layouts | ✅ | ✅ |
-| Voice entry into the Add form | ✅ — the browser's speech recognition, not the server's | ✅ |
-| **Ask it a question** | ✅ **via the offline matcher** — same arithmetic, narrower language | ✅ model-backed: five intents, nine metrics |
-| **Receipt scanning** | ❌ no offline substitute for a vision model. The button says *"Scanning is unavailable — the assistant is offline."* | ✅ |
+**Make the budget a daily question.** Rather than only showing a month total
+against a month budget, the home screen turns what is left into a daily
+allowance for the rest of the month ("about $9.80 a day for the 14 days left in
+October"), which is the number that changes a decision at a food court.
 
-The public URL is therefore a complete tracker with an offline assistant — and
-not an AI demo. Both are honest descriptions of the same build; which one you
-get depends only on whether a backend is reachable.
+**Make answers checkable.** Ask in plain English: every figure is calculated
+locally from your own rows in integer cents and shown with the transactions it
+came from, so you can verify it instead of trusting it.
 
-Run the local version from `http://localhost:5173/…`, not by opening the public
-URL on a machine that happens to have the backend running: an HTTPS page calling
-`http://127.0.0.1` is a mixed-content request and that combination has never
-been tested.
+**Make logging slightly fun.** After a purchase saves, a short roast appears for
+a few seconds, written from facts taken from your own ledger rows. One sentence,
+optional, and there because the main reason trackers fail is that nobody opens
+them.
 
-All 518 checks pass, at any time of day — one of them used to derive
-"yesterday" from UTC while the parser correctly uses the Asia/Singapore day,
-and it now uses a fixed clock.
+## 3. Key Features
 
----
+- Add, edit, delete and undo expenses (description, amount, category, date,
+  note).
+- Month filtering and month-to-month navigation.
+- A total monthly budget and per-category budgets, with status labels through to
+  "Over budget" and explicit overspend amounts per category.
+- Charts: a cumulative month graph on laptop, seven-day bars on phone (with
+  read-only daily detail), and a category donut.
+- Date search, with strict date matching.
+- Voice entry into an editable draft. Monetary amounts are identified in the
+  transcript, numbers that are part of a name stay in the description, and an
+  unresolved amount is left blank for review rather than guessed.
+- Receipt scan into an editable draft: merchant, total, currency, date and
+  category. Receipt-level, not line-item level, so individual items are not
+  extracted.
+- Ask: plain-English questions about recorded spending, answered with evidence
+  transactions.
+- Roast: one short line after a save, with a persistent off switch in Settings.
+- Three animated backgrounds (Moonlit Forest, Sunset Beach, Rainy City) that
+  react to how much of the budget is used. Reduced motion is honoured, with an
+  in-app override.
+- Separate laptop and phone layouts, not one layout stretched.
+- A sample data loader in Settings, so the app can be understood without typing
+  anything first.
 
-## What works today
+## 4. AI Integration
 
-Everything in this section is in the code and verified working.
+I tried to be exact about where a model is involved, because "AI tracker"
+usually hides the part that matters.
 
-- **Log expenses** by typing, by speaking into the Add form, or by photographing
-  a receipt. Description, amount, category, date, note. Edit, delete, undo.
-- **Receipt scanning** fills the Add form from a photo — and **only** fills it.
-  It produces a draft you check and never saves a row on its own. The total is
-  taken as the figure *after* service charge and GST, anything unreadable comes
-  back blank and is named rather than guessed, a photo that is not a receipt is
-  refused, and a foreign-currency receipt clears the amount and says so rather
-  than leaving an SGD figure sitting under the new receipt's name. Currency is
-  reported, never converted.
-- **Budgets** per category, with a shared five-state status model — *No budget
-  set · On track · Close to limit · Budget reached · Over budget*.
-- **See it** — month total, category donut, a last-7-days bar chart, searchable
-  transaction list, month navigation, per-category drill-down.
-- **Ask it** — type a question and get an answer computed from the real rows.
-  Nine metrics over seven time windows, optionally scoped to one category. Ask it
-  to add or delete and it shows a confirmation card first. Say "undo that" and it
-  reverses its own last change. Every answer states how it was interpreted.
-- **Three live wallpapers** — Moonlit Forest, Sunset Beach, Rainy City — that
-  **run down as you spend**. Three states, driven by the same thresholds as the
-  status pill: *healthy* under 75%, *strained* from 75 to 100, *run down* past
-  it. The forest fogs over, loses its fish and its deer and the moon wanes to a
-  crescent; the beach cools to night, the surfer and crab leave and litter
-  arrives; the city's windows go cold, the rain thickens and the building stops
-  smiling. Delete the expense and the world recovers — it is the same transition
-  backwards. Reduced motion is honoured, with an in-app override.
-- **A phone layout and a laptop layout** — below 1024px the phone column,
-  unchanged; at 1024px and up a navigation rail, a centre overview and a
-  transaction ledger, with each scene swapping to a composition drawn for the
-  wider screen.
+**Ask: the model interprets, the app calculates.** A question goes to the OpenAI
+Responses API (gpt-4.1-mini by default, set via `OPENAI_MODEL`) and the model's
+only job is to turn the sentence into a structured query: a period or date
+range, one real category, a description substring, an amount condition, a
+weekday filter. That output is validated against a strict closed contract
+(`src/lib/intent.js`, `src/lib/queryContract.js`) on the server and again in the
+browser. The answer is then computed locally from the stored rows in integer
+cents (`src/lib/queryEngine.js`, `src/lib/stats.js`) and shown with its evidence
+transactions. The model never does the arithmetic, any number it emits is
+discarded, and ambiguous or out-of-contract questions get a clarification prompt
+instead of a guess.
 
-Money is summed in integer cents. Dates follow the Asia/Singapore calendar day,
-so a 1 a.m. supper is dated today, not yesterday.
+**Receipt scanning: extraction only.** The model reads the photo and returns
+draft fields, saving nothing. The draft lands in the Add form and I review it
+before it becomes a row; anything unreadable comes back blank and is named
+rather than invented.
 
-## Recently completed
+**Roast: one sentence, from supplied facts.** The model gets only that
+purchase's description, amount in cents, category label, up to two locally
+calculated exact-repeat facts and a bounded budget band. It writes at most 120
+characters and exactly one complete sentence, and the output is checked before
+display: unsupported counts or history claims are rejected and a labelled
+offline quip is shown instead.
 
-- Sample data is available from Settings; loading it does not trigger roasts.
-- Spending comparisons and source transaction evidence are built. Charts inside Assistant answers and budget forecasts are outside this release.
-- **Personalised purchase roasts are built and on by default**, with a persistent off switch. Preferred name, Singapore references and SMU references are optional local settings. Roasts run after a successful new save, use verified aggregates, and fall back to a labelled offline quip.
+**Voice entry is not OpenAI.** It uses the browser's Web Speech API
+(`src/lib/speech.js`), on the device.
 
-## What does not work yet
+**Every OpenAI call is server-side**, through Vercel Functions in `api/` in
+production or a local Node server in `backend/` in development.
+`OPENAI_API_KEY` is read only through `process.env` in `backend/src/provider.js`
+and is never returned or logged. It is deliberately not prefixed with `VITE_`,
+because Vite inlines every `VITE_*` variable into the public client bundle. The
+key never reaches the browser.
 
-- **No accounts, no login, no sync, no server storage.** Everything is in
-  `localStorage` on one device. Clearing site data loses it, and there is no
-  export yet. Nothing in the app presents accounts as existing.
-- **No voice in the Assistant.** Speech fills the Add *form* only; you cannot
-  speak a question.
-- **Reduce Motion stops the wallpapers entirely**, by design. The decay still
-  reads — it is colour and opacity — but nothing loops.
+**How this was developed.** I built TallyAI with AI coding agents, OpenAI Codex
+and Claude Code, directing the work, reviewing the diffs and testing the result
+myself. The rule that the model interprets language and application code does
+arithmetic is the one I held to throughout, and most of my review time went into
+enforcing it.
 
-### Three caveats worth reading before you judge it
+## 5. External Tools & Datasets
 
-**The deployed build is current** as of 2026-10-17 and was checked in a
-browser. It runs with no backend, which is deliberate: see the table above for
-exactly what that does and does not include.
-
-**No backend is hosted, by choice.** The public URL is the tracker with the
-offline assistant; live model answers and receipt scanning run from a laptop
-with the local server. The reasoning, and what hosting one would require, is in
-[`docs/ROADMAP.md`](docs/ROADMAP.md).
-
-**Nothing has been tested on real iPhone hardware.** Every "works on phone"
-claim here means a 390×844 viewport in desktop Chrome.
-
-See [`docs/PRD.md`](docs/PRD.md) for the full built / planned / removed breakdown
-and [`docs/ROADMAP.md`](docs/ROADMAP.md) for what is being built this week and
-what has been cut.
-
----
-
-## Not in this product
-
-Cut deliberately, and not hidden later stages: **a cat mascot and the "Ask
-Tally" framing** — the Assistant is a normal section of the app and the
-animation budget belongs to the wallpapers; and **bank statement import, card
-syncing, and transaction reconciliation** — PDF layouts differ per bank, CSV
-import without reconciliation is a half-feature, and with it, it was the largest
-item on the old plan. Receipt scanning stays: it is the good half of ingestion
-and it needs none of that.
-
-The hackathon demo uses **sample financial data generated for it**. No real bank
-statement, card or account is involved.
-
----
-
-## How it is put together
-
-React 19 + Vite 8, no UI framework, CSS driven entirely by custom properties —
-which is what makes a theme swap cost nothing.
-
-```
-src/
-  views/       one file per screen
-  components/  shared pieces
-  lib/         the logic — all pure, all testable in Node
-    status.js     the budget thresholds, and the wallpaper's decay level
-    stats.js      every number the assistant can report
-    actions.js    add / delete / undo, shared by the UI and the assistant
-    money.js      integer-cent arithmetic
-    intent.js     the model contract — imported by the backend too
-    receipt.js    the receipt contract — imported by the backend too
-    assistant.js  turns a validated intent into a plan, never into a change
-    storage.js    the only place that touches persistence
-  themes/      design tokens and the wallpaper engine
-                 scenes.js holds two compositions per scene, phone and laptop
-backend/       the assistant and receipt endpoints, and the API key
-```
-
-**The rule that shapes the architecture:** the model interprets language,
-application code does arithmetic. `src/lib/intent.js` constrains what the model
-may say; `src/lib/stats.js` computes every figure from the real rows. A number
-the model produced is discarded. Anything that changes data is parked as a
-proposal until a person confirms it.
-
-**The API key never reaches the browser.** `OPENAI_API_KEY` is read server-side
-only, in `backend/src/provider.js`, and is never logged or returned. Vite inlines
-every `VITE_`-prefixed variable into the client bundle, so the name matters: a
-`VITE_OPENAI_API_KEY` would be a published key. See
-[`backend/README.md`](backend/README.md).
-
----
-
-## Docs
-
-| | |
+| What | Used for |
 |---|---|
-| [`docs/PRD.md`](docs/PRD.md) | Product requirements, feature status, planned capability detail |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Stages, cut line, risk register |
-| [`docs/RESUME.md`](docs/RESUME.md) | State of the working tree — read this first when picking the work back up |
-| [`docs/PLANNING-BRIEF.md`](docs/PLANNING-BRIEF.md) | Self-contained brief for getting planning help from another model |
-| [`docs/CLAUDE-CODE-PROMPTS.md`](docs/CLAUDE-CODE-PROMPTS.md) | Prompt index per stage, and the rules every prompt must restate |
-| [`docs/WALLPAPER-REDESIGN.md`](docs/WALLPAPER-REDESIGN.md) | Wallpaper spec |
-| [`docs/design-canvas/`](docs/design-canvas/) | Source artwork for the scenes |
-| [`backend/README.md`](backend/README.md) | Server, API key handling, verification |
+| OpenAI API (gpt-4.1-mini) | Ask interpretation, receipt extraction, roast text |
+| `openai` Node SDK v7 (official) | The only runtime dependency on both sides |
+| React 19 and `react-dom` | UI |
+| Vite 8 with `@vitejs/plugin-react` | Dev server, build, and the smoke test runner |
+| Node.js 20.19+ | Local backend (`node:http`, no framework) and build tooling |
+| Vercel | Hosting for the static build and the serverless API routes |
+| Browser Web Speech API | Voice entry |
+| `localStorage` | All persistence |
 
+There is no UI framework, no CSS library, no state library and no test
+framework: the frontend checks run as a server-side Vite build in
+`scripts/smoke.jsx`, and the backend uses the built-in `node:test` runner.
 
-## Personalised roasts
+**Datasets: none.** No real financial data is used anywhere. The demo data is
+invented in code, in `src/lib/sampleData.js`, generated relative to today's date
+so the charts are never empty, and labelled as sample data in the app wherever
+it appears. No bank statement, card or account is involved.
 
-New confirmed form saves (manual, voice-filled or receipt-filled) and assistant
-adds can generate a short, transient roast popup. Saving happens first; roasting cannot
-modify expenses. Edits, sample loading, reloads, deletes and undo do not request
-roasts. Results and interrupted attempts are cached by transaction ID locally;
-editing or removing the purchase clears its obsolete card. Turning roasting off
-in Settings dismisses it and stops new requests.
+## 6. Installation & Setup
 
-Only that purchase's description, SGD cents and category label, up to two
-locally calculated exact-repeat facts with inclusive date ranges, a bounded budget band,
-a rotating angle and enabled preferences reach `/assistant/roast`. Notes, images
-and ledger rows are excluded. Repeats require identical normalised description
-and category, with separate IDs counted separately; future-dated rows are excluded.
-Category transaction counts and totals are not sent in new roast requests; category
-spending stays local to calculate configured budget usage. Backdated purchases
-carry no claim about historical budget settings.
+**Prerequisites:** Node.js 20.19+ or 22.12+ (Vite 8 requires this; the backend
+declares `>=20.12`), and npm.
 
-The shared backend/Vercel route caps input at 4 KiB, validates output to 120
-characters and exactly one complete sentence, uses 100 output tokens and an 8-second
-provider timeout with no retries. The browser caps responses at 2 KiB and waits
-at most 10 seconds. Failure produces an **Offline** quip without losing the save.
-Model humour and factual grounding are prompted and manually reviewed, not a
-semantic guarantee: syntactic validation cannot prove every personal claim true.
+```sh
+# 1. Clone and install both halves
+git clone https://github.com/wakigit/Daily-Expense-Tracker.git
+cd Daily-Expense-Tracker
+npm install
+cd backend && npm install && cd ..
 
-**Public demo cost limitation:** the Vercel limiter is best-effort (10 calls per
-minute per IP per instance). There is no authentication or distributed quota.
-Forged requests, changing IPs and cold starts can still incur provider costs.
-Provider billing controls and platform firewall/rate limits require separate
-account configuration; this implementation is not a hard spending ceiling.
+# 2. Add a key for the AI features
+cp backend/.env.example backend/.env
+#    then edit backend/.env and set OPENAI_API_KEY=sk-...
 
-### Validated spending queries
+# 3. Start the backend (port 8787 on 127.0.0.1; it loads .env itself)
+cd backend && npm start
 
-Ask supports recorded totals/counts/averages, filtered transaction lists, largest individual transactions (including ties), highest-spending groups, weekday/weekend analysis, current month/week comparisons and category budget pace estimates. A shared closed query contract combines a supported period (or inclusive ISO date range), one real category, a case-insensitive description substring, a cent-exact amount condition and a weekday filter where applicable. The model interprets only; the local ledger supplies every figure and evidence row. Merchant identity is not inferred from descriptions. Unsupported or ambiguous queries ask for a complete clarification using **Edit original question**.
+# 4. In another terminal, start the frontend from the repository root
+npm run dev
+```
 
-“Usually” by weekday means average recorded spending per calendar occurrence, including zero-spend days, from the first recorded expense through today unless a range is specified. Comparisons use matching elapsed dates. Budget estimates use actual category budgets, require seven elapsed days and three spending dates before giving a date estimate, and become stale when the budget changes. Historical figures stay fixed and relevant ledger changes mark their evidence out of date.
+Open **http://localhost:5173/Daily-Expense-Tracker/**. The base path is not
+optional locally: `vite.config.js` serves from `/Daily-Expense-Tracker/` unless
+the build is on Vercel or `VITE_BASE` is set, so the bare root URL will not
+load.
 
-Home uses independent desktop columns, five matching Recent rows initially, explicit category overspending amounts, strict date search, and read-only daily details on the phone's seven-day bars. The laptop graph remains cumulative.
+```sh
+npm run smoke            # frontend render and logic checks
+cd backend && npm test   # backend contract, transport and roast checks
+```
 
-Physical microphone and receipt verification must be performed by the user, see [hardware checklist](docs/HARDWARE-CHECKLIST.md). Receipt extraction is receipt-level, not item-level. Local Wi-Fi HTTP does not provide a secure phone microphone context. Public AI routes still have only best-effort per-instance rate limiting; public release needs an explicit cost/abuse policy.
+The backend also has `npm run verify` (is the key accepted, is the model
+available) and `npm run verify:live` (one real request end to end).
 
-Roast popups use plain, blunt language, one complete sentence, at most 120 characters. They dismiss after eight seconds of completed, unpaused display time; hover or keyboard focus pauses the timer. A new purchase resets it. Popups do not replay after reload; paid-attempt caches remain intact. The popup stays out of Add and Settings forms, and away from Undo. Voice parsing identifies monetary spans in the original transcript, preserves numbers in descriptions, and clears an unresolved amount for review without saving.
+**A key is optional.** The tracker itself (adding, editing, budgets, charts,
+search, backgrounds, voice entry) works with no key and no backend. The AI paths
+fall back: Ask answers through a local offline matcher with the same arithmetic
+over a narrower range of phrasings, labelled "Answered offline", and roasts show
+a labelled offline quip. Receipt scanning has no offline substitute, because a
+vision model cannot be replaced locally, and the button says so rather than
+failing quietly.
 
-Greeting-only/help messages use built-in help without a paid call or ledger total. Ambiguous “highest expenditure” asks whether you mean an individual transaction, category total or daily total. Choices submit complete scoped questions. A greeting followed by a financial question still reaches the interpreter. Safe validation diagnostics report fixed codes and field names; failed AI interpretation remains labelled offline.
+## 7. AI Safety & Limitations
+
+### Risks and limitations
+
+- **Data lives only in your browser.** No accounts, no login, no sync, no server
+  storage. Clearing the browser clears the data, and there is no export yet.
+- **Not built for sensitive financial data.** It is a hackathon project with
+  unencrypted `localStorage` and no authentication, so it should not hold
+  anything you would mind losing or leaving on a shared device.
+- **Answers describe recorded spending only.** A purchase that was never logged
+  is in no answer, and the app cannot know it is missing.
+- **Receipt extraction can be wrong**, which is why it is always a reviewed
+  draft and never a saved row.
+- **The roast grounding check is heuristic.** It validates structure and rejects
+  unsupported counts and history claims, but syntactic validation cannot prove
+  every personal claim true: it can miss a bad line and over-reject a fine one.
+- **Budget pace figures are conditional, not predictions.** They extrapolate
+  past recorded pace and say so; future spending can differ, and they go stale
+  when a budget changes.
+- **Some question combinations are unsupported.** The query contract is closed,
+  so complex or ambiguous questions get a clarification prompt rather than a
+  confident wrong answer.
+- **Public AI endpoints have best-effort rate limits, not a cost cap.** The
+  per-IP limiter is per serverless instance with no shared memory, so cold
+  starts and changing IPs can slip through. A hard spending ceiling has to be set
+  at the provider, which is account configuration and not code.
+
+### Guardrails implemented
+
+Each of these is in the code, in `api/_shared.js`, `backend/src/routes.js`,
+`backend/src/provider.js` and `src/lib/`:
+
+- The API key is read server-side only, never logged or returned, and never
+  given a `VITE_` prefix.
+- Model output is validated against a strict closed schema that forbids extra
+  properties and requires every field, on the server and again in the browser.
+  An invalid intent returns a diagnostic code, never a guess.
+- All money arithmetic is in integer cents (`src/lib/money.js`), computed
+  locally from the ledger, and answers ship with their evidence transactions.
+- AI failures degrade to a visibly labelled offline path, not a silent one.
+- Foreign-currency receipts clear the amount and say so instead of leaving a
+  foreign figure in an SGD field. Currency is reported, never converted.
+- Uploads are capped by decoded size and restricted to an explicit MIME
+  allowlist (`image/jpeg`, `image/png`, `image/webp`); other request bodies are
+  capped at 8 KiB, and roast inputs at 4 KiB.
+- Per-IP rate limits per route: 20/min for Ask, 6/min for receipts, 10/min for
+  roasts.
+- Roast output is checked for length (120 characters), exactly one complete
+  sentence, and unsupported factual claims.
+- No automatic paid retries: the provider client uses `maxRetries: 0` and
+  bounded timeouts (10s for intents, 8s for roasts).
+- Anything that would change data is parked as a proposal until a person
+  confirms it.
+
+### Testing done
+
+Automated suites, run on this branch on 18 Oct 2026:
+
+- `npm run smoke`: **1137/1137 passed.**
+- `cd backend && npm test`: **120 passed, 0 failed** (28 from
+  `provider.test.mjs`, plus 92 under `node --test` across the assistant,
+  transport, provider-error, roast and roast-diagnostics suites).
+
+Checked live against the production URL on 18 Oct 2026, against the hosted
+serverless routes: "How does this month compare to last month?" returned HTTP
+200 with a structured `compare` query over the month period, "Which weekday do I
+usually spend the most on?" returned HTTP 200 with a structured `highest` query
+grouped by weekday, and `GET /api/health` returned HTTP 200.
+
+**Not yet verified on physical hardware.** Voice entry and receipt capture on a
+real phone are still pending: every "works on phone" claim here means a 390x844
+viewport in desktop Chrome, not an actual device. The steps for that check are
+in [docs/HARDWARE-CHECKLIST.md](docs/HARDWARE-CHECKLIST.md).
+
+---
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/DEVELOPER-NOTES.md](docs/DEVELOPER-NOTES.md) | The previous README: architecture, the local-versus-hosted difference, full feature and caveat detail |
+| [docs/PRD.md](docs/PRD.md) | Product requirements, built / planned / removed breakdown |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Stages, cut line, risk register |
+| [docs/RESUME.md](docs/RESUME.md) | State of the working tree |
+| [docs/CAPABILITY-VERIFICATION.md](docs/CAPABILITY-VERIFICATION.md) | What was verified for each capability, and how |
+| [docs/ASSISTANT-RELIABILITY-REVIEW.md](docs/ASSISTANT-RELIABILITY-REVIEW.md) | Review of Ask failure modes |
+| [docs/ROAST-QUALITY-REVIEW.md](docs/ROAST-QUALITY-REVIEW.md) | Review of roast grounding and tone |
+| [docs/WALLPAPER-REDESIGN.md](docs/WALLPAPER-REDESIGN.md) | Background and scene spec |
+| [docs/HARDWARE-CHECKLIST.md](docs/HARDWARE-CHECKLIST.md) | Physical microphone and camera checks |
+| [docs/PLANNING-BRIEF.md](docs/PLANNING-BRIEF.md) | Self-contained planning brief |
+| [docs/CLAUDE-CODE-PROMPTS.md](docs/CLAUDE-CODE-PROMPTS.md) | Prompt index per stage |
+| [docs/design-canvas/](docs/design-canvas/) | Source artwork for the scenes |
+| [backend/README.md](backend/README.md) | Server, API key handling, verification |
