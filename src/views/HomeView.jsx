@@ -88,11 +88,15 @@ export default function HomeView({
             <p className="hero-left money">
               {st.left >= 0 ? `${money(st.left)} left this month` : `${money(st.over)} over budget`}
             </p>
-            {daysLeft > 0 && (
+            {/* Over budget there is no pace to keep, and the line above has
+                already said so — a second line saying nothing is left reads as
+                a scolding. "days left in October" rather than "the last 14
+                days", which sounds like the fortnight just gone. */}
+            {daysLeft > 0 && st.left > 0 && (
               <p className="hero-pace money">
-                {st.left > 0
-                  ? `About ${money(st.left / daysLeft)} a day for the last ${daysLeft} days`
-                  : `Nothing left for the last ${daysLeft} days`}
+                {daysLeft === 1
+                  ? `About ${money(st.left)} for the last day of ${monthName}`
+                  : `About ${money(st.left / daysLeft)} a day for the ${daysLeft} days left in ${monthName}`}
               </p>
             )}
           </>
