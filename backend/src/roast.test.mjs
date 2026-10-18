@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { handleRoast } from './routes.js';
-import { ROAST_SCHEMA, ROAST_PROMPT } from './provider.js';
+import { ROAST_SCHEMA, ROAST_PROMPT, roastModelInput } from './provider.js';
 import roastFunction from '../../api/assistant/roast.js';
-import { MAX_ROAST_BYTES, validateRoastInput, validateRoastOutput } from '../../src/lib/roastContract.js';
+import { MAX_ROAST_BYTES, ROAST_ANGLES, validateRoastInput, validateRoastOutput } from '../../src/lib/roastContract.js';
 const valid = () => ({ transaction: { description: 'Fictional kopi', amountCents: 200, category: 'Food' }, facts: [{ kind: 'repeat_week', start: '2026-10-12', end: '2026-10-18', count: 2, totalCents: 400 }], budget: { band: 'near', intensity: 1, categoryUsagePct: 76 }, angle: 'corporate_report', preferences: { name: '', singapore: false, smu: false } });
 const response = () => ({ status(code) { this.code = code; }, setHeader() {}, send(body) { this.body = JSON.parse(body); } });
 
@@ -84,8 +84,8 @@ test('roast contract accepts 200 characters, rejects 201 and incomplete sentence
 
 // Prompt checks enforce instruction boundaries, not subjective humour quality.
 test('roast: concise purchase-first prompt includes grounded examples and preference gates', () => {
-  assert.match(ROAST_PROMPT, /Category is bookkeeping, not the subject/);
-  assert.match(ROAST_PROMPT, /never joke about a category mismatch/);
+  assert.match(ROAST_PROMPT, /the description is the only subject/);
+  assert.match(ROAST_PROMPT, /a drink is not a ride/);
   assert.match(ROAST_PROMPT, /No repeat fact means this purchase ONLY/);
   assert.match(ROAST_PROMPT, /SMU references require preferences.smu/);
   assert.match(ROAST_PROMPT, /Singlish require preferences.singapore/);
@@ -114,4 +114,25 @@ test('KFC: route rejects unsupported history, never returns rejected text', asyn
   assert.equal(result.body.diagnostic.validation,'unsupported_history');
   assert.equal(Object.hasOwn(result.body,'text'),false);
   assert.equal(input.transaction.amountCents,2300);
+});
+
+test('roast: the model never sees the saved category', () => {
+  const input = valid();
+  input.transaction = { description: 'Long Island at Smoobar', amountCents: 1590, category: 'Private hire' };
+  const seen = roastModelInput(input);
+  assert.deepEqual(seen.transaction, { description: 'Long Island at Smoobar', amountCents: 1590 });
+  assert.equal(JSON.stringify(seen).includes('Private hire'), false);
+  assert.deepEqual(seen.facts, input.facts);
+  assert.deepEqual(seen.budget, input.budget);
+  assert.equal(seen.angle, input.angle);
+  assert.deepEqual(seen.preferences, input.preferences);
+  assert.equal(input.transaction.category, 'Private hire', 'the validated input itself is not mutated');
+});
+test('roast: prompt explains every angle the client can send and no longer bans one of them', () => {
+  for (const angle of ['dramatic_narration', 'absurd_accounting', 'corporate_report']) {
+    assert.ok(ROAST_ANGLES.includes(angle));
+    assert.match(ROAST_PROMPT, new RegExp(`${angle} =`));
+  }
+  assert.doesNotMatch(ROAST_PROMPT, /corporate jokes/);
+  assert.doesNotMatch(ROAST_PROMPT, /saved category Food/);
 });

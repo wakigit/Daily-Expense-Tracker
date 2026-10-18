@@ -53,7 +53,9 @@ try {
     assert.equal(calls, before + 1);
     assert.equal(lastRequest.max_output_tokens, 100);
     assert.equal(lastRequest.text.format.strict, true);
-    assert.deepEqual(JSON.parse(lastRequest.input[0].content), input);
+    const { category, ...withoutCategory } = input.transaction;
+    assert.equal(category, 'Food');
+    assert.deepEqual(JSON.parse(lastRequest.input[0].content), { ...input, transaction: withoutCategory });
   });
   await test('provider exceptions do not retain raw upstream text', async () => {
     upstreamStatus = 400;
