@@ -2,10 +2,10 @@
 export const MAX_ROAST_BYTES = 4096;
 export const MAX_ROAST_TEXT = 200;
 export const ROAST_ANGLES = ['dramatic_narration', 'absurd_accounting', 'corporate_report', 'singapore', 'smu'];
-export const ROAST_DEFAULTS = { enabled: true, name: '', singapore: false, smu: false };
+export const ROAST_DEFAULTS = { enabled: true, name: '', singapore: true, smu: true };
 export function roastPreferences(value = {}) {
   value = value && typeof value === 'object' ? value : {};
-  return { enabled: value.enabled !== false, name: typeof value.name === 'string' ? value.name.slice(0, 40) : '', singapore: value.singapore === true, smu: value.smu === true };
+  return { enabled: value.enabled !== false, name: typeof value.name === 'string' ? value.name.slice(0, 40) : '', singapore: value.singapore !== false, smu: value.smu !== false };
 }
 const object = v => v && typeof v === 'object' && !Array.isArray(v);
 const exact = (v, keys) => object(v) && Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));

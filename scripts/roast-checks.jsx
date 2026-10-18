@@ -18,6 +18,18 @@ export async function roastChecks(logic) {
   const ctx = { expenses, cats, budgets: { 'custom-food': 100, travel: 100 }, today: '2026-10-18', preferences: ROAST_DEFAULTS };
   const input = buildRoastInput(added, ctx);
   logic('roast preferences: default on, no inferred name or context', roastPreferences(null), ROAST_DEFAULTS);
+  // A fresh visitor gets the local references on; someone who deliberately
+  // switched them off keeps them off. Absent and false must stay distinct, so
+  // nothing silently migrates a saved preference.
+  logic('roast preferences: a fresh visitor gets Singapore and SMU on',
+    [ROAST_DEFAULTS.singapore, ROAST_DEFAULTS.smu, roastPreferences(undefined).singapore, roastPreferences({}).smu],
+    [true, true, true, true]);
+  logic('roast preferences: saved false stays false, never re-enabled',
+    roastPreferences({ enabled: true, name: 'Waki', singapore: false, smu: false }),
+    { enabled: true, name: 'Waki', singapore: false, smu: false });
+  logic('roast preferences: one switch off does not drag the other off',
+    [roastPreferences({ singapore: false }).smu, roastPreferences({ smu: false }).singapore],
+    [true, true]);
   logic('roast facts: exact description/category, distinct duplicate-looking IDs count independently', input.facts[0], { kind: 'repeat_week', start: '2026-10-12', end: '2026-10-18', count: 3, totalCents: 420 });
   logic('roast facts: monthly matching amount excludes similar names and category-only history', input.facts[1], { kind: 'repeat_month', start: '2026-10-01', end: '2026-10-18', count: 4, totalCents: 720 });
   logic('roast facts: category aggregate never leaves builder', input.facts.some(f=>f.kind==='category_month'), false);
