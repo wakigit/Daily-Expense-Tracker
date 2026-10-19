@@ -8,6 +8,34 @@ export const WEEKDAYS = DAY_FILTERS.slice(3);
 export const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && s >= '1900-01-01' && s <= '2200-12-31' && !Number.isNaN(Date.parse(`${s}T00:00:00Z`)) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
 export const weekday = date => WEEKDAYS[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7];
 export const normaliseScopeText = text => String(text ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-SG');
+/**
+ * A spendingScope object carrying no label and no rules means "no scope".
+ *
+ * The schema permits it — `spendingScope` is `anyOf: [null, object]` with all
+ * inner arrays allowed to be empty — so a model can emit a hollow placeholder
+ * instead of null. Without this, that placeholder fails validation, the whole
+ * intent is refused, and an answerable question drops to the offline matcher.
+ *
+ * This is NOT a loosening. An all-empty scope selects and excludes nothing, so
+ * discarding it cannot change which rows any query matches. The narrowness is
+ * the point: a scope with a LABEL but no rules is left alone to be rejected,
+ * because a label is evidence the model meant to scope something and silently
+ * dropping it would turn a concept question into an unscoped total. And a
+ * `propose_scope` whose scope normalises away is still refused downstream,
+ * since a scope proposal with no scope is not a proposal.
+ *
+ * One definition, used by `validateQuery`, which both the server and the
+ * browser call.
+ */
+export function isHollowSpendingScope(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+  const lists = ['includeCategories', 'includeTerms', 'excludeCategories', 'excludeTerms'];
+  const labelBlank = raw.label == null || (typeof raw.label === 'string' && !raw.label.trim());
+  const listsEmpty = lists.every(key => raw[key] == null || (Array.isArray(raw[key]) && raw[key].length === 0));
+  const onlyKnownKeys = Object.keys(raw).every(key => key === 'label' || lists.includes(key));
+  return labelBlank && listsEmpty && onlyKnownKeys;
+}
+
 export function validateSpendingScope(raw, cats = []) {
   const keys = ['label','includeCategories','includeTerms','excludeCategories','excludeTerms'];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(k => !keys.includes(k))) return {ok:false};
@@ -57,7 +85,7 @@ export function validateQuery(raw, cats = []) {
   const { operation, period = 'month', category = null, description = null, amountOperator = null, amount = null, day = 'all', groupBy = null, aggregate = 'total', start = null, end = null, dayCount = null } = raw;
   if (!OPERATIONS.includes(operation) || !QUERY_PERIODS.includes(period) || !DAY_FILTERS.includes(day) || !['total','daily_average','per_transaction','calendar_week','calendar_month'].includes(aggregate)) return fail('Choose a supported operation, period and grouping.', !OPERATIONS.includes(operation)?'operation':!QUERY_PERIODS.includes(period)?'period':!DAY_FILTERS.includes(day)?'day':'aggregate');
   if (category !== null && !cats.some(c => c.id === category)) return fail('Which of your configured categories do you mean?', 'category');
-  const reviewed = raw.spendingScope == null ? {ok:true,scope:null} : validateSpendingScope(raw.spendingScope,cats);
+  const reviewed = raw.spendingScope == null || isHollowSpendingScope(raw.spendingScope) ? {ok:true,scope:null} : validateSpendingScope(raw.spendingScope,cats);
   if (!reviewed.ok) return fail('Review the spending scope: include at least one rule, use valid categories and at most eight terms or categories per list.', 'spendingScope');
   if (reviewed.scope && !['total','count','list','breakdown'].includes(operation)) return fail('Reviewed scopes support totals, counts, lists and complete category/month breakdowns.', 'spendingScope');
   const terms = raw.category_terms ?? raw.categoryTerms ?? [];
