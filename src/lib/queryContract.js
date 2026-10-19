@@ -1,3 +1,4 @@
+import { validateComparison, comparisonSchema } from './comparisonContract.js';
 import { INTENT_LIMITATION } from './intentLimitations.js';
 import { categoryNames } from './categoryVocabulary.js';
 import { normaliseScopeText, matchesAnyCategory, matchesAnyDescription } from './filterMatching.js';
@@ -63,7 +64,7 @@ export function spendingScopeMatches(row, scope) {
 }
 export function matchingRows(expenses, scope) {
   const rows = expenses.filter(row => rowMatches(row, scope));
-  return scope.spendingScope || scope.categories?.length || scope.descriptionTerms?.length ? [...new Map(rows.map(row => [row.id, row])).values()] : rows;
+  return scope.deduplicate || scope.spendingScope || scope.categories?.length || scope.descriptionTerms?.length ? [...new Map(rows.map(row => [row.id, row])).values()] : rows;
 }
 export function rowMatches(row, scope = {}) {
   if ((scope.start && row.date < scope.start) || (scope.end && row.date > scope.end)) return false;
@@ -83,7 +84,7 @@ export function rowMatches(row, scope = {}) {
 export function validateQuery(raw, cats = []) {
   const fail = (question, field='structure', limitation=null) => ({ ok: false, question, field, ...(limitation ? {limitation} : {}) });
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fail('Please specify a supported spending question.');
-  const allowed = ['operation','period','start','end','category','description','amountOperator','amount','day','groupBy','aggregate','category_terms','categoryTerms','dayCount','amountCents','spendingScope','categories','descriptionTerms'];
+  const allowed = ['operation','period','start','end','category','description','amountOperator','amount','day','groupBy','aggregate','category_terms','categoryTerms','dayCount','amountCents','spendingScope','categories','descriptionTerms','comparison'];
   if (Object.keys(raw).some(k => !allowed.includes(k))) return fail('The query contains unsupported fields.');
   const { operation, period = 'month', category = null, description = null, amountOperator = null, amount = null, day = 'all', groupBy = null, aggregate = 'total', start = null, end = null, dayCount = null } = raw;
   if (!OPERATIONS.includes(operation) || !QUERY_PERIODS.includes(period) || !DAY_FILTERS.includes(day) || !['total','daily_average','per_transaction','calendar_week','calendar_month'].includes(aggregate)) return fail('Choose a supported operation, period and grouping.', !OPERATIONS.includes(operation)?'operation':!QUERY_PERIODS.includes(period)?'period':!DAY_FILTERS.includes(day)?'day':'aggregate');
@@ -93,6 +94,12 @@ export function validateQuery(raw, cats = []) {
   if (!Array.isArray(descriptionTerms) || descriptionTerms.length > 8 || descriptionTerms.some(term => typeof term !== 'string' || !term.trim() || term.length > 80)) return fail('Use at most eight non-empty literal description terms, each at most 80 characters.', 'descriptionTerms');
   if (category !== null && categories.length) return fail('Use either a single category or a category list, not both.', 'categories');
   if (description !== null && descriptionTerms.length) return fail('Use either a single description term or a description-term list, not both.', 'descriptionTerms');
+  const compared=validateComparison(raw.comparison,{cats,periods:QUERY_PERIODS,validDate});
+  if(!compared.ok)return fail('A comparison needs exactly two valid periods or two distinct configured categories, without extra side fields.', 'comparison');
+  const comparison=compared.comparison;
+  if(comparison&&operation!=='compare')return fail('Comparison sides require the compare operation.', 'comparison');
+  if(comparison?.kind==='periods'&&(period!=='all'||start!==null||end!==null||dayCount!==null))return fail('Put the two requested periods only in comparison.periods; root period must be all.', 'comparison');
+  if(comparison?.kind==='categories'&&(category!==null||categories.length))return fail('Put the two category sides only in comparison.categories.', 'comparison');
   const hasOr = categories.length > 0 || descriptionTerms.length > 0;
   const reviewed = raw.spendingScope == null || isHollowSpendingScope(raw.spendingScope) ? {ok:true,scope:null} : validateSpendingScope(raw.spendingScope,cats);
   if (!reviewed.ok) return fail('Review the spending scope: include at least one rule, use valid categories and at most eight terms or categories per list.', 'spendingScope');
@@ -100,7 +107,7 @@ export function validateQuery(raw, cats = []) {
   if (!Array.isArray(terms) || terms.some(x => typeof x !== 'string')) return fail('Please name one category.', 'category_terms');
   if (terms.length > 8 || terms.some(term => !term.trim() || term.length > 80)) return fail('Use bounded, non-empty category labels.', 'category_terms');
   if (raw.category_terms && raw.categoryTerms && JSON.stringify(raw.category_terms) !== JSON.stringify(raw.categoryTerms)) return fail('Conflicting category labels.', 'category_terms');
-  if (!reviewed.scope && terms.length === 1 && !category && !categories.length) return fail(`I could not match “${terms[0]}” to a category. Please resubmit using your category label, or explicitly ask for descriptions mentioning that term.`, 'category_terms');
+  if (!reviewed.scope && terms.length === 1 && !category && !categories.length && comparison?.kind!=='categories') return fail(`I could not match “${terms[0]}” to a category. Please resubmit using your category label, or explicitly ask for descriptions mentioning that term.`, 'category_terms');
   if (description !== null && (typeof description !== 'string' || !description.trim() || description.length > 100)) return fail('Supply a purchase-description search term of 1 to 100 characters.', 'description');
   if ((amountOperator === null) !== (amount === null) || (amountOperator !== null && (!['gt','lt','gte','lte'].includes(amountOperator) || typeof amount !== 'string' || !/^\d{1,9}(\.\d{1,2})?$/.test(amount)))) return fail('What dollar threshold should I use, and is it over, under, at least or at most?', 'amount');
   if (period === 'range' ? !validDate(start) || !validDate(end) || start > end : start !== null || end !== null) return fail('Please provide a valid inclusive date range using YYYY-MM-DD.', 'range');
@@ -113,23 +120,25 @@ export function validateQuery(raw, cats = []) {
   if (operation === 'average' && aggregate === 'total') return fail('Should the average be per calendar day or per transaction?', 'aggregate');
   // Only after every structural/type/date/filter check has passed can a known
   // semantic limitation be distinguished from malformed output. No query executes.
+  if (comparison?.kind==='categories' && terms.some(term=>!cats.some(c=>comparison.categories.includes(c.id)&&categoryNames(c).some(name=>normaliseScopeText(name)===normaliseScopeText(term)))))return fail('All category words must match the two configured comparison sides.', 'category_terms',INTENT_LIMITATION.FILTER_COVERAGE);
   if (reviewed.scope && terms.some(term => !cats.some(c => [...reviewed.scope.includeCategories,...reviewed.scope.excludeCategories,...categories,category].includes(c.id) && categoryNames(c).some(name=>normaliseScopeText(name)===normaliseScopeText(term))))) return fail('Named categories must be represented by valid reviewed rules or the separate category filter.', 'category_terms', INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE);
   if (!reviewed.scope && terms.length && categories.length && terms.some(term => !cats.some(c => categories.includes(c.id) && categoryNames(c).some(name => normaliseScopeText(name) === normaliseScopeText(term))))) return fail('Every requested category must be represented by an explicit configured filter.', 'category_terms', INTENT_LIMITATION.FILTER_COVERAGE);
-  if (!reviewed.scope && terms.length > 1 && !categories.length) {
+  if (!reviewed.scope && terms.length > 1 && !categories.length && comparison?.kind!=='categories') {
     return fail('I support one category per query.', 'category_terms', INTENT_LIMITATION.MULTIPLE_CATEGORIES);
   }
-  if (hasOr && ['projection','compare'].includes(operation)) return fail('Explicit unions support recorded totals, counts, averages, lists, breakdowns and winners. Ask a separate scoped total instead of this budget or comparison operation.', 'operation', INTENT_LIMITATION.OR_OPERATION);
+  if (hasOr && operation==='projection') return fail('Explicit unions support recorded totals, counts, averages, lists, breakdowns and winners. Ask a separate scoped total instead of this budget or comparison operation.', 'operation', INTENT_LIMITATION.OR_OPERATION);
   if (reviewed.scope && !['total','count','list','breakdown'].includes(operation)) return fail('Reviewed scopes support totals, counts, lists and complete category/month breakdowns.', 'spendingScope', INTENT_LIMITATION.SCOPE_OPERATION);
-  if (operation === 'compare' && !['month','week'].includes(period)) return fail('Comparisons support this month versus matching dates last month, or this week versus matching days last week.', 'period', INTENT_LIMITATION.COMPARISON_PERIOD);
-  return { ok: true, query: { operation, period, start, end, dayCount, category, description: description?.trim() ?? null, amountOperator, amount, amountCents: amount === null ? null : Math.round(Number(amount) * 100), day, groupBy, aggregate, categoryTerms: [...terms], categories: [...new Set(categories)].sort(), descriptionTerms: [...new Set(descriptionTerms.map(normaliseScopeText))].sort(), spendingScope: reviewed.scope } };
+  if (operation === 'compare' && !comparison && !['month','week'].includes(period)) return fail('Comparisons support this month versus matching dates last month, or this week versus matching days last week.', 'period', INTENT_LIMITATION.COMPARISON_PERIOD);
+  return { ok: true, query: { operation, period, start, end, dayCount, category, description: description?.trim() ?? null, amountOperator, amount, amountCents: amount === null ? null : Math.round(Number(amount) * 100), day, groupBy, aggregate, comparison, categoryTerms: [...terms], categories: [...new Set(categories)].sort(), descriptionTerms: [...new Set(descriptionTerms.map(normaliseScopeText))].sort(), spendingScope: reviewed.scope } };
 }
 export function generalQuerySchema(category) {
   return { type: 'object', additionalProperties: false,
-    required: ['operation','period','start','end','category','description','amountOperator','amount','day','groupBy','aggregate','category_terms','dayCount','spendingScope','categories','descriptionTerms'],
+    required: ['operation','period','start','end','category','description','amountOperator','amount','day','groupBy','aggregate','category_terms','dayCount','spendingScope','categories','descriptionTerms','comparison'],
     properties: {
       operation: { type:'string', enum:OPERATIONS, description:'Use breakdown for complete category or month subtotals, including a total plus a question about which categories purchases fall into. highest selects only winners; total does not group.' }, period:{ type:'string',enum:QUERY_PERIODS },
       dayCount:{type:['integer','null'],minimum:1,maximum:3660,description:'Only for last_days: inclusive number of calendar dates ending today; otherwise null'},
       start:{type:['string','null'],description:'Inclusive YYYY-MM-DD only for range'}, end:{type:['string','null']}, category,
+      comparison:comparisonSchema(category,QUERY_PERIODS),
       categories:{type:'array',maxItems:8,items:{type:'string',...((category.enum??[]).some(id=>id!==null)?{enum:(category.enum??[]).filter(id=>id!==null)}:{})},description:'Explicit requested category union. OR within this list, AND with description/date/day/amount filters. Use category null when nonempty. Never infer broad related-spending rules.'},
       descriptionTerms:{type:'array',maxItems:8,items:{type:'string',minLength:1,maxLength:80},description:'Explicit literal description union. OR within this list, AND with categories/date/day/amount. Use description null when nonempty. Not merchant identity, aliases or regex.'},
       description:{type:['string','null'],description:'Literal description substring, not inferred merchant identity'},
@@ -144,4 +153,32 @@ export function generalQuerySchema(category) {
       }}],description:'Only a proposed related-spending scope, never approved by the model; otherwise null'},
       category_terms:{type:'array',items:{type:'string'},description:'Only category labels explicitly requested in message, never copy the context category catalog. Empty [] if no category requested. Exclude weekdays, merchants, dates and description terms. Never narrow multiple categories.'}
     } };
+}
+
+/** Enforce mutually exclusive representations during decoding, not only afterwards.
+ * Shared validation stays strict. Each variant has the same canonical fields.
+ */
+export function providerQuerySchemas(category){
+  const base=generalQuerySchema(category),comparison=base.properties.comparison.anyOf;
+  const variants=[];
+  for(const kind of ['legacy','periods','categories']){
+    for(const listCategory of (kind==='categories'?[false]:[false,true]))for(const listDescription of [false,true]){
+      const schema=JSON.parse(JSON.stringify(base));
+      const p=schema.properties;
+      if(listCategory)p.category={type:'null'};
+      else p.categories={...p.categories,maxItems:0};
+      if(listDescription)p.description={type:'null'};
+      else p.descriptionTerms={...p.descriptionTerms,maxItems:0};
+      if(kind==='legacy')p.comparison={type:'null'};
+      else{
+        p.operation={type:'string',enum:['compare']};p.spendingScope={type:'null'};
+        p.comparison=comparison.find(x=>x.properties?.kind.enum[0]===kind);
+        if(kind==='periods'){
+          p.period={type:'string',enum:['all']};for(const key of ['start','end','dayCount'])p[key]={type:'null'};
+        }else{p.category={type:'null'};}
+      }
+      variants.push(schema);
+    }
+  }
+  return variants;
 }

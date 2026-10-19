@@ -23,16 +23,17 @@ const snapshot = (row, cats) => ({
   categoryLabel: cats.find((cat) => cat.id === row.category)?.label ?? (row.category == null ? 'Uncategorised' : `Unknown category (${row.category})`),
   amount: row.amount,
   notes: row.notes ?? '',
+  ...(row.currency?{currency:row.currency}:{}),
 });
 
 /** Local-only immutable inputs, with a separate scope for detecting later changes.
  * A top answer displays the winning rows; every candidate can affect its winner.
  */
-export function captureEvidence(rows, { basis = rows, scope = {}, cats = [] } = {}) {
+export function captureEvidence(rows, { basis = rows, scope = {}, cats = [], categoryIds = [] } = {}) {
   return {
     rows: rows.map((row) => snapshot(row, cats)),
     basis: basis.map((row) => snapshot(row, cats)),
-    scopeCategories: scope.spendingScope || scope.categories?.length ? [...new Set([...(scope.categories??[]),...(scope.spendingScope?.includeCategories??[]),...(scope.spendingScope?.excludeCategories??[])])].sort().map(id=>[id,cats.find(c=>c.id===id)?.label??null]) : null,
+    scopeCategories: scope.spendingScope || scope.categories?.length || categoryIds.length ? [...new Set([...categoryIds,...(scope.categories??[]),...(scope.spendingScope?.includeCategories??[]),...(scope.spendingScope?.excludeCategories??[])])].sort().map(id=>[id,cats.find(c=>c.id===id)?.label??null]) : null,
     scope: JSON.parse(JSON.stringify({ ...scope, category: scope.category ?? null })),
   };
 }

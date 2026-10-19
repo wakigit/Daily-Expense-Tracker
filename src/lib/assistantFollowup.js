@@ -55,6 +55,7 @@ export function resolveFollowup(message, context, ctx) {
   if (!context) return reject('There is no financial query to follow up yet. Please ask a complete question with a description or category and a date range.');
   if (context.ambiguous) return reject('The latest provider request failed and its fallback answer has a different possible scope. Please submit the complete question so I do not attach your follow-up to the wrong answer.');
   const changed = contextIsOutdated(context, ctx);
+  if(context.query.operation==='compare')return reject(amendment.kind==='evidence'?'Which comparison side do you mean? Expand either labelled side below the original comparison, or ask a complete transaction question naming its dates and filters.':'A comparison has two scopes. Please submit a complete comparison with both periods/categories and filters instead of changing only one implied side.');
   if (amendment.kind === 'exclude') {
     if (!context.query.spendingScope) return reject('Exclusions require a reviewed related-spending scope. Please ask a complete question describing the inclusion rules first.');
     const query={...context.query,spendingScope:{...context.query.spendingScope,excludeTerms:[...context.query.spendingScope.excludeTerms,amendment.term]}};

@@ -1,3 +1,4 @@
+import { interpretComparisonOffline } from './comparisonOffline.js';
 import { descriptionOrRequest } from './explicitFilterRequest.js';
 import { asksCategoryComparison } from './intentLimitations.js';
 import { categoryNames } from './categoryVocabulary.js';
@@ -5,7 +6,7 @@ import { dialogueIntent, stripGreeting, HELP_TEXT, HELP_QUESTIONS } from './assi
 import { executeQuery } from './queryEngine';
 import { validateQuery, WEEKDAYS } from './queryContract.js';
 /** Conservative grammar. Unconsumed words produce a clarification, never a simpler answer. */
-export function interpretOffline(question, cats=[]) {
+export function interpretOffline(question, cats=[], referenceDate=null) {
   const dialogue=dialogueIntent(question, cats);
   if(dialogue) return dialogue.type==='help'?{kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS}:{kind:'clarify',text:dialogue.question,question:dialogue.question,suggestions:dialogue.options};
   let text=stripGreeting(question).toLowerCase().trim();
@@ -20,6 +21,8 @@ export function interpretOffline(question, cats=[]) {
   if (/\bwhat if\b|\bif i (?:cut|cuts|reduce|reduced|halve|halved|stop|stopped|skip|skipped|drop|dropped|spend less)\b|\b(?:cut|reduce|halve|double)\b.*\b(?:in half|by half|by \d+%?|spending)\b|\bhow much (?:would|could) i save\b/.test(text)) return clarify('I cannot calculate hypothetical changes to your spending. I can tell you what you actually recorded — for example “How much did I spend on Bubble Tea this month?” — and you can compare that yourself.');
   if (/\btop \d+\b|\b(?:\d+|two|three|four|five|ten) (?:biggest|largest|most expensive|top)\b|\b(?:biggest|largest|most expensive) (?:\d+|two|three|four|five|ten)\b/.test(text)) return clarify('I can report the single largest transaction, including ties, but not a ranked list of several. Ask for the largest single expense, or list transactions over an amount.');
   if (/\b(?:save|saving|savings)\b.*\b(?:goal|target|by|in \d+ months?|each month|per month)\b|\bi want to save\b/.test(text)) return clarify('I cannot plan a savings goal yet. I can total what you actually recorded for a category or period.');
+  const compared=interpretComparisonOffline(question,cats,text=>interpretOffline(text,cats),referenceDate);
+  if(compared)return compared;
   if (asksCategoryComparison(question,cats)) return clarify('Comparing named categories is not supported yet. Ask for a combined total or separate category totals, keeping the original dates and filters.');
   const q={categories:[],descriptionTerms:[],operation:'total',period:'month',start:null,end:null,category:null,description:null,amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',category_terms:[]};
   const explicitTerms=descriptionOrRequest(text);
@@ -117,6 +120,6 @@ export function interpretOffline(question, cats=[]) {
   const checked=validateQuery(q,cats);return checked.ok?{query:checked.query}:clarify(checked.question);
 }
 export function answerOfflineQuery(question,ctx) {
-  const parsed=interpretOffline(question,ctx.cats);
+  const parsed=interpretOffline(question,ctx.cats,ctx.today);
   return parsed.query?executeQuery(parsed.query,ctx):parsed;
 }

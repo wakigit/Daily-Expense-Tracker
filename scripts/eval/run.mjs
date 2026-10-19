@@ -270,7 +270,7 @@ async function runTurn({ text, key, session, ledger }) {
 
   /* The app's offline fallback. Never counted as a live pass. */
   if (!res.ok) {
-    const parsed = interpretOffline(text, ledger.cats);
+    const parsed = interpretOffline(text, ledger.cats,ledger.today);
     const reply = parsed.query ? executeQuery(parsed.query, { ...ledger, message: text }) : parsed;
     session.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
     const notice = explainIntentFailure(res.reason);

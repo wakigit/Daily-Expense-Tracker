@@ -60,7 +60,7 @@ export function orFilterChecks(check){
   check('OR largest and latest',[ids(run({operation:'largest'})),ids(run({operation:'latest'}))],[['u3'],['u9']]);
   const dayTypes=run({operation:'day_types',descriptionTerms:[]});
   check('OR day types partition',dayTypes.comparison.sides.map(s=>s.totalCents),[4708,3003]);
-  for(const operation of ['projection','compare']){
+  for(const operation of ['projection']){
     const c=validateIntent({type:'analyze',query:{...orQuery,operation}},{cats,message});check('OR unsupported '+operation,[c.ok,c.intent.type,c.intent.reason],[true,'clarify','or_operation_unsupported']);
   }
   for(const patch of [

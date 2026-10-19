@@ -1,3 +1,4 @@
+import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { descriptionOrRequest, unresolvedCoordination } from './explicitFilterRequest.js';
 import { normaliseScopeText } from './filterMatching.js';
 import { INTENT_LIMITATION, isLimitationReason, limitationClarification, asksMultipartPercentage, mentionedCategories, requestLimitation, needsScopeRules, asksCategoryComparison } from './intentLimitations.js';
@@ -89,7 +90,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
      can choose the RESPONSE TYPE and never the words. Rejecting it outright
      sent five honest replies down the offline fallback instead. */
   if(type==='help') {
-    const reason=requestLimitation(message,cats);
+    const reason=requiresTwoSidedAnswer(message,cats)?(asksCategoryComparison(message,cats)?INTENT_LIMITATION.CATEGORY_COMPARISON:INTENT_LIMITATION.COMPARISON_SHAPE):requestLimitation(message,cats);
     return {ok:true,intent:reason ? limitationClarification(reason,message) : {type:'help'}};
   }
 
@@ -112,6 +113,20 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
       }
       return bad(INTENT_ERR.BAD_FIELD,{field:`query.${checked.field}`});
     }
+    if(checked.query.operation!=='compare'&&requiresTwoSidedAnswer(message,cats))return {ok:true,intent:limitationClarification(asksCategoryComparison(message,cats)?INTENT_LIMITATION.CATEGORY_COMPARISON:INTENT_LIMITATION.COMPARISON_SHAPE,message)};
+    if(checked.query.operation==='compare'&&checked.query.comparison){
+      const query=checked.query, comparison=query.comparison;
+      const selected=comparison.kind==='categories'?comparison.categories:[query.category,...query.categories].filter(Boolean);
+      const comparisonWords=/\b(?:compare|compared|comparing|comparison|versus|vs)\b|\b(?:more|less|higher|lower|greater|smaller)\b/i.test(message);
+      const missing=mentioned.some(c=>!selected.includes(c.id))||selected.some(id=>!mentioned.some(c=>c.id===id));
+      const literal=descriptionOrRequest(message);
+      const terms=[query.description,...query.descriptionTerms].filter(Boolean).map(normaliseScopeText);
+      const tooMany=(message.replace(/[“"][^”"]*[”"]/g,' ').match(/\b(?:vs|versus)\b/gi)??[]).length>1;
+      const reason=tooMany?INTENT_LIMITATION.COMPARISON_SHAPE:asksMultipartPercentage(message)?INTENT_LIMITATION.MULTIPART_PERCENTAGE:needsScopeRules(message)?INTENT_LIMITATION.SCOPE_REQUIRED:
+        !comparisonWords||missing||unresolvedCoordination(message,cats)||query.descriptionTerms.some(t=>!normaliseScopeText(message).includes(t))||literal?.terms.some(t=>!terms.includes(t))?INTENT_LIMITATION.FILTER_COVERAGE:null;
+      if(reason)return {ok:true,intent:limitationClarification(reason,message)};
+      return {ok:true,intent:{type:'analyze',query,say:''}};
+    }
     let reason = null;
     if (asksMultipartPercentage(message)) reason = INTENT_LIMITATION.MULTIPART_PERCENTAGE;
     else if (asksCategoryComparison(message,cats)) reason = INTENT_LIMITATION.CATEGORY_COMPARISON;
@@ -129,7 +144,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
 
   if (type === 'answer') {
     const q = isPlainObject(raw.query) ? raw.query : {};
-    if (q.categories !== undefined || q.descriptionTerms !== undefined) return bad(INTENT_ERR.BAD_FIELD,{field:'query.structure'});
+    if (q.categories !== undefined || q.descriptionTerms !== undefined || q.comparison !== undefined) return bad(INTENT_ERR.BAD_FIELD,{field:'query.structure'});
     const metric = trimmed(q.metric);
     if (!METRICS.includes(metric)) return bad(INTENT_ERR.UNKNOWN_METRIC, { metric: q.metric ?? null });
 
@@ -157,6 +172,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
       : Array.isArray(q.categoryTerms) ? q.categoryTerms
       : [];
     const categoryTerms = rawTerms.map(trimmed).filter(Boolean).slice(0, 8);
+    if(metric!=='compare'&&requiresTwoSidedAnswer(message,cats))return {ok:true,intent:limitationClarification(INTENT_LIMITATION.COMPARISON_SHAPE,message)};
 
     return {
       ok: true,
@@ -248,6 +264,6 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
 
 /** Public diagnostics contain fixed codes/field names, never model values or category labels. */
 export function intentDiagnostic(error) {
-  const fields=['message','query','query.structure','query.category_terms','query.description','query.categories','query.descriptionTerms','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
+  const fields=['message','query','query.structure','query.category_terms','query.description','query.categories','query.descriptionTerms','query.comparison','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
   return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

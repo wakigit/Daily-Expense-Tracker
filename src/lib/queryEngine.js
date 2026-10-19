@@ -1,3 +1,6 @@
+import { requiresTwoSidedAnswer } from './comparisonRequest.js';
+import { resolveQueryRange as queryRange } from './queryDates.js';
+import { executeComparison } from './comparison.js';
 import { validateQuery, validDate, rowMatches, matchingRows, weekday, WEEKDAYS, normaliseScopeText } from './queryContract.js';
 import { categoryNames } from './categoryVocabulary.js';
 import { shiftCalendarDate as addDays, calendarWeekStart as weekStart } from './queryDates.js';
@@ -63,19 +66,8 @@ export function unmatchedSubject(q, expenses = [], cats = []) {
   return parts.length ? {kind:'outside',message:parts.join(' ')} : null;
 }
 
-export function queryRange(q, today, expenses) {
-  const ym = today.slice(0,7);
-  if (q.period === 'range') return { start:q.start, end:q.end < today ? q.end : today };
-  if (q.period === 'last_days') return {start:addDays(today,1-q.dayCount),end:today};
-  if (q.period === 'year') return {start:`${today.slice(0,4)}-01-01`,end:today};
-  if (q.period === 'today') return {start:today,end:today};
-  if (q.period === 'yesterday') return {start:addDays(today,-1),end:addDays(today,-1)};
-  if (q.period === 'week') return {start:weekStart(today),end:today};
-  if (q.period === 'lastweek') return {start:addDays(weekStart(today),-7),end:addDays(weekStart(today),-1)};
-  if (q.period === 'lastmonth') { const end=addDays(`${ym}-01`,-1); return {start:`${end.slice(0,7)}-01`,end}; }
-  if (q.period === 'all') return {start:expenses.filter(e=>e.date<=today).map(e=>e.date).sort()[0] ?? today,end:today};
-  return {start:`${ym}-01`,end:today};
-}
+export { resolveQueryRange as queryRange } from './queryDates.js';
+
 function calendarDays(start,end) {
   if (end < start) return [];
   const n = Math.round((Date.parse(`${end}T00:00:00Z`)-Date.parse(`${start}T00:00:00Z`))/86400000)+1;
@@ -102,7 +94,10 @@ function buildAnswer(raw, {expenses=[],cats=[],today,budgets={},approvedScope=nu
   const checked=validateQuery(input,cats);
   if (!checked.ok) return clarify(checked.question);
   if (!validDate(today)) return clarify('A valid Singapore reference date is required. Please try again.');
-  const q=checked.query, range=queryRange(q,today,expenses);
+  const q=checked.query;
+  if(q.operation!=='compare'&&requiresTwoSidedAnswer(message,cats))return clarify('Your request compares two sides. A single total would omit a requested side. Please resubmit both periods or categories and all shared filters.');
+  if(q.operation==='compare')return executeComparison(q,{expenses,cats,today,message});
+  const range=queryRange(q,today,expenses);
   if (q.spendingScope && JSON.stringify(q.spendingScope)!==JSON.stringify(approvedScope)) return clarify('Review and confirm the proposed spending rules before calculating this scope.');
   if (!validDate(range.start) || !validDate(range.end)) return clarify('The resolved date range is outside supported calendar dates (1900 to 2200).');
   if (range.start > range.end) return clarify('That range is entirely in the future. Choose recorded dates through today.');
@@ -173,19 +168,6 @@ function buildAnswer(raw, {expenses=[],cats=[],today,budgets={},approvedScope=nu
     return {...result,text:rows.length?`${dollars(total)} recorded spending across ${rows.length} ${rows.length===1?'transaction':'transactions'}, broken down by ${q.groupBy}.`:'No matching recorded expenses. Total S$0.00 across 0 transactions.',
       detail:result.detail+' All amounts are SGD. Every non-empty group is included.',
       breakdown:{groupBy:q.groupBy,totalCents:total,count:rows.length,groups}};
-  }
-  if(q.operation==='compare') {
-    const ranges=comparisonRanges(q.period,today);
-    const sides=['current','earlier'].map(key=>{const s={...scope,...ranges[key]};const r=expenses.filter(e=>rowMatches(e,s));return {key,label:key==='current'?`This ${q.period} to date`:`Previous ${q.period}, matching dates`,...ranges[key],totalCents:sumCents(r),evidence:captureEvidence(r,{scope:s,cats})};});
-    const delta=sides[0].totalCents-sides[1].totalCents, direction=delta>0?'more':delta<0?'less':'the same';
-    const percentage=sides[1].totalCents>0?Math.abs(delta)/sides[1].totalCents*100:null;
-    // Both ranges are named in the HEADLINE, not only in the interpretation
-    // line. A comparison that silently resolved to different months than the
-    // ones asked about is the failure this wording exists to make impossible
-    // to miss.
-    return {...result,evidence:undefined,text:`${dollars(sides[0].totalCents)} for ${sides[0].start} to ${sides[0].end} versus ${dollars(sides[1].totalCents)} for ${sides[1].start} to ${sides[1].end}: ${delta===0?'the same total':`${dollars(Math.abs(delta))} ${direction}`}.`,
-      detail:[result.detail,percentage===null?'Percentage unavailable because the earlier total is zero.':`${percentage.toFixed(1)}% ${delta===0?'change':direction}.`,sides.some(s=>!s.evidence.rows.length)&&'One range has no recorded expenses. This is not a reliable spending trend.',ranges.capped&&'The previous month is shorter, so its range ends at month-end and has fewer days.'].filter(Boolean).join(' '),
-      interpretation:{...interpretation,period:`${sides[0].start} to ${sides[0].end} vs ${sides[1].start} to ${sides[1].end}`},comparison:{sides,differenceCents:delta,direction,percentage}};
   }
   if(q.operation==='day_types') {
     const sides=['weekday','weekend'].map(day=>{const r=rows.filter(e=>rowMatches(e,{day})),count=days.filter(date=>rowMatches({date},{day})).length;return {key:day,label:day==='weekday'?'Weekdays (Monday–Friday)':'Weekends (Saturday–Sunday)',...range,totalCents:sumCents(r),calendarDays:count,averageCents:count?sumCents(r)/count:null,evidence:evidence(r,r,{day})};});

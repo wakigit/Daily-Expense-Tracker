@@ -273,7 +273,7 @@ const orCats=[{id:'art-k',label:'Art tools'},{id:'bike-r',label:'Wheel repairs'}
 const orContext={today:'2026-10-19',categories:orCats,expenseCount:10};
 const orQuery={operation:'total',period:'month',category:null,description:null,categories:['art-k','bike-r'],descriptionTerms:['  TEAL CAB ','Quick Van'],category_terms:['Art tools','Wheel repairs']};
 test('OR schema is closed, bounded and includes configured category IDs',()=>{
- const schema=buildSchema(orCats.map(c=>c.id)).properties.query.anyOf[0];
+ const schema=buildSchema(orCats.map(c=>c.id)).properties.query.anyOf.find(s=>s.properties?.categories.maxItems===8&&s.properties?.descriptionTerms.maxItems===8);
  assert.equal(schema.properties.categories.maxItems,8);assert.equal(schema.properties.descriptionTerms.maxItems,8);
  assert.equal(schema.properties.descriptionTerms.items.maxLength,80);
  assert.deepEqual(schema.properties.categories.items.enum,['art-k','bike-r','meal-m']);
@@ -343,4 +343,81 @@ test('OR recognised ambiguity uses the same safe clarification for model help/cl
   assert.ok(reply.body.intent.question.includes(message));assert.equal(reply.body.intent.question.includes('Hall meals'),false);
   assert.deepEqual(validateIntent(reply.body.intent,{cats:orCats,message}).intent,reply.body.intent);
  }
+});
+
+// Step3B2 independent vocabulary; no MAIN fixtures or expectation changes.
+const compareCats=[{id:'ceramic-v',label:'Ceramics'},{id:'rail-v',label:'Rail passes'},{id:'supplies-v',label:'Field supplies'}];
+const compareContext={today:'2026-10-20',categories:compareCats,expenseCount:12};
+const comparePeriod={operation:'compare',period:'all',category:'ceramic-v',comparison:{kind:'periods',categories:[],periods:[{period:'named_month',month:'2026-09'},{period:'named_month',month:'2026-07'}]}};
+const compareCategory={operation:'compare',period:'month',comparison:{kind:'categories',periods:[],categories:['ceramic-v','rail-v']},category_terms:['Ceramics','Rail passes']};
+test('B2 strict schema has one bounded comparison descriptor',()=>{
+ const schema=buildSchema(compareCats.map(c=>c.id)).properties.query.anyOf[0];
+ assert.ok(schema.required.includes('comparison'));
+ const variants=buildSchema(compareCats.map(c=>c.id)).properties.query.anyOf;
+ const comparison=variants.find(q=>q.properties?.comparison.properties?.kind.enum[0]==='periods').properties.comparison;
+ assert.equal(comparison.additionalProperties,false);
+ assert.equal(comparison.properties.periods.maxItems,2);assert.equal(comparison.properties.categories.maxItems,0);
+ assert.equal(comparison.properties.periods.items.additionalProperties,false);
+});
+for(const [message,query]of [
+ ['Compare Ceramics in September with July.',comparePeriod],
+ ['Did I spend more on Ceramics or Rail passes this month?',compareCategory],
+ ['Compare purchases mentioning Falcon Cab or River Bus last month with this month.',{...comparePeriod,category:null,descriptionTerms:['Falcon Cab','River Bus'],comparison:{kind:'periods',categories:[],periods:[{period:'lastmonth'},{period:'month'}]}}],
+])test('B2 handler/client round trip '+message,async()=>{
+ const reply=await handleIntent({message,context:compareContext},{request:async()=>({type:'analyze',query})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'analyze');assert.equal(reply.body.intent.query.operation,'compare');
+ assert.deepEqual(validateIntent(reply.body.intent,{cats:compareCats,message}).intent,reply.body.intent);
+});
+for(const [label,comparison]of [
+ ['third category',{kind:'categories',categories:['ceramic-v','rail-v','supplies-v'],periods:[]}],
+ ['missing category',{kind:'categories',categories:['ceramic-v'],periods:[]}],
+ ['unknown category',{kind:'categories',categories:['ceramic-v','SECRET_CANARY'],periods:[]}],
+ ['duplicate category',{kind:'categories',categories:['ceramic-v','ceramic-v'],periods:[]}],
+ ['third period',{kind:'periods',categories:[],periods:[{period:'month'},{period:'lastmonth'},{period:'year'}]}],
+ ['invalid date',{kind:'periods',categories:[],periods:[{period:'range',start:'2026-02-30',end:'2026-03-01'},{period:'month'}]}],
+ ['invented operation',{kind:'periods',categories:[],periods:[{period:'month',operation:'count'},{period:'lastmonth'}]}],
+ ['invented figure',{kind:'periods',categories:[],periods:[{period:'month',total:100},{period:'lastmonth'}]}],
+ ['invalid named month',{kind:'periods',categories:[],periods:[{period:'named_month',month:'2026-13'},{period:'month'}]}],
+ ['mixed side dimensions',{kind:'periods',categories:['ceramic-v'],periods:[{period:'month'},{period:'lastmonth'}]}],
+])test('B2 malformed comparison remains rejected '+label,async()=>{
+ const reply=await handleIntent({message:'Compare Ceramics in September with July.',context:compareContext},{request:async()=>({type:'analyze',query:{...comparePeriod,comparison}})});
+ assert.equal(reply.status,502);assert.equal(reply.body.detail.field,'query.comparison');assert.equal(JSON.stringify(reply).includes('SECRET_CANARY'),false);
+});
+test('B2 third requested side cannot be silently discarded',async()=>{
+ const message='Compare Ceramics versus Rail passes versus Field supplies this month.';
+ const reply=await handleIntent({message,context:compareContext},{request:async()=>({type:'analyze',query:compareCategory})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');assert.ok(reply.body.intent.question.includes(message));
+});
+test('B2 combined total cannot be reinterpreted as category comparison',async()=>{
+ const message='Total Ceramics and Rail passes spending this month.';
+ const reply=await handleIntent({message,context:compareContext},{request:async()=>({type:'analyze',query:compareCategory})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');
+});
+test('B2 reviewed concept comparison still needs separate approved totals',async()=>{
+ const scope={label:'Related',includeCategories:[],includeTerms:['clay'],excludeCategories:[],excludeTerms:[]};
+ const reply=await handleIntent({message:'Compare art-related spending in September with July.',context:compareContext},{request:async()=>({type:'analyze',query:{...comparePeriod,spendingScope:scope}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');assert.equal(reply.body.intent.reason,'scope_operation_unsupported');
+});
+test('B2 provider failures are not successful comparisons',async()=>{
+ const reply=await handleIntent({message:'Compare Ceramics September with July.',context:compareContext},{request:async()=>{throw Object.assign(Error('PRIVATE_CANARY'),{code:'provider_timeout',status:504});}});
+ assert.deepEqual(reply,{status:504,body:{error:'provider_timeout'}});
+});
+
+test('B2 provider decoding prevents duplicate scalar/list and side/root scopes',()=>{
+ const variants=buildSchema(compareCats.map(c=>c.id)).properties.query.anyOf.filter(q=>q.properties);
+ assert.equal(variants.length,10);
+ for(const {properties:p}of variants){
+  assert.ok(p.category.type==='null'||p.categories.maxItems===0);
+  assert.ok(p.description.type==='null'||p.descriptionTerms.maxItems===0);
+  const kind=p.comparison.properties?.kind.enum[0];
+  if(kind==='periods'){assert.deepEqual(p.period.enum,['all']);assert.equal(p.start.type,'null');assert.equal(p.end.type,'null');assert.equal(p.comparison.properties.periods.minItems,2);}
+  if(kind==='categories'){assert.equal(p.category.type,'null');assert.equal(p.categories.maxItems,0);assert.equal(p.comparison.properties.categories.minItems,2);assert.equal(p.comparison.properties.periods.maxItems,0);}
+ }
+});
+
+test('B2 a one-period interpretation cannot answer a two-range comparative question',async()=>{
+ const message='Was my Ceramics spending higher between January1–15 or February1–15?';
+ const reply=await handleIntent({message,context:compareContext},{request:async()=>({type:'analyze',query:{operation:'total',period:'range',start:'2026-01-01',end:'2026-01-15',category:'ceramic-v'}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');assert.equal(reply.body.intent.query,undefined);assert.ok(reply.body.intent.question.includes(message));
+ assert.deepEqual(validateIntent(reply.body.intent,{cats:compareCats,message}).intent,reply.body.intent);
 });

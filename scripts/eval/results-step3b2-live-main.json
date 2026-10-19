@@ -1,0 +1,233 @@
+{
+  "summary": {
+    "label": "step3b2-live-main",
+    "note": "M67 retains its old unsupported expectation. A correct new comparison will fail that unchanged expectation; verify figures independently. Only these three MAIN recordings refreshed.",
+    "set": "MAIN",
+    "mode": "live",
+    "startedAt": "2026-10-19T16:13:30.022Z",
+    "finishedAt": "2026-10-19T16:13:40.367Z",
+    "referenceDate": "2026-10-19",
+    "endpoint": "http://127.0.0.1:8844",
+    "questions": 3,
+    "questionsPassed": 0,
+    "turns": 3,
+    "turnsPassed": 0,
+    "paidCalls": 3,
+    "httpCalls": 3,
+    "offlineTurns": 3,
+    "byCapability": {
+      "complex-two-category": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M66"
+        ]
+      },
+      "complex-arbitrary-periods": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M67"
+        ]
+      },
+      "complex-compare-category": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M76"
+        ]
+      }
+    },
+    "byRootCause": {
+      "contract": 3
+    }
+  },
+  "results": [
+    {
+      "id": "M66",
+      "capability": "complex-two-category",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M66",
+          "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "answer",
+          "httpStatus": 502,
+          "intentType": null,
+          "semanticReason": {
+            "code": "intent_bad_field",
+            "field": "query.comparison"
+          },
+          "source": "offline",
+          "paid": true,
+          "pass": false,
+          "rootCause": "contract",
+          "issues": [
+            "fell back to offline (invalid_intent)"
+          ],
+          "note": "Two categories in one question. A breakdown containing both is honest; narrowing to one is not.",
+          "actualText": "Food & Drinks: S$117.90 across 14 transactions (2026-10-01 to 2026-10-19) versus Bubble Tea: S$39.50 across 6 transactions (2026-10-01 to 2026-10-19). Food & Drinks has the larger recorded total; exact difference S$78.40.",
+          "actualQuery": {
+            "operation": "compare",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "categories",
+              "periods": [],
+              "categories": [
+                "food",
+                "bbt"
+              ]
+            },
+            "categoryTerms": [
+              "Food & Drinks",
+              "Bubble Tea"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "M67",
+      "capability": "complex-arbitrary-periods",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M67",
+          "text": "Compare my September spending with my July spending.",
+          "wantOutcome": [
+            "unsupported"
+          ],
+          "gotOutcome": "answer",
+          "httpStatus": 502,
+          "intentType": null,
+          "semanticReason": {
+            "code": "intent_bad_field",
+            "field": "query.comparison"
+          },
+          "source": "offline",
+          "paid": true,
+          "pass": false,
+          "rootCause": "contract",
+          "issues": [
+            "fell back to offline (invalid_intent)"
+          ],
+          "note": "Comparison supports only this month vs last month and this week vs last week.",
+          "actualText": "September 2026: S$148.40 across 13 transactions (2026-09-01 to 2026-09-30) versus July 2026: S$1052.39 across 7 transactions (2026-07-01 to 2026-07-31). July 2026 has the larger recorded total; exact difference S$903.99.",
+          "actualQuery": {
+            "operation": "compare",
+            "period": "all",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "periods",
+              "periods": [
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-09"
+                },
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-07"
+                }
+              ],
+              "categories": []
+            },
+            "categoryTerms": [],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "M76",
+      "capability": "complex-compare-category",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M76",
+          "text": "How much did I spend on Food & Drinks this month compared with last month?",
+          "wantOutcome": [
+            "answer"
+          ],
+          "gotOutcome": "answer",
+          "httpStatus": 502,
+          "intentType": null,
+          "semanticReason": {
+            "code": "intent_bad_field",
+            "field": "query.comparison"
+          },
+          "source": "offline",
+          "paid": true,
+          "pass": false,
+          "rootCause": "contract",
+          "issues": [
+            "fell back to offline (invalid_intent)"
+          ],
+          "note": "Supported: this month to date against the matching elapsed dates of last month.",
+          "actualText": "This month to date: S$117.90 across 14 transactions (2026-10-01 to 2026-10-19) versus Previous month, matching dates: S$31.90 across 3 transactions (2026-09-01 to 2026-09-19). This month to date has the larger recorded total; exact difference S$86.00.",
+          "actualQuery": {
+            "operation": "compare",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": "food",
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": null,
+            "categoryTerms": [
+              "Food & Drinks"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          }
+        }
+      ]
+    }
+  ]
+}

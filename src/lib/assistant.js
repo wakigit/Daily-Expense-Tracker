@@ -1,3 +1,4 @@
+import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { HELP_TEXT, HELP_QUESTIONS } from './assistantDialogue.js';
 import { executeQuery } from './queryEngine';
 /**
@@ -72,13 +73,14 @@ function categoryTrouble({ category, categoryTerms = [] }, cats) {
   return null;
 }
 
-function planAnswer(intent, { expenses, cats, today }) {
+function planAnswer(intent, { expenses, cats, today, message='' }) {
   const { metric, period: periodName, category } = intent.query;
 
+  if(metric!=='compare'&&requiresTwoSidedAnswer(message,cats))return {kind:'clarify',question:'Your question compares two sides. Please specify both periods or categories and all shared filters; one total would omit a side.'};
   const trouble = categoryTrouble(intent.query, cats);
   if (trouble) return trouble;
 
-  if (metric === 'compare') return comparisonAnswer(intent.query, { expenses, cats, today });
+  if (metric === 'compare') return comparisonAnswer(intent.query, { expenses, cats, today, message });
 
   const win = St.period(periodName, today);
 

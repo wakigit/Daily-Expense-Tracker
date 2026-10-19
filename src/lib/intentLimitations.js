@@ -2,6 +2,7 @@ import { categoryRequestText, unresolvedCoordination } from './explicitFilterReq
 import { categoryNames } from './categoryVocabulary.js';
 /** Fixed semantic limitations, never exception-text matching or model-authored answers. */
 export const INTENT_LIMITATION = Object.freeze({
+  COMPARISON_SHAPE: 'comparison_shape_unsupported',
   FILTER_COVERAGE: 'explicit_filter_coverage_incomplete',
   OR_OPERATION: 'or_operation_unsupported',
   MULTIPLE_CATEGORIES: 'multiple_categories',
@@ -16,14 +17,15 @@ export const INTENT_LIMITATION = Object.freeze({
 export const isLimitationReason = reason => Object.values(INTENT_LIMITATION).includes(reason);
 export function limitationClarification(reason, message = '') {
   const explanations = {
+    [INTENT_LIMITATION.COMPARISON_SHAPE]: 'I can compare exactly two periods with the same spending filters, or two configured categories over one shared period. Which two sides should I use? Different filters and periods on each side, or reviewed related concepts, need separate totals. I will not discard a third side.',
     [INTENT_LIMITATION.FILTER_COVERAGE]: 'I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection.',
     [INTENT_LIMITATION.OR_OPERATION]: 'A combined filter does not define a single category budget or a category/period comparison. I can calculate its recorded total, count, average, transaction list or complete breakdown. Which supported result would you like?',
     [INTENT_LIMITATION.MULTIPLE_CATEGORIES]: 'Please specify all configured categories for a combined total, or ask for explicit literal description terms. If a term could mean either a category or a description, which do you intend? I will not calculate a narrower selection.',
-    [INTENT_LIMITATION.CATEGORY_COMPARISON]: 'I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category.',
+    [INTENT_LIMITATION.CATEGORY_COMPARISON]: 'A category comparison needs exactly two configured categories over one shared period. Which two categories and period should I use? Keep any description, day and amount filters in the complete question.',
     [INTENT_LIMITATION.SCOPE_REQUIRED]: 'Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval.',
     [INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE]: 'The proposed scope rules do not cover every named category. Which single category should I use, or should each requested category be explicitly included in rules for your review? I will not calculate a narrower selection.',
     [INTENT_LIMITATION.SCOPE_OPERATION]: 'Reviewed related-spending rules support totals, transaction counts, lists and complete category or month breakdowns. They do not support that requested comparison, average or ranking. Which supported result do you want?',
-    [INTENT_LIMITATION.COMPARISON_PERIOD]: 'I cannot compare arbitrary periods in one query. Comparisons support this month against matching dates last month, or this week against matching days last week. Would you like separate totals for your requested periods instead?',
+    [INTENT_LIMITATION.COMPARISON_PERIOD]: 'An explicit period comparison needs two complete periods with the same spending filters. Please give both named months and years or inclusive date ranges. Ordinary current-versus-previous month/week comparisons use matching elapsed dates.',
     [INTENT_LIMITATION.MULTIPART_PERCENTAGE]: 'I cannot combine a spending total with a separate category-percentage answer. Would you like the recorded total or a complete category breakdown? Keep the original subject, dates and other filters in your next question.',
     [INTENT_LIMITATION.FINANCIAL_ASSESSMENT]: 'What would you like to assess: recorded spending against a category budget, a change from a previous period, or a particular category? Please name the category and period you want. An expense ledger alone cannot establish your overall financial health.',
   };
@@ -65,11 +67,12 @@ export function mentionedCategories(message, cats = []) {
 }
 export function asksCategoryComparison(message, cats = []) {
   // Amount thresholds are restrictions, not category comparisons.
-  const text=unquotedText(message).replace(/\b(?:more|less) than\s*(?:s\$|\$|sgd\s*)?\d+(?:\.\d+)?/gi,' ');
-  return mentionedCategories(text,cats).length > 1 && /\b(?:compare|compared|comparing|comparison|versus|vs)\b|\b(?:more|less)\b[^?.]*\b(?:or|and|than)\b|\b(?:or|and)\b[^?.]*\b(?:more|less)\b/i.test(text);
+  const text=unquotedText(message).replace(/\b(?:more|less|higher|lower|greater|smaller) than\s*(?:s\$|\$|sgd\s*)?\d+(?:\.\d+)?/gi,' ');
+  return mentionedCategories(text,cats).length > 1 && /\b(?:compare|compared|comparing|comparison|versus|vs)\b|\b(?:more|less|higher|lower|greater|smaller)\b[^?.]*\b(?:or|and|than)\b|\b(?:or|and)\b[^?.]*\b(?:more|less|higher|lower|greater|smaller)\b/i.test(text);
 }
 export function requestLimitation(message, cats = []) {
   if (asksMultipartPercentage(message)) return INTENT_LIMITATION.MULTIPART_PERCENTAGE;
+  if (/\b(?:compare|compared|comparing|comparison|versus|vs)\b/i.test(message)&&(mentionedCategories(message,cats).length>2||(String(message).match(/\b(?:versus|vs)\b/gi)??[]).length>1||needsScopeRules(message)))return INTENT_LIMITATION.COMPARISON_SHAPE;
   if (asksCategoryComparison(message,cats)) return INTENT_LIMITATION.CATEGORY_COMPARISON;
   if (unresolvedCoordination(message,cats)) return INTENT_LIMITATION.FILTER_COVERAGE;
   if (mentionedCategories(message,cats).length > 1) return INTENT_LIMITATION.MULTIPLE_CATEGORIES;

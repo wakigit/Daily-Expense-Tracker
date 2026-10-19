@@ -1547,40 +1547,22 @@
     }
   },
   "M66": {
-    "status": 200,
+    "status": 502,
     "body": {
-      "intent": {
-        "type": "clarify",
-        "reason": "category_comparison_unsupported",
-        "question": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
-        "options": [],
-        "say": ""
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.comparison"
       }
     }
   },
   "M67": {
-    "status": 200,
+    "status": 502,
     "body": {
-      "intent": {
-        "type": "analyze",
-        "query": {
-          "operation": "compare",
-          "period": "month",
-          "start": null,
-          "end": null,
-          "dayCount": null,
-          "category": null,
-          "description": null,
-          "amountOperator": null,
-          "amount": null,
-          "amountCents": null,
-          "day": "all",
-          "groupBy": null,
-          "aggregate": "total",
-          "categoryTerms": [],
-          "spendingScope": null
-        },
-        "say": "Comparing spending between September and July."
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.comparison"
       }
     }
   },
@@ -1747,30 +1729,12 @@
     }
   },
   "M76": {
-    "status": 200,
+    "status": 502,
     "body": {
-      "intent": {
-        "type": "analyze",
-        "query": {
-          "operation": "compare",
-          "period": "month",
-          "start": null,
-          "end": null,
-          "dayCount": null,
-          "category": "food",
-          "description": null,
-          "amountOperator": null,
-          "amount": null,
-          "amountCents": null,
-          "day": "all",
-          "groupBy": null,
-          "aggregate": "total",
-          "categoryTerms": [
-            "food"
-          ],
-          "spendingScope": null
-        },
-        "say": ""
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.comparison"
       }
     }
   }

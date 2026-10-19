@@ -1,0 +1,885 @@
+{
+  "baseline": "abf5209a24b9633bb1227db260dbb1794b5161d3",
+  "startedAt": "2026-10-19T15:59:35Z",
+  "verifiedAt": "2026-10-19T16:25:25.095Z",
+  "paidCalls": 10,
+  "automaticRetries": 0,
+  "recordingKeysChanged": [
+    "M66",
+    "M67",
+    "M76"
+  ],
+  "unrelatedRecordingKeysPreserved": 71,
+  "finalSourceHashes": {
+    "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+    "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+    "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+    "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+    "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+    "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+    "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+    "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+    "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+    "src/lib/queryEngine.js": "1e41df9e47906df0e02c6a10988450bb66dce0145045a4e423c7a19aba5b630a",
+    "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+    "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+    "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+    "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee",
+    "src/lib/assistant.js": "f3f70de370ea2cbe76da236034b87b8d5165c78a631e0acd2490ddf217a73cec"
+  },
+  "verdict": "BLOCKED: no final live numeric category or OR-period comparison pass; original MAIN contract failures retained. One live request silently narrowed before the new guard; final saved-intent revalidation now clarifies.",
+  "liveCoverage": "First five calls precede the mutually-exclusive provider schema repair. Calls 6\u20137 precede the one-sided-answer guard. Calls 8\u201310 use the guarded final comparison path. A final legacy-answer safety guard was added after the ten calls; final handler/client verification is non-paid saved-intent revalidation, not fresh provider coverage.",
+  "cases": [
+    {
+      "question": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "5313ac737ad769b9ff9767fb80451f2cc3d401aabd3fd205708f854422d7d71c",
+        "src/lib/queryContract.js": "3b602c3747ca07caee9a682de4241c5ce940ac32f4a50693ce981151f204c687",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "b2e7e9b02d0139456dc7d73d4308840336729bd8d5fc33e23a9f4656deac1bee",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 502,
+      "liveValidatedIntent": null,
+      "safeError": {
+        "error": "invalid_intent",
+        "detail": {
+          "code": "intent_bad_field",
+          "field": "query.comparison"
+        }
+      },
+      "source": "offline fallback after recorded HTTP error",
+      "finalHttpStatus": 502,
+      "finalIntentType": null,
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "Food & Drinks: S$117.90 across 14 transactions (2026-10-01 to 2026-10-19) versus Bubble Tea: S$39.50 across 6 transactions (2026-10-01 to 2026-10-19). Food & Drinks has the larger recorded total; exact difference S$78.40.",
+      "sides": [
+        {
+          "label": "Food & Drinks",
+          "start": "2026-10-01",
+          "end": "2026-10-19",
+          "totalCents": 11790,
+          "count": 14,
+          "filters": "category Food & Drinks",
+          "ids": [
+            "f073",
+            "f075",
+            "f076",
+            "f079",
+            "f081",
+            "f084",
+            "f085",
+            "f087",
+            "f091",
+            "f092",
+            "f094",
+            "f095",
+            "f098",
+            "f100"
+          ]
+        },
+        {
+          "label": "Bubble Tea",
+          "start": "2026-10-01",
+          "end": "2026-10-19",
+          "totalCents": 3950,
+          "count": 6,
+          "filters": "category Bubble Tea",
+          "ids": [
+            "f074",
+            "f080",
+            "f086",
+            "f090",
+            "f096",
+            "f099"
+          ]
+        }
+      ],
+      "percentage": null,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. No percentage baseline is assigned to this symmetric or overlapping comparison.",
+      "finalRoundTrip": "original HTTP error retained",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Compare my September spending with my July spending.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "5313ac737ad769b9ff9767fb80451f2cc3d401aabd3fd205708f854422d7d71c",
+        "src/lib/queryContract.js": "3b602c3747ca07caee9a682de4241c5ce940ac32f4a50693ce981151f204c687",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "b2e7e9b02d0139456dc7d73d4308840336729bd8d5fc33e23a9f4656deac1bee",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 502,
+      "liveValidatedIntent": null,
+      "safeError": {
+        "error": "invalid_intent",
+        "detail": {
+          "code": "intent_bad_field",
+          "field": "query.comparison"
+        }
+      },
+      "source": "offline fallback after recorded HTTP error",
+      "finalHttpStatus": 502,
+      "finalIntentType": null,
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "September 2026: S$148.40 across 13 transactions (2026-09-01 to 2026-09-30) versus July 2026: S$1052.39 across 7 transactions (2026-07-01 to 2026-07-31). July 2026 has the larger recorded total; exact difference S$903.99.",
+      "sides": [
+        {
+          "label": "September 2026",
+          "start": "2026-09-01",
+          "end": "2026-09-30",
+          "totalCents": 14840,
+          "count": 13,
+          "filters": "All categories and descriptions; all days; no amount restriction",
+          "ids": [
+            "f060",
+            "f061",
+            "f062",
+            "f063",
+            "f064",
+            "f065",
+            "f066",
+            "f067",
+            "f068",
+            "f069",
+            "f070",
+            "f071",
+            "f072"
+          ]
+        },
+        {
+          "label": "July 2026",
+          "start": "2026-07-01",
+          "end": "2026-07-31",
+          "totalCents": 105239,
+          "count": 7,
+          "filters": "All categories and descriptions; all days; no amount restriction",
+          "ids": [
+            "f044",
+            "f045",
+            "f046",
+            "f047",
+            "f048",
+            "f049",
+            "f050"
+          ]
+        }
+      ],
+      "percentage": 85.89876376628436,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. Unequal intervals: 30 versus 31 calendar days, different numbers of days. The shorter interval has fewer days. Totals are not duration-adjusted. 85.9% decrease from baseline July 2026 (2026-07-01 to 2026-07-31) to September 2026 (2026-09-01 to 2026-09-30).",
+      "finalRoundTrip": "original HTTP error retained",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "How much did I spend on Food & Drinks this month compared with last month?",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "5313ac737ad769b9ff9767fb80451f2cc3d401aabd3fd205708f854422d7d71c",
+        "src/lib/queryContract.js": "3b602c3747ca07caee9a682de4241c5ce940ac32f4a50693ce981151f204c687",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "b2e7e9b02d0139456dc7d73d4308840336729bd8d5fc33e23a9f4656deac1bee",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 502,
+      "liveValidatedIntent": null,
+      "safeError": {
+        "error": "invalid_intent",
+        "detail": {
+          "code": "intent_bad_field",
+          "field": "query.comparison"
+        }
+      },
+      "source": "offline fallback after recorded HTTP error",
+      "finalHttpStatus": 502,
+      "finalIntentType": null,
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "This month to date: S$117.90 across 14 transactions (2026-10-01 to 2026-10-19) versus Previous month, matching dates: S$31.90 across 3 transactions (2026-09-01 to 2026-09-19). This month to date has the larger recorded total; exact difference S$86.00.",
+      "sides": [
+        {
+          "label": "This month to date",
+          "start": "2026-10-01",
+          "end": "2026-10-19",
+          "totalCents": 11790,
+          "count": 14,
+          "filters": "category Food & Drinks",
+          "ids": [
+            "f073",
+            "f075",
+            "f076",
+            "f079",
+            "f081",
+            "f084",
+            "f085",
+            "f087",
+            "f091",
+            "f092",
+            "f094",
+            "f095",
+            "f098",
+            "f100"
+          ]
+        },
+        {
+          "label": "Previous month, matching dates",
+          "start": "2026-09-01",
+          "end": "2026-09-19",
+          "totalCents": 3190,
+          "count": 3,
+          "filters": "category Food & Drinks",
+          "ids": [
+            "f061",
+            "f064",
+            "f065"
+          ]
+        }
+      ],
+      "percentage": 269.5924764890282,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. 269.6% increase from baseline Previous month, matching dates (2026-09-01 to 2026-09-19) to This month to date (2026-10-01 to 2026-10-19).",
+      "finalRoundTrip": "original HTTP error retained",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Compare my Art lab spending in September with July.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "5313ac737ad769b9ff9767fb80451f2cc3d401aabd3fd205708f854422d7d71c",
+        "src/lib/queryContract.js": "3b602c3747ca07caee9a682de4241c5ce940ac32f4a50693ce981151f204c687",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "b2e7e9b02d0139456dc7d73d4308840336729bd8d5fc33e23a9f4656deac1bee",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 502,
+      "liveValidatedIntent": null,
+      "safeError": {
+        "error": "invalid_intent",
+        "detail": {
+          "code": "intent_bad_field",
+          "field": "query.categories"
+        }
+      },
+      "source": "offline fallback after recorded HTTP error",
+      "finalHttpStatus": 502,
+      "finalIntentType": null,
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "September 2026: S$40.00 across 2 transactions (2026-09-01 to 2026-09-30) versus July 2026: S$20.00 across 2 transactions (2026-07-01 to 2026-07-31). September 2026 has the larger recorded total; exact difference S$20.00.",
+      "sides": [
+        {
+          "label": "September 2026",
+          "start": "2026-09-01",
+          "end": "2026-09-30",
+          "totalCents": 4000,
+          "count": 2,
+          "filters": "category Art lab",
+          "ids": [
+            "v3",
+            "v4"
+          ]
+        },
+        {
+          "label": "July 2026",
+          "start": "2026-07-01",
+          "end": "2026-07-31",
+          "totalCents": 2000,
+          "count": 2,
+          "filters": "category Art lab",
+          "ids": [
+            "v1",
+            "v2"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. Unequal intervals: 30 versus 31 calendar days, different numbers of days. The shorter interval has fewer days. Totals are not duration-adjusted. 100.0% increase from baseline July 2026 (2026-07-01 to 2026-07-31) to September 2026 (2026-09-01 to 2026-09-30).",
+      "finalRoundTrip": "original HTTP error retained",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Did I spend more on Art lab or Cycle club this month?",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "5313ac737ad769b9ff9767fb80451f2cc3d401aabd3fd205708f854422d7d71c",
+        "src/lib/queryContract.js": "3b602c3747ca07caee9a682de4241c5ce940ac32f4a50693ce981151f204c687",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "b2e7e9b02d0139456dc7d73d4308840336729bd8d5fc33e23a9f4656deac1bee",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 502,
+      "liveValidatedIntent": null,
+      "safeError": {
+        "error": "invalid_intent",
+        "detail": {
+          "code": "intent_bad_field",
+          "field": "query.comparison"
+        }
+      },
+      "source": "offline fallback after recorded HTTP error",
+      "finalHttpStatus": 502,
+      "finalIntentType": null,
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "Art lab: S$14.44 across 2 transactions (2026-10-01 to 2026-10-20) versus Cycle club: S$22.22 across 1 transactions (2026-10-01 to 2026-10-20). Cycle club has the larger recorded total; exact difference S$7.78.",
+      "sides": [
+        {
+          "label": "Art lab",
+          "start": "2026-10-01",
+          "end": "2026-10-20",
+          "totalCents": 1444,
+          "count": 2,
+          "filters": "category Art lab",
+          "ids": [
+            "v6",
+            "v8"
+          ]
+        },
+        {
+          "label": "Cycle club",
+          "start": "2026-10-01",
+          "end": "2026-10-20",
+          "totalCents": 2222,
+          "count": 1,
+          "filters": "category Cycle club",
+          "ids": [
+            "v7"
+          ]
+        }
+      ],
+      "percentage": null,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. No percentage baseline is assigned to this symmetric or overlapping comparison.",
+      "finalRoundTrip": "original HTTP error retained",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Compare purchases mentioning MetroFox or CloudCab last month with this month.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+        "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 200,
+      "liveValidatedIntent": {
+        "type": "clarify",
+        "reason": "explicit_filter_coverage_incomplete",
+        "question": "I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection. Your original request: \u201cCompare purchases mentioning MetroFox or CloudCab last month with this month.\u201d",
+        "options": [],
+        "say": ""
+      },
+      "safeError": null,
+      "source": "recorded live interpretation through final handler/client",
+      "finalHttpStatus": 200,
+      "finalIntentType": "clarify",
+      "finalSemanticReason": "explicit_filter_coverage_incomplete",
+      "finalOutcome": "clarify",
+      "finalQuestion": "I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection. Your original request: \u201cCompare purchases mentioning MetroFox or CloudCab last month with this month.\u201d",
+      "finalText": null,
+      "sides": null,
+      "percentage": null,
+      "detail": null,
+      "finalRoundTrip": "pass",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Was my Art lab total higher between January1\u201315 or February1\u201315?",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+        "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+        "src/lib/intent.js": "fba09d8cffb684662061ae695ac7a4d22351c87680f2b60fe8a1a43cb3a09e65",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+        "src/lib/comparisonRequest.js": "684c6e3c65d0ddda7be2cf92e799f9dc7d14d9b8e7ec7512077dcef52921616e",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "85887da31b2b2cea9477475c7424ce9e2972b2dd377f0e72c9e08c8feb05aa9a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 200,
+      "liveValidatedIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "range",
+          "start": "2026-01-01",
+          "end": "2026-01-15",
+          "dayCount": null,
+          "category": "art-v",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Art lab"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "safeError": null,
+      "source": "recorded live interpretation through final handler/client",
+      "finalHttpStatus": 200,
+      "finalIntentType": "clarify",
+      "finalSemanticReason": "comparison_shape_unsupported",
+      "finalOutcome": "clarify",
+      "finalQuestion": "I can compare exactly two periods with the same spending filters, or two configured categories over one shared period. Which two sides should I use? Different filters and periods on each side, or reviewed related concepts, need separate totals. I will not discard a third side. Your original request: \u201cWas my Art lab total higher between January1\u201315 or February1\u201315?\u201d",
+      "finalText": null,
+      "sides": null,
+      "percentage": null,
+      "detail": null,
+      "finalRoundTrip": "pass",
+      "livePass": "not a live numeric comparison pass"
+    },
+    {
+      "question": "Compare Art lab spending in June with July.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+        "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+        "src/lib/intent.js": "a87785e3085e57d0c307ec78fb0d11d1a74931a7c434b615d13e5ec6cb799d92",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "1e41df9e47906df0e02c6a10988450bb66dce0145045a4e423c7a19aba5b630a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 200,
+      "liveValidatedIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": {
+            "kind": "periods",
+            "periods": [
+              {
+                "period": "named_month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "month": "2026-06"
+              },
+              {
+                "period": "named_month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "month": "2026-07"
+              }
+            ],
+            "categories": []
+          },
+          "categoryTerms": [
+            "Art lab"
+          ],
+          "categories": [
+            "art-v"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "safeError": null,
+      "source": "recorded live interpretation through final handler/client",
+      "finalHttpStatus": 200,
+      "finalIntentType": "analyze",
+      "finalSemanticReason": null,
+      "finalOutcome": "answer",
+      "finalQuestion": null,
+      "finalText": "June 2026: S$0.00 across 0 transactions (2026-06-01 to 2026-06-30) versus July 2026: S$20.00 across 2 transactions (2026-07-01 to 2026-07-31). July 2026 has the larger recorded total; exact difference S$20.00.",
+      "sides": [
+        {
+          "label": "June 2026",
+          "start": "2026-06-01",
+          "end": "2026-06-30",
+          "totalCents": 0,
+          "count": 0,
+          "filters": "categories (any of: Art lab)",
+          "ids": []
+        },
+        {
+          "label": "July 2026",
+          "start": "2026-07-01",
+          "end": "2026-07-31",
+          "totalCents": 2000,
+          "count": 2,
+          "filters": "categories (any of: Art lab)",
+          "ids": [
+            "v1",
+            "v2"
+          ]
+        }
+      ],
+      "percentage": null,
+      "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. At least one side has no matching recorded expenses; this is not proof of no real-world spending and not a reliable spending trend. Unequal intervals: 30 versus 31 calendar days, different numbers of days. The shorter interval has fewer days. Totals are not duration-adjusted. Percentage unavailable: percentage change is undefined because baseline June 2026 (2026-06-01 to 2026-06-30) has a zero recorded total.",
+      "finalRoundTrip": "pass",
+      "livePass": "numeric comparison pass"
+    },
+    {
+      "question": "Compare Art lab versus Cycle club versus Pantry this month.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+        "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+        "src/lib/intent.js": "a87785e3085e57d0c307ec78fb0d11d1a74931a7c434b615d13e5ec6cb799d92",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "1e41df9e47906df0e02c6a10988450bb66dce0145045a4e423c7a19aba5b630a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 200,
+      "liveValidatedIntent": {
+        "type": "clarify",
+        "reason": "category_comparison_unsupported",
+        "question": "A category comparison needs exactly two configured categories over one shared period. Which two categories and period should I use? Keep any description, day and amount filters in the complete question. Your original request: \u201cCompare Art lab versus Cycle club versus Pantry this month.\u201d",
+        "options": [],
+        "say": ""
+      },
+      "safeError": null,
+      "source": "recorded live interpretation through final handler/client",
+      "finalHttpStatus": 200,
+      "finalIntentType": "clarify",
+      "finalSemanticReason": "category_comparison_unsupported",
+      "finalOutcome": "clarify",
+      "finalQuestion": "A category comparison needs exactly two configured categories over one shared period. Which two categories and period should I use? Keep any description, day and amount filters in the complete question. Your original request: \u201cCompare Art lab versus Cycle club versus Pantry this month.\u201d",
+      "finalText": null,
+      "sides": null,
+      "percentage": null,
+      "detail": null,
+      "finalRoundTrip": "pass",
+      "livePass": "guarded three-side clarification"
+    },
+    {
+      "question": "Compare Cycle club versus Art lab spending this month.",
+      "sourceHashes": {
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "backend/src/provider.js": "1c391c5e0bfc28fac319c209365b44d2e2d5e173c96e258026f6ae3cf1c66c01",
+        "src/lib/queryContract.js": "17b4bfd0779f86d6055dac1a5cdca3444da4f96df2135c5c2327a18c35bc0130",
+        "src/lib/intent.js": "a87785e3085e57d0c307ec78fb0d11d1a74931a7c434b615d13e5ec6cb799d92",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonContract.js": "394ecc69fd3ca7c9404212491781408011669642aeed5e15420279522a8d6185",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/comparisonOffline.js": "b733fc0e7c5ffce76955fb339bcdf1659dd6b286b723a2f87ae4392881b89467",
+        "src/lib/queryDates.js": "80cdb6b74a913bb85fafccafca5906ba6544093aa38857f9a3ebf8482d6762ef",
+        "src/lib/queryEngine.js": "1e41df9e47906df0e02c6a10988450bb66dce0145045a4e423c7a19aba5b630a",
+        "src/lib/intentLimitations.js": "24f760e11ebbbb44f237307cc78387a8db3bf414269e6e3c70a73fd77e5d7998",
+        "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+        "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+        "src/components/ComparisonEvidence.jsx": "e47266e34e2ae6ada90e820249f714b335b42bfa426664dd2244be0aec8934ee"
+      },
+      "httpStatus": 200,
+      "liveValidatedIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": {
+            "kind": "categories",
+            "periods": [],
+            "categories": [
+              "cycle-v",
+              "art-v"
+            ]
+          },
+          "categoryTerms": [
+            "Cycle club",
+            "Art lab"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "safeError": null,
+      "source": "recorded live interpretation through final handler/client",
+      "finalHttpStatus": 200,
+      "finalIntentType": "analyze",
+      "finalSemanticReason": null,
+      "finalOutcome": "clarify",
+      "finalQuestion": "The category comparison does not preserve the requested complete period. Please give the shared inclusive date range.",
+      "finalText": "The category comparison does not preserve the requested complete period. Please give the shared inclusive date range.",
+      "sides": null,
+      "percentage": null,
+      "detail": null,
+      "finalRoundTrip": "pass",
+      "livePass": "not a live numeric comparison pass"
+    }
+  ],
+  "safeShapeDiagnostics": [
+    {
+      "at": "2026-10-19T16:15:04.069Z",
+      "caseIndex": 4,
+      "type": "analyze",
+      "rootPeriod": "month",
+      "rootCategoryPresent": false,
+      "rootCategoryCount": 2,
+      "descriptor": "object",
+      "kind": "categories",
+      "categoryCount": 2,
+      "periodCount": 0,
+      "sideShape": []
+    },
+    {
+      "at": "2026-10-19T16:17:34.252Z",
+      "caseIndex": 5,
+      "type": "analyze",
+      "rootPeriod": "all",
+      "rootCategoryPresent": false,
+      "rootCategoryCount": 0,
+      "descriptor": "object",
+      "kind": "categories",
+      "categoryCount": 2,
+      "periodCount": 0,
+      "sideShape": []
+    },
+    {
+      "at": "2026-10-19T16:18:37.498Z",
+      "caseIndex": 6,
+      "type": "analyze",
+      "rootPeriod": "range",
+      "rootCategoryPresent": true,
+      "rootCategoryCount": 0,
+      "descriptor": "null",
+      "kind": "other",
+      "categoryCount": null,
+      "periodCount": null,
+      "sideShape": null
+    },
+    {
+      "at": "2026-10-19T16:20:42.674Z",
+      "caseIndex": 7,
+      "type": "analyze",
+      "rootPeriod": "all",
+      "rootCategoryPresent": false,
+      "rootCategoryCount": 1,
+      "descriptor": "object",
+      "kind": "periods",
+      "categoryCount": 0,
+      "periodCount": 2,
+      "sideShape": [
+        {
+          "keys": [
+            "period",
+            "start",
+            "end",
+            "dayCount",
+            "month"
+          ],
+          "period": "named_month",
+          "startPresent": false,
+          "endPresent": false,
+          "dayCountPresent": false,
+          "monthPresent": true
+        },
+        {
+          "keys": [
+            "period",
+            "start",
+            "end",
+            "dayCount",
+            "month"
+          ],
+          "period": "named_month",
+          "startPresent": false,
+          "endPresent": false,
+          "dayCountPresent": false,
+          "monthPresent": true
+        }
+      ]
+    },
+    {
+      "at": "2026-10-19T16:21:25.055Z",
+      "caseIndex": 8,
+      "type": "analyze",
+      "rootPeriod": "all",
+      "rootCategoryPresent": false,
+      "rootCategoryCount": 0,
+      "descriptor": "object",
+      "kind": "categories",
+      "categoryCount": 2,
+      "periodCount": 0,
+      "sideShape": []
+    },
+    {
+      "at": "2026-10-19T16:21:47.941Z",
+      "caseIndex": 9,
+      "type": "analyze",
+      "rootPeriod": "all",
+      "rootCategoryPresent": false,
+      "rootCategoryCount": 0,
+      "descriptor": "object",
+      "kind": "categories",
+      "categoryCount": 2,
+      "periodCount": 0,
+      "sideShape": []
+    }
+  ],
+  "browser": {
+    "origin": "http://127.0.0.1:5244",
+    "fictionalFixture": "scripts/comparison-v2-fixture.js",
+    "sizes": [
+      [
+        1440,
+        900
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "liveRequests": 7,
+    "notes": "Live zero-baseline comparison, local which-side follow-up and guarded clarifications inspected. Offline nonadjacent-month results use original saved HTTP502 and explicit offline label. No fallback counts as a live pass.",
+    "screenshotsDirectory": "/private/tmp/tallyai-step3b2/",
+    "finalGuardVerification": "The original single-January validated intent was reprocessed through final handler/client and shown as clarify at both sizes, no further provider request. Both populated month evidence sets were inspected as explicitly labelled offline fallback, including keyboard Enter/focus."
+  },
+  "timeChecks": [
+    {
+      "at": "2026-10-19T16:29:48Z",
+      "elapsedSeconds": 1813,
+      "status": "30-minute checkpoint: no implementation ongoing, paid cap exhausted, live gate blocked; verification/reporting only"
+    }
+  ],
+  "tests": {
+    "build": "pass",
+    "smokePassed": 1964,
+    "smokeTotal": 1964,
+    "newComparisonChecks": 82,
+    "obsoleteUnsupportedOrCheckRemoved": 1,
+    "providerPassed": 28,
+    "backendPassed": 174,
+    "diffCheck": "pass"
+  },
+  "mainReplay": {
+    "beforeQuestions": [
+      74,
+      76
+    ],
+    "beforeTurns": [
+      80,
+      82
+    ],
+    "afterQuestions": [
+      71,
+      76
+    ],
+    "afterTurns": [
+      77,
+      82
+    ],
+    "paidReplayCalls": 0,
+    "failures": [
+      "M46",
+      "M48.2",
+      "M66",
+      "M67",
+      "M76"
+    ],
+    "provenance": "Three refreshed MAIN responses are actual pre-schema HTTP502 envelopes; 71 other keys unchanged. M67 unsupported expectation remains unchanged."
+  },
+  "finishedAt": "2026-10-19T16:33:29.176228+00:00",
+  "elapsedSeconds": 2034,
+  "laterCheckpoints": "60- and 80-minute checkpoints not reached; task stopped earlier with blocked live gate."
+}

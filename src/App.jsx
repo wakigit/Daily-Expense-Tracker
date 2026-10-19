@@ -399,7 +399,7 @@ export default function App() {
     if (!sessionRef.current.current(ticket)) return;
     if (!res.ok) {
       const ctx = ledgerRef.current;
-      const parsed = interpretOffline(text, ctx.cats);
+      const parsed = interpretOffline(text, ctx.cats,ctx.today);
       const reply = parsed.query ? executeQuery(parsed.query, { ...ctx, message: text }) : parsed;
       sessionRef.current.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
       setAsking(false);
