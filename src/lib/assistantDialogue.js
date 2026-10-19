@@ -5,7 +5,44 @@ export const HELP_QUESTIONS = ['How much did I spend this month?', 'What was my 
 export function stripGreeting(message) {
   return String(message ?? '').trim().replace(/^(?:hello|hi|hey|hiya|yo|good morning|good afternoon|good evening)\b(?:\s+(?:there|tallyai))?[,!:.\s]*/i,'').trim();
 }
+/**
+ * The only reply to a request for keys, prompts or instructions.
+ *
+ * Fixed text, chosen here and never written by the model. The key is not
+ * reachable from this code in any case — it lives in the backend process
+ * environment and is never sent to the browser or to the model — so there is
+ * nothing to leak; this exists so the answer is the same every time instead of
+ * whatever a model improvises under a persuasive prompt.
+ */
+export const SECURITY_REFUSAL = 'I will not share credentials, server configuration or my own instructions, and I have no access to them. I can only answer questions about your recorded spending — for example “How much did I spend this month?”';
+
+/** Prompt shown instead of sending an empty question anywhere. */
+export const EMPTY_PROMPT = 'Type a question about your recorded spending, for example “How much did I spend this month?”';
+
+/**
+ * Asking for the key, the system prompt, or the operating instructions.
+ *
+ * Matched locally and before any request, so these never cost a model call and
+ * never depend on the model refusing correctly. Deliberately narrow: it must
+ * not swallow ordinary questions that happen to contain "show" or "tell me".
+ */
+export function isCredentialOrPromptProbe(message) {
+  const text = String(message ?? '').toLowerCase().replace(/\s+/g, ' ');
+  const secret = /\b(api[- ]?key|apikey|openai[- ]?key|secret key|access token|auth token|bearer token|credentials?|\.env\b|environment variables?)\b/;
+  const internals = /\b(system prompt|system message|your prompt|your instructions|initial instructions|developer message|prompt template|verbatim instructions)\b/;
+  const extract = /\b(what is|what's|show|print|reveal|tell me|give me|repeat|output|disclose|leak|dump|display)\b/;
+  if (secret.test(text) && (extract.test(text) || /\byour\b/.test(text))) return true;
+  if (internals.test(text) && (extract.test(text) || /\bignore\b|\bverbatim\b/.test(text))) return true;
+  return false;
+}
+
 export function dialogueIntent(message, cats = []) {
+  /* Deliberately NOT handling empty input here. `validateIntent` consults this
+     function and is legitimately called without a message (validating a stored
+     or server-normalised payload), so an empty-message reply here would turn
+     every such call into a clarification. Empty input is refused at the point a
+     USER question enters, in assistantClient.requestIntent. */
+  if (isCredentialOrPromptProbe(message)) return { type: 'clarify', question: SECURITY_REFUSAL, options: [] };
   const transport = transportClarification(message, cats);
   if (transport) return transport;
   const original=String(message ?? '').trim();

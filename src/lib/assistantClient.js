@@ -12,7 +12,7 @@
  * reaching it is a published key.
  */
 
-import { dialogueIntent } from './assistantDialogue.js';
+import { dialogueIntent, EMPTY_PROMPT } from './assistantDialogue.js';
 import { validateIntent, buildContext, intentDiagnostic } from './intent';
 
 /**
@@ -45,6 +45,12 @@ export function explainIntentFailure(reason) {
  *   Never throws. A rejected promise here would mean an unanswered message.
  */
 export async function requestIntent(message, { cats, today, expenses, fetchImpl, url, signal } = {}) {
+  /* Nothing to interpret, so nothing is sent. This is the boundary a user
+     question crosses, which is why the check lives here rather than in the
+     shared validator: that one also validates payloads with no message. */
+  if (!String(message ?? '').trim()) {
+    return {ok:true,intent:{type:'clarify',question:EMPTY_PROMPT,options:[],say:''},source:'builtin'};
+  }
   const local=dialogueIntent(message, cats);
   if(local) {
     const checked=validateIntent(local,{cats,message});

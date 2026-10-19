@@ -81,7 +81,12 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
   const type = trimmed(raw.type);
   if (!INTENT_TYPES.includes(type)) return bad(INTENT_ERR.UNKNOWN_TYPE, { type: raw.type ?? null });
 
-  if(type==='help') return bad(INTENT_ERR.BAD_FIELD,{field:'message'});
+  /* `help` is accepted from the model, but nothing the model wrote is shown.
+     The reply is the built-in capability text assembled by planFromIntent, and
+     `say` is dropped here rather than forwarded, so a model that returns help
+     can choose the RESPONSE TYPE and never the words. Rejecting it outright
+     sent five honest replies down the offline fallback instead. */
+  if(type==='help') return {ok:true,intent:{type:'help'}};
 
   const catIds = cats.map((c) => c.id);
   const say = trimmed(raw.say);
@@ -199,6 +204,8 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
     : [];
   return { ok: true, intent: { type, question, options, say } };
 }
+
+
 
 /**
  * What the model is allowed to know. Deliberately NOT the expense rows.
