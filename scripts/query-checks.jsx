@@ -108,7 +108,7 @@ export function queryChecks(check) {
   check('projection six elapsed days suppress date despite multiple spending dates',brief.text.includes('Too little history'),true);
   check('source addition on comparison earlier side stale',evidenceIsOutdated(cmp.comparison.sides[1].evidence,[...expenses,row('earlier-new','2026-09-10','Chicken rice',1)],cats),true);
 
-  check('model cannot omit a second named category',validateIntent({type:'analyze',query:{operation:'total',category:'custom-meals',period:'month'}},{cats,message:'Food and Public transport spending this month'}).ok,false);
+  check('model cannot omit a second named category',validateIntent({type:'analyze',query:{operation:'total',category:'custom-meals',period:'month'}},{cats,message:'Food and Public transport spending this month'}).intent?.type,'clarify');
 
   const historyPattern=run({operation:'highest',groupBy:'weekday',aggregate:'daily_average',period:'all',category:'custom-meals'});
   check('earlier other-category row changes default history denominator and marks stale',evidenceIsOutdated(historyPattern.evidence,[...expenses,row('earlier-other','2026-08-01','Art',1,'leisure')],cats),true);

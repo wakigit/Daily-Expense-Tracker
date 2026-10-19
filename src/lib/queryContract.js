@@ -1,3 +1,4 @@
+import { INTENT_LIMITATION } from './intentLimitations.js';
 import { categoryNames } from './categoryVocabulary.js';
 /** Shared, closed interpretation contract. Thresholds are inputs, never model totals. */
 export const OPERATIONS = ['total', 'count', 'average', 'list', 'highest', 'compare', 'day_types', 'projection', 'largest', 'latest', 'breakdown'];
@@ -78,7 +79,7 @@ export function rowMatches(row, scope = {}) {
   return true;
 }
 export function validateQuery(raw, cats = []) {
-  const fail = (question, field='structure') => ({ ok: false, question, field });
+  const fail = (question, field='structure', limitation=null) => ({ ok: false, question, field, ...(limitation ? {limitation} : {}) });
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fail('Please specify a supported spending question.');
   const allowed = ['operation','period','start','end','category','description','amountOperator','amount','day','groupBy','aggregate','category_terms','categoryTerms','dayCount','amountCents','spendingScope'];
   if (Object.keys(raw).some(k => !allowed.includes(k))) return fail('The query contains unsupported fields.');
@@ -87,23 +88,29 @@ export function validateQuery(raw, cats = []) {
   if (category !== null && !cats.some(c => c.id === category)) return fail('Which of your configured categories do you mean?', 'category');
   const reviewed = raw.spendingScope == null || isHollowSpendingScope(raw.spendingScope) ? {ok:true,scope:null} : validateSpendingScope(raw.spendingScope,cats);
   if (!reviewed.ok) return fail('Review the spending scope: include at least one rule, use valid categories and at most eight terms or categories per list.', 'spendingScope');
-  if (reviewed.scope && !['total','count','list','breakdown'].includes(operation)) return fail('Reviewed scopes support totals, counts, lists and complete category/month breakdowns.', 'spendingScope');
   const terms = raw.category_terms ?? raw.categoryTerms ?? [];
   if (!Array.isArray(terms) || terms.some(x => typeof x !== 'string')) return fail('Please name one category.', 'category_terms');
-  if (terms.length > (reviewed.scope ? 8 : 1)) return fail('I support one category per query. Please resubmit the full question with one category.', 'category_terms');
-  if (reviewed.scope && terms.some(term => !cats.some(c => [...reviewed.scope.includeCategories,...reviewed.scope.excludeCategories,category].includes(c.id) && categoryNames(c).some(name=>normaliseScopeText(name)===normaliseScopeText(term))))) return fail('Named categories must be represented by valid reviewed rules or the separate category filter.', 'category_terms');
+  if (terms.length > 8 || terms.some(term => !term.trim() || term.length > 80)) return fail('Use bounded, non-empty category labels.', 'category_terms');
+  if (raw.category_terms && raw.categoryTerms && JSON.stringify(raw.category_terms) !== JSON.stringify(raw.categoryTerms)) return fail('Conflicting category labels.', 'category_terms');
   if (!reviewed.scope && terms.length === 1 && !category) return fail(`I could not match “${terms[0]}” to a category. Please resubmit using your category label, or explicitly ask for descriptions mentioning that term.`, 'category_terms');
   if (description !== null && (typeof description !== 'string' || !description.trim() || description.length > 100)) return fail('Supply a purchase-description search term of 1 to 100 characters.', 'description');
   if ((amountOperator === null) !== (amount === null) || (amountOperator !== null && (!['gt','lt','gte','lte'].includes(amountOperator) || typeof amount !== 'string' || !/^\d{1,9}(\.\d{1,2})?$/.test(amount)))) return fail('What dollar threshold should I use, and is it over, under, at least or at most?', 'amount');
   if (period === 'range' ? !validDate(start) || !validDate(end) || start > end : start !== null || end !== null) return fail('Please provide a valid inclusive date range using YYYY-MM-DD.', 'range');
   if (period === 'last_days' ? !Number.isInteger(dayCount) || dayCount < 1 || dayCount > 3660 : dayCount !== null) return fail('Last N days requires a whole number from 1 to 3660; other periods must not include a day count.', 'dayCount');
-  if (operation === 'compare' && !['month','week'].includes(period)) return fail('Comparisons support this month versus matching dates last month, or this week versus matching days last week.', 'period');
   if (operation === 'highest' ? !GROUPS.includes(groupBy) : operation === 'breakdown' ? !['category','month'].includes(groupBy) : groupBy !== null) return fail('Choose category or month for a complete breakdown, or a supported highest-spending group.', 'groupBy');
   if (operation === 'projection' && (!category || period !== 'month' || description || amountOperator || day !== 'all')) return fail('Budget pace estimates require one configured category for this month, without purchase, amount or weekday filters.', 'projection_filters');
   if (operation === 'day_types' && day !== 'all') return fail('Weekday versus weekend analysis needs both groups, without a separate weekday filter.', 'day');
   if (operation !== 'average' && !(operation === 'highest' && groupBy === 'weekday') && aggregate !== 'total') return fail('That aggregation is not supported for this operation.', 'aggregate');
   if (operation === 'highest' && !['total','daily_average'].includes(aggregate)) return fail('Highest weekday supports total or daily average.', 'aggregate');
   if (operation === 'average' && aggregate === 'total') return fail('Should the average be per calendar day or per transaction?', 'aggregate');
+  // Only after every structural/type/date/filter check has passed can a known
+  // semantic limitation be distinguished from malformed output. No query executes.
+  if (reviewed.scope && terms.some(term => !cats.some(c => [...reviewed.scope.includeCategories,...reviewed.scope.excludeCategories,category].includes(c.id) && categoryNames(c).some(name=>normaliseScopeText(name)===normaliseScopeText(term))))) return fail('Named categories must be represented by valid reviewed rules or the separate category filter.', 'category_terms', INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE);
+  if (!reviewed.scope && terms.length > 1) {
+    return fail('I support one category per query.', 'category_terms', INTENT_LIMITATION.MULTIPLE_CATEGORIES);
+  }
+  if (reviewed.scope && !['total','count','list','breakdown'].includes(operation)) return fail('Reviewed scopes support totals, counts, lists and complete category/month breakdowns.', 'spendingScope', INTENT_LIMITATION.SCOPE_OPERATION);
+  if (operation === 'compare' && !['month','week'].includes(period)) return fail('Comparisons support this month versus matching dates last month, or this week versus matching days last week.', 'period', INTENT_LIMITATION.COMPARISON_PERIOD);
   return { ok: true, query: { operation, period, start, end, dayCount, category, description: description?.trim() ?? null, amountOperator, amount, amountCents: amount === null ? null : Math.round(Number(amount) * 100), day, groupBy, aggregate, categoryTerms: [...terms], spendingScope: reviewed.scope } };
 }
 export function generalQuerySchema(category) {

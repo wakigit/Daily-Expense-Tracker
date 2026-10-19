@@ -1,4 +1,4 @@
-import { categoryNames } from './categoryVocabulary.js';
+import { INTENT_LIMITATION, isLimitationReason, limitationClarification, asksMultipartPercentage, mentionedCategories, requestLimitation, needsScopeRules, asksCategoryComparison } from './intentLimitations.js';
 import { dialogueIntent } from './assistantDialogue.js';
 import { validateQuery } from './queryContract.js';
 /**
@@ -86,25 +86,37 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
      `say` is dropped here rather than forwarded, so a model that returns help
      can choose the RESPONSE TYPE and never the words. Rejecting it outright
      sent five honest replies down the offline fallback instead. */
-  if(type==='help') return {ok:true,intent:{type:'help'}};
+  if(type==='help') {
+    const reason=requestLimitation(message,cats);
+    return {ok:true,intent:reason ? limitationClarification(reason,message) : {type:'help'}};
+  }
 
   const catIds = cats.map((c) => c.id);
   const say = trimmed(raw.say);
 
   if (type === 'analyze' || type === 'propose_scope') {
-    const unquoted = message.toLowerCase().replace(/[“\"][^”\"]*[”\"]/g, ' ');
-    const mentioned = cats.filter(c => {
-      return categoryNames(c).some(label => {
-        const escaped = label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'u').test(unquoted);
-      });
-    });
-    if (!raw.query?.spendingScope && mentioned.length > 1) return bad(INTENT_ERR.BAD_FIELD, { field: 'multiple_categories' });
-    if (!raw.query?.spendingScope && /\brelated\b|\bincluding\b/i.test(message)) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
+    const mentioned = mentionedCategories(message,cats);
     const { amountCents: ignored, ...q } = raw.query ?? {};
     const checked = validateQuery(q, cats);
-    if (!checked.ok) return bad(INTENT_ERR.BAD_FIELD,{field:`query.${checked.field}`});
-    if (checked.ok && type === 'propose_scope' && !checked.query.spendingScope) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
+    if (!checked.ok) {
+      if (isLimitationReason(checked.limitation)) {
+        // category_terms contains unmapped words, not executable IDs. Only a
+        // corresponding limitation in the USER request can rescue that metadata.
+        // Invented extra category words on an ordinary single-scope request fail.
+        if ([INTENT_LIMITATION.MULTIPLE_CATEGORIES,INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE].includes(checked.limitation)
+            && !requestLimitation(message,cats)) return bad(INTENT_ERR.BAD_FIELD,{field:'query.category_terms'});
+        const reason = asksMultipartPercentage(message) ? INTENT_LIMITATION.MULTIPART_PERCENTAGE : asksCategoryComparison(message,cats) ? INTENT_LIMITATION.CATEGORY_COMPARISON : checked.limitation;
+        return {ok:true,intent:limitationClarification(reason,message)};
+      }
+      return bad(INTENT_ERR.BAD_FIELD,{field:`query.${checked.field}`});
+    }
+    let reason = null;
+    if (asksMultipartPercentage(message)) reason = INTENT_LIMITATION.MULTIPART_PERCENTAGE;
+    else if (asksCategoryComparison(message,cats)) reason = INTENT_LIMITATION.CATEGORY_COMPARISON;
+    else if (!checked.query.spendingScope && mentioned.length > 1) reason = INTENT_LIMITATION.MULTIPLE_CATEGORIES;
+    else if (!checked.query.spendingScope && needsScopeRules(message)) reason = INTENT_LIMITATION.SCOPE_REQUIRED;
+    if (reason) return {ok:true,intent:limitationClarification(reason,message)};
+    if (type === 'propose_scope' && !checked.query.spendingScope) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
     return checked.ok ? { ok: true, intent: { type:checked.query.spendingScope?'propose_scope':type, query: checked.query, say } } : bad(INTENT_ERR.BAD_FIELD, { field: `query.${checked.field}` });
   }
 
@@ -197,12 +209,14 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
   }
 
   // clarify
+  if (raw.reason != null && !isLimitationReason(raw.reason)) return bad(INTENT_ERR.BAD_FIELD, {field:'reason'});
   const question = trimmed(raw.question);
   if (!question) return bad(INTENT_ERR.MISSING_FIELD, { field: 'question' });
   const options = Array.isArray(raw.options)
     ? raw.options.map(trimmed).filter(Boolean).slice(0, 6)
     : [];
-  return { ok: true, intent: { type, question, options, say } };
+  const reason = raw.reason ?? requestLimitation(message,cats);
+  return { ok: true, intent: reason ? limitationClarification(reason,message) : { type, question, options, say } };
 }
 
 
@@ -226,6 +240,6 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
 
 /** Public diagnostics contain fixed codes/field names, never model values or category labels. */
 export function intentDiagnostic(error) {
-  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period'];
+  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
   return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

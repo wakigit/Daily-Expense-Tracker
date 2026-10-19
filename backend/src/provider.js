@@ -139,6 +139,7 @@ Ordinary read requests use type analyze with the general query. Supported operat
 - projection: category budget exhaustion estimate, period month, one configured category required. No description, amount or weekday filter. A budget question is an ordinary analyze request: type analyze, operation projection, spendingScope MUST be null. Never use propose_scope for a budget question and never wrap the category into a spendingScope — a reviewed scope is not valid on projection and the request will be refused.
 
 NOT SUPPORTED, use clarify and name the limitation. Do not map these onto a nearby operation:
+- A spending total plus a separate percentage for one category in the same question: clarify whether the user wants the total or a complete category breakdown, retaining the subject, period and all filters. Never put non-category words or the whole category catalog in category_terms to represent multiple parts.
 - Several top items (top 3 expenses, my five biggest buys, a ranked list). Only ONE winner plus exact ties exists, via largest or highest. Answering with the single largest when several were asked for is a different answer, not a partial one.
 - Hypotheticals and what-ifs (if I cut X in half, what if I stopped buying Y, how much would I save). The app calculates recorded spending only; there is no operation for a counterfactual.
 - Savings goals and plans (I want to save S$500 in 4 months, help me put aside X). Say which inputs would be needed rather than inventing a figure from a category budget: a budget is not actual spending and not savings.

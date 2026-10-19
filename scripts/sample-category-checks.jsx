@@ -86,7 +86,7 @@ export async function sampleCategoryChecks(check) {
   const query={operation:'total',period:'month',category:'food',category_terms:['Food']};
   const validated=validateIntent({type:'analyze',query},{cats:DEF_CATS,message:'Food spending this month'});
   check('Food alias shared validation twice',validated.ok&&validateIntent(validated.intent,{cats:DEF_CATS,message:'Food spending this month'}).ok,true);
-  check('Food alias cannot hide a second category',validateIntent({type:'analyze',query},{cats:DEF_CATS,message:'Food and Public Transport spending this month'}).ok,false);
+  check('Food alias cannot hide a second category',validateIntent({type:'analyze',query},{cats:DEF_CATS,message:'Food and Public Transport spending this month'}).intent?.type,'clarify');
   const damaged={...blank.mark};delete damaged.appliedBudgets;
   const unknown=planRemove({expenses:blank.expenses,budgets:{...blank.budgets,entertainment:99},cats:blank.categories,mark:damaged});
   check('incomplete ownership receipt never deletes categories/budgets',[unknown.categories,unknown.budgets],[blank.categories,{...blank.budgets,entertainment:99}]);

@@ -168,7 +168,8 @@ test('reviewed scope: model cannot bypass review with analyze; invalid category 
 });
 test('reviewed scope: broad related request cannot silently become one substring total',async()=>{
  const reply=await handleIntent({message:'Car-related expenses including fuel insurance and repair this year',context},{request:async()=>({type:'analyze',query:{operation:'total',period:'year',description:'fuel'}})});
- assert.equal(reply.status,502);assert.equal(reply.body.detail.field,'query.spendingScope');
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');
+ assert.equal(reply.body.intent.reason,'scope_rules_required');assert.equal(reply.body.intent.query,undefined);
 });
 test('reviewed scope: unmentioned whole categories remain review-only, never an automatic read',async()=>{
  const query={operation:'total',period:'year',spendingScope:{label:'Related',includeCategories:['custom'],includeTerms:['coffee'],excludeCategories:[],excludeTerms:[]}};
@@ -176,4 +177,93 @@ test('reviewed scope: unmentioned whole categories remain review-only, never an 
  assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'propose_scope');
  assert.deepEqual(reply.body.intent.query.spendingScope.includeCategories,['custom']);
  assert.equal(validateIntent(reply.body.intent,{message:'Related purchases including coffee this year',cats:context.categories}).ok,true);
+});
+
+// Roadmap Step3A, fictional vocabulary independent of the MAIN fixture.
+const step3aCats=[{id:'hobby-a',label:'Pottery'},{id:'travel-b',label:'Cycle repairs'},{id:'meal-c',label:'Canteen'}];
+const step3aContext={today:'2026-09-18',categories:step3aCats,expenseCount:4};
+const step3aQuery={operation:'total',period:'month',category:null,category_terms:[]};
+for(const [label,message,patch,reason] of [
+ ['two explicit categories','Pottery and Cycle repairs spending last month, weekends only, over S$14?',{period:'lastmonth',day:'weekend',amountOperator:'gt',amount:'14'},'multiple_categories'],
+ ['structured multiple labels','Compare Pottery with Canteen for this month.',{operation:'compare',category_terms:['Pottery','Canteen']},'category_comparison_unsupported'],
+ ['scope rules omitted','Study-related purchases this year including paper and ink?',{period:'year',description:'paper'},'scope_rules_required'],
+ ['multipart','Give my spending total and also the percentage for Pottery this week.',{period:'week'},'multipart_percentage_unsupported'],
+ ['arbitrary comparison','Compare April with September spending.',{operation:'compare',period:'range',start:'2026-04-01',end:'2026-09-18'},'comparison_period_unsupported'],
+]) {
+ test('Step3A valid semantic limitation: '+label,async()=>{
+  let requests=0;
+  const reply=await handleIntent({message,context:step3aContext},{request:async()=>{requests++;return {type:'analyze',query:{...step3aQuery,...patch}};}});
+  assert.equal(requests,1);assert.equal(reply.status,200);
+  assert.equal(reply.body.intent.type,'clarify');assert.equal(reply.body.intent.reason,reason);
+  assert.ok(reply.body.intent.question.includes(message));assert.equal(reply.body.intent.query,undefined);
+  assert.deepEqual(validateIntent(reply.body.intent,{cats:step3aCats,message}).intent,reply.body.intent);
+ });
+}
+for(const [label,patch] of [
+ ['invalid amount',{amountOperator:'gt',amount:'PRIVATE_CANARY'}],
+ ['unknown operation',{operation:'PRIVATE_CANARY'}],
+ ['unknown category',{category:'PRIVATE_CANARY'}],
+ ['invalid date',{period:'range',start:'2026-02-30',end:'2026-09-01'}],
+ ['invalid group',{groupBy:'PRIVATE_CANARY'}],
+ ['extra field',{privateFigure:12345}],
+ ['invalid terms',{category_terms:['Pottery',7]}],
+ ['invalid scope',{spendingScope:{label:'Study',includeCategories:[],includeTerms:[],excludeCategories:[],excludeTerms:[]}}],
+]) {
+ test('Step3A structural rejection precedes semantic handling: '+label,async()=>{
+  const reply=await handleIntent({message:'Pottery and Canteen related spending this month?',context:step3aContext},{request:async()=>({type:'analyze',query:{...step3aQuery,...patch}})});
+  assert.equal(reply.status,502);assert.equal(reply.body.error,'invalid_intent');
+  assert.equal(JSON.stringify(reply).includes('PRIVATE_CANARY'),false);
+ });
+}
+for(const [code,status] of [['provider_timeout',504],['provider_key_rejected',401],['provider_connection_failed',503]]) {
+ test('Step3A provider error remains an error: '+code,async()=>{
+  const reply=await handleIntent({message:'Pottery and Canteen spending last month?',context:step3aContext},{request:async()=>{throw Object.assign(Error('PRIVATE_CANARY'),{code,status});}});
+  assert.deepEqual(reply,{status,body:{error:code}});
+ });
+}
+test('Step3A financial assessment is a useful built-in clarification',async()=>{
+ let calls=0;
+ for(const message of ['Am I handling my finances well?','Is my spending healthy?','How am I doing financially?']) {
+  const reply=await handleIntent({message,context:step3aContext},{request:async()=>{calls++;throw Error('unexpected');}});
+  assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');
+  assert.equal(reply.body.intent.reason,'financial_assessment_needs_scope');
+  assert.match(reply.body.intent.question,/budget/);assert.match(reply.body.intent.question,/previous period/);
+  assert.equal(validateIntent(reply.body.intent,{message,cats:step3aCats}).ok,true);
+ }
+ assert.equal(calls,0);
+});
+test('Step3A valid reviewed scope on unsupported operation clarifies without executing',async()=>{
+ const scope={label:'Study purchases',includeCategories:[],includeTerms:['paper','ink'],excludeCategories:[],excludeTerms:[]};
+ const reply=await handleIntent({message:'Average study-related spending this year?',context:step3aContext},{request:async()=>({type:'propose_scope',query:{...step3aQuery,operation:'average',aggregate:'per_transaction',period:'year',spendingScope:scope}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.reason,'scope_operation_unsupported');
+ assert.equal(reply.body.intent.query,undefined);
+});
+test('Step3A incomplete category coverage is semantic only after structural validation',async()=>{
+ const scope={label:'Hobbies',includeCategories:['hobby-a'],includeTerms:[],excludeCategories:[],excludeTerms:[]};
+ const message='Pottery and Cycle repairs totals last month, on weekends, over S$14?';
+ const q={...step3aQuery,period:'lastmonth',day:'weekend',amountOperator:'gt',amount:'14',spendingScope:scope,category_terms:['Pottery','Cycle repairs']};
+ const reply=await handleIntent({message,context:step3aContext},{request:async()=>({type:'propose_scope',query:q})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.reason,'scope_categories_incomplete');
+ assert.ok(reply.body.intent.question.includes(message));assert.equal(reply.body.intent.query,undefined);
+ assert.deepEqual(validateIntent(reply.body.intent,{message,cats:step3aCats}).intent,reply.body.intent);
+ const invalid=await handleIntent({message,context:step3aContext},{request:async()=>({type:'propose_scope',query:{...q,amount:'invalid'}})});
+ assert.equal(invalid.status,502);assert.equal(invalid.body.detail.field,'query.amount');
+});
+test('Step3A category comparison cannot be substituted with an approved union total',async()=>{
+ const message='Did I spend more on Pottery or Cycle repairs last month?';
+ const scope={label:'Both categories',includeCategories:['hobby-a','travel-b'],includeTerms:[],excludeCategories:[],excludeTerms:[]};
+ const reply=await handleIntent({message,context:step3aContext},{request:async()=>({type:'propose_scope',query:{...step3aQuery,period:'lastmonth',spendingScope:scope}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');
+ assert.equal(reply.body.intent.reason,'category_comparison_unsupported');assert.equal(reply.body.intent.query,undefined);
+});
+test('Step3A unmapped category-word metadata clarifies only an established user limitation',async()=>{
+ const raw={type:'analyze',query:{...step3aQuery,category_terms:['hobby-a','travel-b']}};
+ const message='Did I spend more on Pottery or Cycle repairs last month?';
+ const reply=await handleIntent({message,context:step3aContext},{request:async()=>raw});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.reason,'category_comparison_unsupported');
+ assert.ok(reply.body.intent.question.includes(message));assert.equal(reply.body.intent.query,undefined);
+ const invalid=await handleIntent({message:'Pottery spending this month?',context:step3aContext},{request:async()=>raw});
+ assert.equal(invalid.status,502);assert.equal(invalid.body.detail.field,'query.category_terms');
+ const invalidId=await handleIntent({message,context:step3aContext},{request:async()=>({...raw,query:{...raw.query,category:'unknown-id'}})});
+ assert.equal(invalidId.status,502);assert.equal(invalidId.body.detail.field,'query.category');
 });

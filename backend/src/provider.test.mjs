@@ -77,7 +77,7 @@ check('schema: general query contract includes comparisons, filters and custom c
   assert.deepEqual(q.properties.category.enum, ['food', 'hire', null]);
   assert.deepEqual(q.properties.amountOperator.enum, ['gt','lt','gte','lte',null]);
   assert.ok(q.properties.groupBy.enum.includes('weekday'));
-  assert.equal(validateIntent({type:'analyze',query:{operation:'compare',period:'all'}},{cats:[]}).ok,false);
+  assert.equal(validateIntent({type:'analyze',query:{operation:'compare',period:'all'}},{cats:[]}).intent.type,'clarify');
 });
 
 /* ── Anything the schema permits must survive lib/intent.js. ── */

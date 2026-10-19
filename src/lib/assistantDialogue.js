@@ -1,3 +1,4 @@
+import { INTENT_LIMITATION, isBroadFinancialAssessment, limitationClarification } from './intentLimitations.js';
 import { transportClarification } from './categoryVocabulary.js';
 /** Deterministic conversation boundaries, no ledger access or financial calculation. */
 export const HELP_TEXT = 'Hi! I can help with recorded spending totals, filtered transactions, largest expenses, comparisons and category budget pace estimates.';
@@ -47,6 +48,7 @@ export function dialogueIntent(message, cats = []) {
      every such call into a clarification. Empty input is refused at the point a
      USER question enters, in assistantClient.requestIntent. */
   if (isCredentialOrPromptProbe(message)) return { type: 'clarify', question: SECURITY_REFUSAL, options: [] };
+  if (isBroadFinancialAssessment(message)) return limitationClarification(INTENT_LIMITATION.FINANCIAL_ASSESSMENT,message);
   const transport = transportClarification(message, cats);
   if (transport) return transport;
   const original=String(message ?? '').trim();

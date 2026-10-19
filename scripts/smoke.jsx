@@ -1,3 +1,4 @@
+import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
 import { followupChecks } from './followup-checks';
@@ -2095,6 +2096,7 @@ await roastChecks(logic);
 }
 
 await step2Checks(logic);
+await step3aChecks(logic);
 scopeChecks(logic);
 queryChecks(logic);
 breakdownChecks(logic);
