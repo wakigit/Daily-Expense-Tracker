@@ -1,0 +1,1940 @@
+{
+  "baseCommit": "d00aa91bf6d83561b0bd21cd78c98856f03d1813",
+  "calls": 6,
+  "attempts": [
+    {
+      "message": "Compare Music bench spending in September with July.",
+      "family": "named-periods",
+      "expectedRecordedAt": "2026-10-19T18:28:33.454Z",
+      "expected": {
+        "kind": "periods",
+        "ranges": [
+          [
+            "2026-09-01",
+            "2026-09-30"
+          ],
+          [
+            "2026-07-01",
+            "2026-07-31"
+          ]
+        ],
+        "totals": [
+          7000,
+          4000
+        ],
+        "counts": [
+          2,
+          2
+        ],
+        "difference": 3000,
+        "ids": [
+          [
+            "r3",
+            "r4"
+          ],
+          [
+            "r1",
+            "r2"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "all",
+        "category": "music-r",
+        "category_terms": [
+          "Music bench"
+        ],
+        "comparison": {
+          "kind": "periods",
+          "periods": [
+            {
+              "period": "named_month",
+              "month": "2026-09",
+              "start": null,
+              "end": null,
+              "dayCount": null
+            },
+            {
+              "period": "named_month",
+              "month": "2026-07",
+              "start": null,
+              "end": null,
+              "dayCount": null
+            }
+          ],
+          "categories": []
+        }
+      },
+      "hashes": {
+        "backend/src/provider.js": "e5c90e8c08d8188fb48e761bc1325d26b59e021ca0f8a1eb07eeece872302976",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 1,
+      "sentAt": "2026-10-19T18:28:33.458Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "all",
+        "kind": "periods",
+        "rootCategoryPresent": true,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 0,
+        "sideCategoryCount": 0,
+        "periodCount": 2
+      },
+      "receivedAt": "2026-10-19T18:28:38.047Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "all",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": "music-r",
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": {
+                "kind": "periods",
+                "periods": [
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-09"
+                  },
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-07"
+                  }
+                ],
+                "categories": []
+              },
+              "categoryTerms": [
+                "Music bench"
+              ],
+              "categories": [],
+              "descriptionTerms": [],
+              "spendingScope": null
+            },
+            "say": ""
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "all",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": "music-r",
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "periods",
+              "periods": [
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-09"
+                },
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-07"
+                }
+              ],
+              "categories": []
+            },
+            "categoryTerms": [
+              "Music bench"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          },
+          "say": ""
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "answer",
+        "text": "September 2026: S$70.00 across 2 transactions (2026-09-01 to 2026-09-30) versus July 2026: S$40.00 across 2 transactions (2026-07-01 to 2026-07-31). September 2026 has the larger recorded total; exact difference S$30.00.",
+        "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. Unequal intervals: 30 versus 31 calendar days, different numbers of days. The shorter interval has fewer days. Totals are not duration-adjusted. 75.0% increase from baseline July 2026 (2026-07-01 to 2026-07-31) to September 2026 (2026-09-01 to 2026-09-30).",
+        "comparison": {
+          "sides": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "key": "first",
+              "label": "September 2026",
+              "totalCents": 7000,
+              "count": 2,
+              "calendarDays": 30,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r4",
+                    "description": "AmberRide",
+                    "date": "2026-09-30",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 5.68,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r4",
+                    "description": "AmberRide",
+                    "date": "2026-09-30",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 5.68,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-30",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            },
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "key": "second",
+              "label": "July 2026",
+              "totalCents": 4000,
+              "count": 2,
+              "calendarDays": 31,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r1",
+                    "description": "SwiftShuttle",
+                    "date": "2026-07-03",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 30.12,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r2",
+                    "description": "AmberRide",
+                    "date": "2026-07-26",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 9.88,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r1",
+                    "description": "SwiftShuttle",
+                    "date": "2026-07-03",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 30.12,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r2",
+                    "description": "AmberRide",
+                    "date": "2026-07-26",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 9.88,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-07-01",
+                  "end": "2026-07-31",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            }
+          ],
+          "differenceCents": 3000,
+          "direction": "more",
+          "percentage": 75,
+          "larger": "September 2026",
+          "baselineKey": "second",
+          "overlap": false
+        },
+        "question": null
+      },
+      "numericAcceptancePass": true
+    },
+    {
+      "message": "Did I spend more on Music bench or Trail gear this month?",
+      "family": "category-sides",
+      "expectedRecordedAt": "2026-10-19T18:28:56.175Z",
+      "expected": {
+        "kind": "categories",
+        "ranges": [
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ],
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ]
+        ],
+        "totals": [
+          2600,
+          4321
+        ],
+        "counts": [
+          2,
+          1
+        ],
+        "difference": -1721,
+        "ids": [
+          [
+            "r7",
+            "r9"
+          ],
+          [
+            "r8"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "month",
+        "category_terms": [
+          "Music bench",
+          "Trail gear"
+        ],
+        "comparison": {
+          "kind": "categories",
+          "periods": [],
+          "categories": [
+            "music-r",
+            "trail-r"
+          ]
+        }
+      },
+      "hashes": {
+        "backend/src/provider.js": "e5c90e8c08d8188fb48e761bc1325d26b59e021ca0f8a1eb07eeece872302976",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 2,
+      "sentAt": "2026-10-19T18:28:56.176Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "month",
+        "kind": "categories",
+        "rootCategoryPresent": false,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 0,
+        "sideCategoryCount": 2,
+        "periodCount": 0
+      },
+      "receivedAt": "2026-10-19T18:28:59.862Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "month",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": null,
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": {
+                "kind": "categories",
+                "periods": [],
+                "categories": [
+                  "music-r",
+                  "trail-r"
+                ]
+              },
+              "categoryTerms": [
+                "Music bench",
+                "Trail gear"
+              ],
+              "categories": [],
+              "descriptionTerms": [],
+              "spendingScope": null
+            },
+            "say": ""
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "categories",
+              "periods": [],
+              "categories": [
+                "music-r",
+                "trail-r"
+              ]
+            },
+            "categoryTerms": [
+              "Music bench",
+              "Trail gear"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          },
+          "say": ""
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "answer",
+        "text": "Music bench: S$26.00 across 2 transactions (2026-10-01 to 2026-10-20) versus Trail gear: S$43.21 across 1 transactions (2026-10-01 to 2026-10-20). Trail gear has the larger recorded total; exact difference S$17.21.",
+        "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. No percentage baseline is assigned to this symmetric or overlapping comparison.",
+        "comparison": {
+          "sides": [
+            {
+              "start": "2026-10-01",
+              "end": "2026-10-20",
+              "key": "first",
+              "label": "Music bench",
+              "totalCents": 2600,
+              "count": 2,
+              "calendarDays": 20,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-10-01",
+                  "end": "2026-10-20",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            },
+            {
+              "start": "2026-10-01",
+              "end": "2026-10-20",
+              "key": "second",
+              "label": "Trail gear",
+              "totalCents": 4321,
+              "count": 1,
+              "calendarDays": 20,
+              "filters": "category Trail gear",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "trail-r",
+                    "Trail gear"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-10-01",
+                  "end": "2026-10-20",
+                  "category": "trail-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            }
+          ],
+          "differenceCents": -1721,
+          "direction": "less",
+          "percentage": null,
+          "larger": "Trail gear",
+          "baselineKey": null,
+          "overlap": false
+        },
+        "question": null
+      },
+      "numericAcceptancePass": true
+    },
+    {
+      "message": "Compare descriptions mentioning SwiftShuttle or AmberRide this month with last month.",
+      "family": "description-or-elapsed",
+      "expectedRecordedAt": "2026-10-19T18:29:30.682Z",
+      "expected": {
+        "kind": null,
+        "ranges": [
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ],
+          [
+            "2026-09-01",
+            "2026-09-20"
+          ]
+        ],
+        "totals": [
+          6921,
+          7765
+        ],
+        "counts": [
+          3,
+          3
+        ],
+        "difference": -844,
+        "ids": [
+          [
+            "r7",
+            "r8",
+            "r9"
+          ],
+          [
+            "r3",
+            "r5",
+            "r6"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "month",
+        "descriptionTerms": [
+          "SwiftShuttle",
+          "AmberRide"
+        ]
+      },
+      "hashes": {
+        "backend/src/provider.js": "e5c90e8c08d8188fb48e761bc1325d26b59e021ca0f8a1eb07eeece872302976",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 3,
+      "sentAt": "2026-10-19T18:29:30.683Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "all",
+        "kind": "periods",
+        "rootCategoryPresent": false,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 2,
+        "sideCategoryCount": 0,
+        "periodCount": 2
+      },
+      "receivedAt": "2026-10-19T18:29:34.318Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "all",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": null,
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": {
+                "kind": "periods",
+                "periods": [
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-10"
+                  },
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-09"
+                  }
+                ],
+                "categories": []
+              },
+              "categoryTerms": [],
+              "categories": [],
+              "descriptionTerms": [
+                "amberride",
+                "swiftshuttle"
+              ],
+              "spendingScope": null
+            },
+            "say": ""
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "all",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "periods",
+              "periods": [
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-10"
+                },
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-09"
+                }
+              ],
+              "categories": []
+            },
+            "categoryTerms": [],
+            "categories": [],
+            "descriptionTerms": [
+              "amberride",
+              "swiftshuttle"
+            ],
+            "spendingScope": null
+          },
+          "say": ""
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "clarify",
+        "text": "An implicit current-versus-previous month/week comparison uses matching elapsed dates. These sides requested full periods instead. Please resubmit the ordinary comparison, or explicitly request full periods.",
+        "comparison": null,
+        "question": "An implicit current-versus-previous month/week comparison uses matching elapsed dates. These sides requested full periods instead. Please resubmit the ordinary comparison, or explicitly request full periods."
+      }
+    },
+    {
+      "message": "Compare descriptions mentioning SwiftShuttle or AmberRide this month with last month.",
+      "family": "description-or-elapsed",
+      "expectedRecordedAt": "2026-10-19T18:31:18.165Z",
+      "expected": {
+        "kind": null,
+        "ranges": [
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ],
+          [
+            "2026-09-01",
+            "2026-09-20"
+          ]
+        ],
+        "totals": [
+          6921,
+          7765
+        ],
+        "counts": [
+          3,
+          3
+        ],
+        "difference": -844,
+        "ids": [
+          [
+            "r7",
+            "r8",
+            "r9"
+          ],
+          [
+            "r3",
+            "r5",
+            "r6"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "month",
+        "descriptionTerms": [
+          "SwiftShuttle",
+          "AmberRide"
+        ]
+      },
+      "hashes": {
+        "backend/src/provider.js": "ebdcedac8eeeebb3bbecfb9b027f6de8d0c35fadc64f5e757d2e0e3d9dd93647",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 4,
+      "sentAt": "2026-10-19T18:31:18.169Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "month",
+        "kind": "null",
+        "rootCategoryPresent": false,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 2,
+        "sideCategoryCount": null,
+        "periodCount": null
+      },
+      "receivedAt": "2026-10-19T18:31:21.048Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "month",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": null,
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": null,
+              "categoryTerms": [],
+              "categories": [],
+              "descriptionTerms": [
+                "amberride",
+                "swiftshuttle"
+              ],
+              "spendingScope": null
+            },
+            "say": "Comparing spending on descriptions mentioning SwiftShuttle or AmberRide for this month and last month."
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": null,
+            "categoryTerms": [],
+            "categories": [],
+            "descriptionTerms": [
+              "amberride",
+              "swiftshuttle"
+            ],
+            "spendingScope": null
+          },
+          "say": "Comparing spending on descriptions mentioning SwiftShuttle or AmberRide for this month and last month."
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "answer",
+        "text": "This month to date: S$69.21 across 3 transactions (2026-10-01 to 2026-10-20) versus Previous month, matching dates: S$77.65 across 3 transactions (2026-09-01 to 2026-09-20). Previous month, matching dates has the larger recorded total; exact difference S$8.44.",
+        "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. 10.9% decrease from baseline Previous month, matching dates (2026-09-01 to 2026-09-20) to This month to date (2026-10-01 to 2026-10-20).",
+        "comparison": {
+          "sides": [
+            {
+              "start": "2026-10-01",
+              "end": "2026-10-20",
+              "key": "current",
+              "label": "This month to date",
+              "totalCents": 6921,
+              "count": 3,
+              "calendarDays": 20,
+              "filters": "descriptions containing any of: \u201camberride\u201d OR \u201cswiftshuttle\u201d (literal, case/whitespace-insensitive substrings, not verified merchant identity)",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": null,
+                "scope": {
+                  "start": "2026-10-01",
+                  "end": "2026-10-20",
+                  "category": null,
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [
+                    "amberride",
+                    "swiftshuttle"
+                  ],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            },
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-20",
+              "key": "earlier",
+              "label": "Previous month, matching dates",
+              "totalCents": 7765,
+              "count": 3,
+              "calendarDays": 20,
+              "filters": "descriptions containing any of: \u201camberride\u201d OR \u201cswiftshuttle\u201d (literal, case/whitespace-insensitive substrings, not verified merchant identity)",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r5",
+                    "description": "AmberRide",
+                    "date": "2026-09-10",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 11.11,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r6",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-09-15",
+                    "category": "home-r",
+                    "categoryLabel": "Household",
+                    "amount": 2.22,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r5",
+                    "description": "AmberRide",
+                    "date": "2026-09-10",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 11.11,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r6",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-09-15",
+                    "category": "home-r",
+                    "categoryLabel": "Household",
+                    "amount": 2.22,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": null,
+                "scope": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-20",
+                  "category": null,
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [
+                    "amberride",
+                    "swiftshuttle"
+                  ],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            }
+          ],
+          "differenceCents": -844,
+          "direction": "less",
+          "percentage": 10.869285254346426,
+          "larger": "Previous month, matching dates",
+          "baselineKey": "earlier",
+          "overlap": false
+        },
+        "question": null
+      },
+      "numericAcceptancePass": true
+    },
+    {
+      "message": "Compare Music bench spending in September with July.",
+      "family": "named-periods",
+      "expectedRecordedAt": "2026-10-19T18:31:50.844Z",
+      "expected": {
+        "kind": "periods",
+        "ranges": [
+          [
+            "2026-09-01",
+            "2026-09-30"
+          ],
+          [
+            "2026-07-01",
+            "2026-07-31"
+          ]
+        ],
+        "totals": [
+          7000,
+          4000
+        ],
+        "counts": [
+          2,
+          2
+        ],
+        "difference": 3000,
+        "ids": [
+          [
+            "r3",
+            "r4"
+          ],
+          [
+            "r1",
+            "r2"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "all",
+        "category": "music-r",
+        "category_terms": [
+          "Music bench"
+        ],
+        "comparison": {
+          "kind": "periods",
+          "periods": [
+            {
+              "period": "named_month",
+              "month": "2026-09",
+              "start": null,
+              "end": null,
+              "dayCount": null
+            },
+            {
+              "period": "named_month",
+              "month": "2026-07",
+              "start": null,
+              "end": null,
+              "dayCount": null
+            }
+          ],
+          "categories": []
+        }
+      },
+      "hashes": {
+        "backend/src/provider.js": "ebdcedac8eeeebb3bbecfb9b027f6de8d0c35fadc64f5e757d2e0e3d9dd93647",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 5,
+      "sentAt": "2026-10-19T18:31:50.845Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "all",
+        "kind": "periods",
+        "rootCategoryPresent": true,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 0,
+        "sideCategoryCount": 0,
+        "periodCount": 2
+      },
+      "receivedAt": "2026-10-19T18:31:54.273Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "all",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": "music-r",
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": {
+                "kind": "periods",
+                "periods": [
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-09"
+                  },
+                  {
+                    "period": "named_month",
+                    "start": null,
+                    "end": null,
+                    "dayCount": null,
+                    "month": "2026-07"
+                  }
+                ],
+                "categories": []
+              },
+              "categoryTerms": [
+                "Music bench"
+              ],
+              "categories": [],
+              "descriptionTerms": [],
+              "spendingScope": null
+            },
+            "say": ""
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "all",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": "music-r",
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "periods",
+              "periods": [
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-09"
+                },
+                {
+                  "period": "named_month",
+                  "start": null,
+                  "end": null,
+                  "dayCount": null,
+                  "month": "2026-07"
+                }
+              ],
+              "categories": []
+            },
+            "categoryTerms": [
+              "Music bench"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          },
+          "say": ""
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "answer",
+        "text": "September 2026: S$70.00 across 2 transactions (2026-09-01 to 2026-09-30) versus July 2026: S$40.00 across 2 transactions (2026-07-01 to 2026-07-31). September 2026 has the larger recorded total; exact difference S$30.00.",
+        "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. Unequal intervals: 30 versus 31 calendar days, different numbers of days. The shorter interval has fewer days. Totals are not duration-adjusted. 75.0% increase from baseline July 2026 (2026-07-01 to 2026-07-31) to September 2026 (2026-09-01 to 2026-09-30).",
+        "comparison": {
+          "sides": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "key": "first",
+              "label": "September 2026",
+              "totalCents": 7000,
+              "count": 2,
+              "calendarDays": 30,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r4",
+                    "description": "AmberRide",
+                    "date": "2026-09-30",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 5.68,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r3",
+                    "description": "SwiftShuttle",
+                    "date": "2026-09-02",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 64.32,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r4",
+                    "description": "AmberRide",
+                    "date": "2026-09-30",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 5.68,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-30",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            },
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "key": "second",
+              "label": "July 2026",
+              "totalCents": 4000,
+              "count": 2,
+              "calendarDays": 31,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r1",
+                    "description": "SwiftShuttle",
+                    "date": "2026-07-03",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 30.12,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r2",
+                    "description": "AmberRide",
+                    "date": "2026-07-26",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 9.88,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r1",
+                    "description": "SwiftShuttle",
+                    "date": "2026-07-03",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 30.12,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r2",
+                    "description": "AmberRide",
+                    "date": "2026-07-26",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 9.88,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-07-01",
+                  "end": "2026-07-31",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            }
+          ],
+          "differenceCents": 3000,
+          "direction": "more",
+          "percentage": 75,
+          "larger": "September 2026",
+          "baselineKey": "second",
+          "overlap": false
+        },
+        "question": null
+      },
+      "numericAcceptancePass": true
+    },
+    {
+      "message": "Did I spend more on Music bench or Trail gear this month?",
+      "family": "category-sides",
+      "expectedRecordedAt": "2026-10-19T18:32:11.077Z",
+      "expected": {
+        "kind": "categories",
+        "ranges": [
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ],
+          [
+            "2026-10-01",
+            "2026-10-20"
+          ]
+        ],
+        "totals": [
+          2600,
+          4321
+        ],
+        "counts": [
+          2,
+          1
+        ],
+        "difference": -1721,
+        "ids": [
+          [
+            "r7",
+            "r9"
+          ],
+          [
+            "r8"
+          ]
+        ]
+      },
+      "expectedQuery": {
+        "operation": "compare",
+        "period": "month",
+        "category_terms": [
+          "Music bench",
+          "Trail gear"
+        ],
+        "comparison": {
+          "kind": "categories",
+          "periods": [],
+          "categories": [
+            "music-r",
+            "trail-r"
+          ]
+        }
+      },
+      "hashes": {
+        "backend/src/provider.js": "ebdcedac8eeeebb3bbecfb9b027f6de8d0c35fadc64f5e757d2e0e3d9dd93647",
+        "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+        "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+        "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+        "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+        "src/lib/comparisonRequest.js": "a2d1bf811ff1cca68c79524362e509c79f4a49732e7451d3d12415256c64e8c4",
+        "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e"
+      },
+      "context": {
+        "today": "2026-10-20",
+        "categories": [
+          {
+            "id": "music-r",
+            "label": "Music bench"
+          },
+          {
+            "id": "trail-r",
+            "label": "Trail gear"
+          },
+          {
+            "id": "home-r",
+            "label": "Household"
+          }
+        ],
+        "expenseCount": 11,
+        "hasData": true
+      },
+      "callNumber": 6,
+      "sentAt": "2026-10-19T18:32:11.079Z",
+      "safeShape": {
+        "type": "analyze",
+        "operation": "compare",
+        "rootPeriod": "month",
+        "kind": "categories",
+        "rootCategoryPresent": false,
+        "rootCategoryCount": 0,
+        "descriptionTermCount": 0,
+        "sideCategoryCount": 2,
+        "periodCount": 0
+      },
+      "receivedAt": "2026-10-19T18:32:14.048Z",
+      "result": {
+        "status": 200,
+        "body": {
+          "intent": {
+            "type": "analyze",
+            "query": {
+              "operation": "compare",
+              "period": "month",
+              "start": null,
+              "end": null,
+              "dayCount": null,
+              "category": null,
+              "description": null,
+              "amountOperator": null,
+              "amount": null,
+              "amountCents": null,
+              "day": "all",
+              "groupBy": null,
+              "aggregate": "total",
+              "comparison": {
+                "kind": "categories",
+                "periods": [],
+                "categories": [
+                  "music-r",
+                  "trail-r"
+                ]
+              },
+              "categoryTerms": [
+                "Music bench",
+                "Trail gear"
+              ],
+              "categories": [],
+              "descriptionTerms": [],
+              "spendingScope": null
+            },
+            "say": ""
+          }
+        }
+      },
+      "clientRoundTrip": {
+        "ok": true,
+        "intent": {
+          "type": "analyze",
+          "query": {
+            "operation": "compare",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "comparison": {
+              "kind": "categories",
+              "periods": [],
+              "categories": [
+                "music-r",
+                "trail-r"
+              ]
+            },
+            "categoryTerms": [
+              "Music bench",
+              "Trail gear"
+            ],
+            "categories": [],
+            "descriptionTerms": [],
+            "spendingScope": null
+          },
+          "say": ""
+        }
+      },
+      "observedCalculation": {
+        "source": "application execution of captured validated live intent, cross-checked in actual live browser",
+        "kind": "answer",
+        "text": "Music bench: S$26.00 across 2 transactions (2026-10-01 to 2026-10-20) versus Trail gear: S$43.21 across 1 transactions (2026-10-01 to 2026-10-20). Trail gear has the larger recorded total; exact difference S$17.21.",
+        "detail": "Recorded spending only, all amounts SGD. Missing logs can affect both totals. No percentage baseline is assigned to this symmetric or overlapping comparison.",
+        "comparison": {
+          "sides": [
+            {
+              "start": "2026-10-01",
+              "end": "2026-10-20",
+              "key": "first",
+              "label": "Music bench",
+              "totalCents": 2600,
+              "count": 2,
+              "calendarDays": 20,
+              "filters": "category Music bench",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r7",
+                    "description": "SwiftShuttle",
+                    "date": "2026-10-01",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 18.19,
+                    "notes": ""
+                  },
+                  {
+                    "id": "r9",
+                    "description": "SwiftShuttle AmberRide",
+                    "date": "2026-10-12",
+                    "category": "music-r",
+                    "categoryLabel": "Music bench",
+                    "amount": 7.81,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "music-r",
+                    "Music bench"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-10-01",
+                  "end": "2026-10-20",
+                  "category": "music-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            },
+            {
+              "start": "2026-10-01",
+              "end": "2026-10-20",
+              "key": "second",
+              "label": "Trail gear",
+              "totalCents": 4321,
+              "count": 1,
+              "calendarDays": 20,
+              "filters": "category Trail gear",
+              "evidence": {
+                "rows": [
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  }
+                ],
+                "basis": [
+                  {
+                    "id": "r8",
+                    "description": "AmberRide",
+                    "date": "2026-10-05",
+                    "category": "trail-r",
+                    "categoryLabel": "Trail gear",
+                    "amount": 43.21,
+                    "notes": ""
+                  }
+                ],
+                "scopeCategories": [
+                  [
+                    "trail-r",
+                    "Trail gear"
+                  ]
+                ],
+                "scope": {
+                  "start": "2026-10-01",
+                  "end": "2026-10-20",
+                  "category": "trail-r",
+                  "categories": [],
+                  "description": null,
+                  "descriptionTerms": [],
+                  "day": "all",
+                  "amountOperator": null,
+                  "amountCents": null,
+                  "spendingScope": null,
+                  "deduplicate": true
+                }
+              },
+              "foreignCurrency": false
+            }
+          ],
+          "differenceCents": -1721,
+          "direction": "less",
+          "percentage": null,
+          "larger": "Trail gear",
+          "baselineKey": null,
+          "overlap": false
+        },
+        "question": null
+      },
+      "numericAcceptancePass": true
+    }
+  ],
+  "startedAt": "2026-10-19T18:23:53Z",
+  "startBasis": "First retained task clock; inspection began immediately before this retained clock",
+  "verifiedAt": "2026-10-19T18:33:13.819Z",
+  "automaticRetries": 0,
+  "finalCodeCalls": [
+    4,
+    5,
+    6
+  ],
+  "finalCodeFamilies": [
+    "description-or-elapsed",
+    "named-periods",
+    "category-sides"
+  ],
+  "verdict": "Requested three-family live numeric repair gate passed. Not a publication or comprehensive reliability claim.",
+  "mainRecordingsChanged": [],
+  "mainExpectationsChanged": false,
+  "rawProviderOutputsRetained": false,
+  "lateElapsedCheck": {
+    "at": "2026-10-19T18:57:12Z",
+    "elapsedSeconds": 1999,
+    "missedRequired20MinuteCheck": true
+  },
+  "completedAt": "2026-10-19T18:57:30.919184+00:00",
+  "elapsedSecondsFromFirstRetainedClock": 2017.919234,
+  "cleanup": {
+    "taskServersStopped": true,
+    "viewportRestored": true,
+    "taskTabClosed": true,
+    "normalBackend8787StillListening": true
+  }
+}

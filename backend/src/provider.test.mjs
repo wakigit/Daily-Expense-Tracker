@@ -8,7 +8,7 @@
 
 import assert from 'node:assert/strict';
 import {
-  buildSchema, buildReceiptSchema, RECEIPT_PROMPT, isConfigured, MODEL, DEFAULT_MODEL,
+  buildSchema, elapsedComparisonPeriod, buildReceiptSchema, RECEIPT_PROMPT, isConfigured, MODEL, DEFAULT_MODEL,
   requestIntent, requestReceipt, verifyModel, ProviderNotConfigured,
 } from './provider.js';
 import { validateIntent } from '../../src/lib/intent.js';
@@ -201,6 +201,102 @@ if (!process.env.OPENAI_API_KEY) {
     assert.ok(!/sk-/.test(e.message));
   });
 }
+
+check('comparison schema: discriminator precedes dependent fields without dropping properties',()=>{
+  for(const q of schema.properties.query.anyOf.filter(q=>q.type==='object')){
+    assert.deepEqual(Object.keys(q.properties).slice(0,2),['operation','comparison']);
+    assert.deepEqual(Object.keys(q.properties).sort(),q.required.slice().sort());
+    if(q.properties.comparison.type!=='null'){
+      assert.equal(q.properties.groupBy.type,'null');
+      assert.deepEqual(q.properties.aggregate.enum,['total']);
+      assert.deepEqual(q.properties.spendingScope,{type:'null'});
+    }
+  }
+});
+check('comparison schema: category sides retain common period and cannot duplicate IDs',()=>{
+  for(const q of schema.properties.query.anyOf.filter(q=>q.properties?.comparison.properties?.kind.enum[0]==='categories')){
+    assert.ok(q.properties.period.enum.includes('month'));
+    assert.match(q.properties.period.description,/Never all unless all time/);
+    assert.equal(q.properties.category.type,'null');assert.equal(q.properties.categories.maxItems,0);
+    assert.equal(q.properties.comparison.properties.categories.minItems,2);
+  }
+});
+check('comparison schema: explicit period neutral root and exact arity',()=>{
+  for(const q of schema.properties.query.anyOf.filter(q=>q.properties?.comparison.properties?.kind.enum[0]==='periods')){
+    assert.deepEqual(q.properties.period.enum,['all']);
+    assert.equal(q.properties.comparison.properties.periods.minItems,2);
+    assert.equal(q.properties.comparison.properties.periods.maxItems,2);
+    assert.equal(q.properties.comparison.properties.categories.maxItems,0);
+    for(const key of ['start','end','dayCount'])assert.deepEqual(q.properties[key],{type:'null'});
+  }
+});
+
+// Small independent schema walker, restricted to keywords our intent schema uses.
+// A canonical request must satisfy an actual decoding branch, not just validation.
+const accepts=(s,v)=>{
+ if(s.anyOf)return s.anyOf.some(x=>accepts(x,v));
+ const type=v===null?'null':Array.isArray(v)?'array':typeof v==='number'&&Number.isInteger(v)?'integer':typeof v;
+ if(!(Array.isArray(s.type)?s.type:[s.type]).includes(type))return false;
+ if(s.enum&&!s.enum.includes(v))return false;
+ if(type==='object')return s.required.every(k=>Object.hasOwn(v,k))&&Object.keys(v).every(k=>s.properties[k]&&accepts(s.properties[k],v[k]));
+ if(type==='array')return v.length>=(s.minItems??0)&&v.length<=(s.maxItems??Infinity)&&v.every(x=>accepts(s.items,x));
+ if(type==='string')return v.length>=(s.minLength??0)&&v.length<=(s.maxLength??Infinity);
+ if(type==='integer')return v>=(s.minimum??-Infinity)&&v<=(s.maximum??Infinity);
+ return true;
+};
+const exampleCats=[{id:'ceramic',label:'Ceramic studio'},{id:'hike',label:'Hiking kit'}];
+const exampleSchema=buildSchema(exampleCats.map(c=>c.id)).properties.query;
+const canonical=patch=>({operation:'compare',comparison:null,period:'month',start:null,end:null,dayCount:null,category:null,categories:[],description:null,descriptionTerms:[],amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',spendingScope:null,category_terms:[],...patch});
+const month=m=>({period:'named_month',month:m,start:null,end:null,dayCount:null});
+for(const [name,query,message]of [
+ ['named category periods',canonical({period:'all',category:'ceramic',category_terms:['Ceramic studio'],comparison:{kind:'periods',categories:[],periods:[month('2027-04'),month('2027-02')]}}),'Compare Ceramic studio spending in April with February.'],
+ ['category sides common month',canonical({comparison:{kind:'categories',categories:['ceramic','hike'],periods:[]},category_terms:['Ceramic studio','Hiking kit']}),'Was Ceramic studio or Hiking kit spending higher this month?'],
+ ['literal OR named periods',canonical({period:'all',descriptionTerms:['PineBus','KiteTaxi'],comparison:{kind:'periods',categories:[],periods:[month('2027-08'),month('2027-05')]}}),'In August versus May, compare descriptions mentioning PineBus or KiteTaxi.'],
+ ['literal OR legacy elapsed',canonical({descriptionTerms:['PineBus','KiteTaxi']}),'Compare descriptions mentioning PineBus or KiteTaxi this month with last month.'],
+])check('comparison prompt example: decoding schema and server/client round-trip '+name,()=>{
+ assert.equal(accepts(exampleSchema,query),true);
+ const v=validateIntent({type:'analyze',query},{cats:exampleCats,message});
+ assert.equal(v.ok,true);assert.equal(v.intent.type,'analyze');
+ assert.deepEqual(validateIntent(v.intent,{cats:exampleCats,message}),v);
+});
+check('comparison decoding rejects root/nested category conflict and wrong aggregate',()=>{
+ const q=canonical({comparison:{kind:'categories',categories:['ceramic','hike'],periods:[]},categories:['ceramic','hike']});
+ assert.equal(accepts(exampleSchema,q),false);
+ assert.equal(accepts(exampleSchema,{...q,categories:[],aggregate:'per_transaction'}),false);
+});
+
+check('elapsed schema selection uses only an unambiguous ordinary relative pair',()=>{
+ const ctx={today:'2027-11-12',categories:exampleCats};
+ for(const [text,wanted]of [
+  ['Compare Ceramic studio this month with last month.','month'],
+  ['Compare descriptions mentioning PineBus or KiteTaxi last month with this month.','month'],
+  ['Was Ceramic studio spending higher this week or last week?','week'],
+  ['Compare full last month with this month.',null],
+  ['Compare entire this week and last week.',null],
+  ['Compare April with February.',null],
+  ['Did Ceramic studio or Hiking kit spending win this month?',null],
+  ['Compare this month, last month and July.',null],
+  ['Compare this month with last month from 2027-01-01 to 2027-01-15.',null],
+  ['Compare this month with this month.',null],
+ ])assert.equal(elapsedComparisonPeriod(text,ctx),wanted,text);
+ assert.equal(elapsedComparisonPeriod('Compare this month with last month.',{...ctx,categories:[{id:'x',label:'Last month souvenirs'}]}),null);
+});
+check('elapsed decoding retains all filters, rejects explicit full descriptors and one-sided totals',()=>{
+ const message='Compare descriptions mentioning PineBus or KiteTaxi this month with last month.';
+ const querySchema=buildSchema(['ceramic','hike'],{message,context:{categories:exampleCats,today:'2027-11-12'}}).properties.query;
+ assert.equal(accepts(querySchema,canonical({descriptionTerms:['PineBus','KiteTaxi'],categories:['ceramic','hike'],day:'weekday',amountOperator:'gte',amount:'9.12'})),true);
+ assert.equal(accepts(querySchema,canonical({operation:'total'})),false);
+ assert.equal(accepts(querySchema,canonical({period:'all',comparison:{kind:'periods',categories:[],periods:[month('2027-11'),month('2027-10')]}})),false);
+ for(const variant of querySchema.anyOf.filter(s=>s.type==='object')){
+   assert.deepEqual(variant.properties.period.enum,['month']);
+   assert.equal(variant.properties.comparison.type,'null');
+ }
+ everyObject({properties:{query:querySchema}},o=>{assert.equal(o.additionalProperties,false);assert.deepEqual(Object.keys(o.properties).sort(),o.required.slice().sort());});
+});
+check('non-elapsed requests retain the unrestricted canonical schema',()=>{
+ for(const message of ['Compare Ceramic studio April with February.','Did Ceramic studio or Hiking kit spending win this month?','Compare full last month with this month.'])
+  assert.deepEqual(buildSchema(['ceramic','hike'],{message,context:{categories:exampleCats}}),buildSchema(['ceramic','hike']));
+});
 
 const failed = checks.filter(([, ok]) => !ok);
 for (const [name, ok, detail] of checks) console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  → ' + detail : ''}`);

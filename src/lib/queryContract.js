@@ -169,14 +169,18 @@ export function providerQuerySchemas(category){
       else p.categories={...p.categories,maxItems:0};
       if(listDescription)p.description={type:'null'};
       else p.descriptionTerms={...p.descriptionTerms,maxItems:0};
-      if(kind==='legacy')p.comparison={type:'null'};
+      if(kind==='legacy')p.comparison={type:'null',description:'Non-comparison read OR legacy current/previous matching-elapsed compare. For elapsed compare root period is month or week, with all shared filters retained.'};
       else{
         p.operation={type:'string',enum:['compare']};p.spendingScope={type:'null'};
-        p.comparison=comparison.find(x=>x.properties?.kind.enum[0]===kind);
+        p.comparison={...comparison.find(x=>x.properties?.kind.enum[0]===kind),description:kind==='periods'?'Two explicit periods, with identical root filters. Not ordinary elapsed current/previous comparisons.':'Two configured category sides over the root requested common period. Never description terms.'};
         if(kind==='periods'){
-          p.period={type:'string',enum:['all']};for(const key of ['start','end','dayCount'])p[key]={type:'null'};
-        }else{p.category={type:'null'};}
+          p.period={type:'string',enum:['all'],description:'Neutral root only: both actual date ranges live in comparison.periods.'};for(const key of ['start','end','dayCount'])p[key]={type:'null'};
+        }else{p.category={type:'null'};p.period={...p.period,description:'The requested common period for BOTH category sides. This month = month, this week = week. Never all unless all time was requested.'};}
+        p.groupBy={type:'null'};p.aggregate={type:'string',enum:['total']};
       }
+      // Decode the kind before its dependent root period and filters. No field
+      // is removed and the shared validator remains the final authority.
+      schema.properties={operation:p.operation,comparison:p.comparison,...Object.fromEntries(Object.entries(p).filter(([key])=>!['operation','comparison'].includes(key)))};
       variants.push(schema);
     }
   }

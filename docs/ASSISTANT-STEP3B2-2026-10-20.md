@@ -1,6 +1,6 @@
 # Step3B2: two-sided comparisons, local checkpoint, live gate blocked
 
-The calculation/validation/evidence implementation is present locally, but **Step3B2 is incomplete at the live acceptance gate**. Do not publish or start multipart work on the strength of passing deterministic tests. Only one final comparison-path live numeric case passed; category and OR-period interpretation remain unreliable.
+The original checkpoint below failed its live acceptance gate. **The subsequent bounded interpretation-repair gate passed all three populated numeric comparison families on final code**, using six paid requests and one focused repair cycle. See the repair addendum at the end and `scripts/eval/step3b2-repair-provenance.json`. This is a local acceptance result, not publication permission or proof of general interpretation reliability. The original failures remain recorded below.
 
 ## 1. Time and Git baseline
 
@@ -122,3 +122,66 @@ Final required checks: build pass; smoke **1964/1964** (82 new B2 checks and one
 ## 10. Decision and next task
 
 **Blocked, incomplete live acceptance.** Preserve this local checkpoint for review. Do not merge, publish, or begin multipart planning. The next bounded task should repair comparison intent selection (period versus category, requested period preservation, OR-description scope) and close final-code fresh-live coverage for M66/M67/M76, category and OR-period families under a newly authorised call budget. Keep the current strict rejection and anti-narrowing guards. No model change, new capability, roast work or publication is started here.
+
+## 11. Interpretation repair addendum, 20 October 2026
+
+### Baseline, timing and scope
+
+Started from clean `checkpoint/2026-10-19-wip` at `d00aa91bf6d83561b0bd21cd78c98856f03d1813`. First retained task clock: 2026-10-19 18:23:53 UTC (02:23:53 Singapore on 20 October); initial inspection began immediately before this retained clock. Final elapsed time is in the repair provenance. The requested 20-minute clock check was missed during review/report writing, explicitly reported at the late check 18:57:12 UTC (33 minutes 19 seconds after the first retained clock). The 40-minute check and 45-minute implementation cutoff were not reached. Application implementation finished before the final live requests at 18:31; subsequent work was verification/documentation/cleanup. Main and wallpaper-redesign remain `6cf9345`; that published checkpoint remains an ancestor. No unexpected work, push, merge, deployment, history rewrite, dependency/model/storage/UI/roast changes, or HOLDOUT access.
+
+### Diagnosis A–E and exact repair
+
+A. The prompt repeated legacy elapsed and generalised comparison rules, including “explicit two-period requests use descriptors” beside the current/previous exception. Category comparisons inherited a generic root period with no branch-specific guidance. These are observed inconsistencies, not proof of the cause of every old rejection. Replaced the competing comparison passages with one decision table and four concise examples using Ceramic studio/Hiking kit, PineBus/KiteTaxi and 2027 dates. Ordinary reads retain their existing rules.
+
+B/C. Earlier safe diagnostics showed an OR-description question selecting category sides, and one category comparison duplicating root/nested IDs. The already-exclusive decoding variants remain. Added branch-specific descriptions, put operation/comparison before dependent fields, and constrain comparison groupBy to null and aggregate to total, as shared validation already requires. Root category/list remains empty for category sides; shared filters remain root fields for period sides. No new representation.
+
+D. First repair batch: named months and category sides passed, but description OR returned well-formed full October/September named-month descriptors. The unchanged date guard clarified before figures. This is a wrong requested-period interpretation, not malformed output or provider failure. One focused repair constrains generation to the existing legacy comparison-null month/week variants for an unambiguous ordinary current/previous pair recognised by the existing date helper. Explicit full periods, named months/ranges, extra sides, or calendar-word category vocabulary do not receive this constraint. The model still selects filters or clarification. This is pre-generation schema selection, not post-generation normalisation or replacement of missing periods. No ledger data is consulted.
+
+E. Truly malformed sides, unknown IDs, duplicate/conflicting root scope, invalid dates, unknown fields and one-sided totals remain rejected or safely clarified by the unchanged validators/guards. Provider failures retain their error/fallback labels. Old discarded provider output was not reconstructed. There were no provider/network/auth failures in the six new calls, all HTTP200.
+
+No returned model field is repaired or silently dropped. No new normalisation rule, second model/classification/repair call, automatic retry, engine change, scope-approval bypass or financial calculation by the model. Server/client validation, integer cents, immutable independent evidence and staleness remain intact.
+
+### Independent acceptance, recorded before each request
+
+Fictional data and exact expectations are in `scripts/comparison-interpretation-fixture.js`, independently specified cents/counts/IDs, not computed using application functions. Reference date 2026-10-20. The adapter wrote each expectation and expected query to its durable state before invoking the provider.
+
+| Question | Required validated scope/ranges | Expected and actual final live result | Evidence IDs |
+| --- | --- | --- | --- |
+| Compare Music bench spending in September with July. | compare/periods; category music-r; full 2026-09-01–30 and 2026-07-01–31 | 7000/4000 cents; counts 2/2; first-minus-second +3000; July baseline, 75.0% increase | r3,r4 / r1,r2 |
+| Did I spend more on Music bench or Trail gear this month? | compare/categories music-r/trail-r; 2026-10-01–20 both sides; no root category duplication | 2600/4321 cents; counts 2/1; difference -1721; no arbitrary percentage baseline | r7,r9 / r8 |
+| Compare descriptions mentioning SwiftShuttle or AmberRide this month with last month. | compare, comparison null, root month; both literal terms; 2026-10-01–20 / 2026-09-01–20 | 6921/7765 cents; counts 3/3; difference -844; previous matching dates baseline, 10.9% decrease | r7,r8,r9 / r3,r5,r6 |
+
+Every final validated query equals the independently expected normalised query, including all null/empty filters, not just matching totals. Full September OR would include r4 and total 8333, so a wrong full-period baseline cannot pass by coincidence. Rows r6/r9 each match both terms and count once. Household Soap r10 and unrelated July Trail gear r11 expose overbroad filters. Both sides are populated and all three pairs have distinct nonzero totals.
+
+### Actual paid ledger and final-code coverage
+
+Exactly six paid interpretation calls, retries zero, logged individually under `step=3B2-repair` in `scripts/eval/calls.log`.
+
+| Call | Family | HTTP / validated intent | Outcome / provenance |
+| --- | --- | --- | --- |
+| 1 | Named periods | 200 / analyze compare, periods | Numeric pass on first repair version |
+| 2 | Categories | 200 / analyze compare, categories, root month | Numeric pass on first repair version |
+| 3 | Description OR elapsed | 200 / analyze compare, periods, full named months | Safe application clarification, wrong requested-period classification; **not** a capability pass |
+| 4 | Description OR elapsed | 200 / analyze compare, comparison null, month | Final-code live numeric pass |
+| 5 | Named periods | 200 / analyze compare, periods | Final-code live numeric pass |
+| 6 | Categories | 200 / analyze compare, categories, month | Final-code live numeric pass |
+
+Calls 4–6 followed the one focused repair and restart. All three were checked again because schema construction changed; no passing old request was automatically attributed to final code. All application source hashes match their final live records. Only documentation/evaluation work followed. No third repair cycle or spare-call scope expansion. Server and client validation passed for every returned intent. One offline-free clarification is a handling success only; the final three are live model interpretation plus application-calculated numerical/evidence passes. Follow-up and evidence expansion are built-in, zero paid calls.
+
+### Browser coverage and limits
+
+Actual current handler/provider backend on isolated 8845, fictional frontend origin 127.0.0.1:5245. Restarted only this task backend after the focused repair, retained its call counter and all failed observations. The user's ordinary servers and browser data were preserved. Only the task frontend/backend were stopped, the viewport was restored and the task tab closed. The pre-existing backend remained listening on 8787 at cleanup. Chrome was initially disconnected/not running; started it through the computer-use app interface, then used its newly connected browser surface.
+
+All six acceptance requests were submitted through the actual app in the isolated browser, not mocks. Final calls 4–6 rendered actual fresh responses. At 1440×900 and 390×844 inspected populated side labels/ranges/counts/amounts/difference, complete expanded evidence, full literal-filter disclosure, named percentage baseline and category no-baseline explanation. Keyboard Enter expands each side and shows a visible focus outline. Long phone evidence/disclosure scroll vertically inside the existing chat. Measured document widths 1425 within 1440 and 375 within 390, no horizontal overflow or clipped amounts. “Show those transactions” produced the built-in which-side clarification, no provider call. The first-batch wrong-period clarification had no misleading offline notice.
+
+Screenshots outside tracked source: `/private/tmp/tallyai-step3b2-repair/`. Key files: `final-live-months-laptop.jpg`, `final-live-months-phone.jpg`, `final-live-categories-laptop.jpg`, `final-live-categories-phone.jpg`, `final-live-or-laptop.jpg`, `final-live-or-phone-evidence.jpg`, `final-followup-phone.jpg`, `batch1-or-period-clarification-phone.jpg`. The evidence images reflect live responses already in the app, no saved-intent mock substitution. The adapter can serve saved envelopes for subsequent identical views, but none of the six accepted calls used that cache. The numerical audit of captured validated intents is additional non-paid verification, not another live request.
+
+### Automated gates, replay and remaining limitations
+
+Final gates: build pass; smoke 1989/1989 (+25); provider checks 39/39 (+11); backend node tests 174/174; diff check pass. Tests cover schema construction/closed required objects, all four prompt examples through actual decoding branches and server/client round-trip, root/nested conflicts, category-versus-description binding, requested ranges, one-sided refusal, full filters, independent figures/IDs and existing OR totals/breakdowns. Existing evidence/follow-up/scope/provider-failure tests still pass. Counterexamples verify the new schema constraint does not apply to full relative periods, explicit named/ISO periods, three-period requests or calendar-word category labels.
+
+MAIN before and after repair: unchanged **71/76 questions, 77/82 turns**, three recorded offline fallbacks. `SCORECARD-step3b2-repair-before.md` and `SCORECARD-step3b2-repair-final.md` document mixed-age replay. No MAIN live cases, recording refresh or expectation edits in this repair; `recorded-intents.json` is unchanged. Old M66/M67/M76 pre-schema HTTP502 captures cannot establish current server/model success. M67's old unsupported expectation conflicts with the implemented explicit comparison capability and stays unchanged. Remaining replay failures: M46, M48.2, M66, M67, M76. A replay score is not wholly fresh live accuracy.
+
+A deterministic pre-live example also exposed an existing bounded literal-parser limitation: OR descriptions followed by named-month comparison words may absorb those words as part of a term and safely clarify. The example places the periods before the terms so it matches the existing supported grammar. The guard was not weakened or repaired here, and this limitation is not hidden by changing expectations. Unknown/ambiguous vocabulary, different category+period on each side, reviewed-concept comparisons, grouped/multipart comparisons, third sides, top-N, savings and ambiguous comparison follow-up amendments remain deferred or clarify. Three representative passes do not establish arbitrary natural-language reliability.
+
+**Decision: the requested three-family interpretation repair acceptance gate passes locally.** Keep this unpublished. Review the documented parser/unsupported limits separately; do not start another repair loop, multipart work, roast work or publication automatically.
