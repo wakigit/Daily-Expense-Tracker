@@ -33,6 +33,10 @@ export function isCredentialOrPromptProbe(message) {
   const extract = /\b(what is|what's|show|print|reveal|tell me|give me|repeat|output|disclose|leak|dump|display)\b/;
   if (secret.test(text) && (extract.test(text) || /\byour\b/.test(text))) return true;
   if (internals.test(text) && (extract.test(text) || /\bignore\b|\bverbatim\b/.test(text))) return true;
+  /* Injection-style framing: an instruction to set aside its instructions.
+     Matched on the pairing, not on "ignore" alone, so "ignore the weekend
+     rows" or a description containing "ignore" is not swept up. */
+  if (/\b(?:ignore|disregard|forget|override|bypass|skip)\b[^.?!]{0,48}\b(?:instructions?|prompts?|rules?|directives?|guidelines?|constraints?)\b/.test(text)) return true;
   return false;
 }
 

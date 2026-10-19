@@ -469,7 +469,7 @@
           "categoryTerms": [],
           "spendingScope": null
         },
-        "say": "Checking your largest single expense this month."
+        "say": ""
       }
     }
   },
@@ -593,7 +593,7 @@
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
-          "day": "weekday",
+          "day": "all",
           "groupBy": "weekday",
           "aggregate": "daily_average",
           "categoryTerms": [],
@@ -887,7 +887,7 @@
           "categoryTerms": [],
           "spendingScope": null
         },
-        "say": "Your spending at weekends this month."
+        "say": ""
       }
     }
   },
@@ -918,52 +918,142 @@
     }
   },
   "M36": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Food & Drinks"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
       }
     }
   },
   "M37": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "bbt",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "bbt"
+          ],
+          "spendingScope": null
+        },
+        "say": "Estimating when your Bubble Tea budget will be exhausted this month."
       }
     }
   },
   "M38": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "pub",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Public Transport"
+          ],
+          "spendingScope": null
+        },
+        "say": "Checking the budget exhaustion estimate for Public Transport this month."
       }
     }
   },
   "M39": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "hire",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "hire"
+          ],
+          "spendingScope": null
+        },
+        "say": "Estimating when your Private Hire budget will be exhausted this month."
       }
     }
   },
   "M40": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "entertainment",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "entertainment"
+          ],
+          "spendingScope": null
+        },
+        "say": "Estimating the exhaustion date for your Entertainment budget this month."
       }
     }
   },
@@ -1094,23 +1184,23 @@
           "aggregate": "total",
           "categoryTerms": [],
           "spendingScope": {
-            "label": "Supper and Late-Night Food",
+            "label": "Supper and late-night food",
             "includeCategories": [],
             "includeTerms": [
-              "late food",
+              "kaya toast",
               "late-night",
-              "latenight",
-              "midnight",
-              "night snack",
-              "nightfood",
+              "lor mee",
+              "maggi",
+              "mee goreng",
               "prata",
+              "satay",
               "supper"
             ],
             "excludeCategories": [],
             "excludeTerms": []
           }
         },
-        "say": "Proposing a related spending scope for supper and late-night food this month."
+        "say": "Proposing a spending scope for supper and late-night food this month."
       }
     }
   },
@@ -1149,19 +1239,19 @@
             "includeCategories": [],
             "includeTerms": [
               "late night",
-              "late supper",
               "late-night",
               "midnight",
               "midnight snack",
               "night food",
               "night snack",
+              "prata",
               "supper"
             ],
             "excludeCategories": [],
             "excludeTerms": []
           }
         },
-        "say": "I can help define your supper and late-night food spending category for this month."
+        "say": "Let me first define a spending scope to include supper and late-night food purchases this month."
       }
     }
   },
@@ -1231,12 +1321,10 @@
     }
   },
   "M54": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "message"
+      "intent": {
+        "type": "help"
       }
     }
   },
@@ -1401,22 +1489,18 @@
     }
   },
   "M63": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "message"
+      "intent": {
+        "type": "help"
       }
     }
   },
   "M64": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "message"
+      "intent": {
+        "type": "help"
       }
     }
   },
@@ -1560,35 +1644,23 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "analyze",
-        "query": {
-          "operation": "largest",
-          "period": "month",
-          "start": null,
-          "end": null,
-          "dayCount": null,
-          "category": null,
-          "description": null,
-          "amountOperator": null,
-          "amount": null,
-          "amountCents": null,
-          "day": "all",
-          "groupBy": null,
-          "aggregate": "total",
-          "categoryTerms": [],
-          "spendingScope": null
-        },
-        "say": ""
+        "type": "clarify",
+        "question": "What exactly do you want: the single largest expense this month or something else?",
+        "options": [
+          "Single largest expense this month"
+        ],
+        "say": "I cannot provide a list of top 3 expenses, only the single largest one. Do you want the single largest expense this month?"
       }
     }
   },
   "M73": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.category_terms"
+      "intent": {
+        "type": "clarify",
+        "question": "You asked about savings if Bubble Tea spending is halved, which is not supported. Please ask for actual spending totals or averages.",
+        "options": [],
+        "say": "I can't perform hypothetical savings calculations. Could you please ask for total or average Bubble Tea spending for a period instead?"
       }
     }
   },

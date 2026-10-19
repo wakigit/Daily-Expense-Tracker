@@ -1,2 +1,4 @@
 2026-10-18T21:49:58.505Z	step=1	calls=1	set=MAIN	purpose=single-call live transport check before baseline
 2026-10-18T21:52:01.381Z	step=1	calls=73	set=MAIN	purpose=Step 1 Part B baseline live run of MAIN question set
+2026-10-19T02:03:21.963Z	step=2	calls=27	set=MAIN	purpose=Step 2 re-run: all baseline failures needing a model call, plus regression-risk questions whose intent instructions changed
+2026-10-19T01:57:00.000Z	step=2	calls=2	set=DIAGNOSTIC	purpose=B2 raw pre-validation shape probe (scripts/eval/b2-probe.mjs, M36 and M40)

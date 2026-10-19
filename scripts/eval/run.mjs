@@ -330,7 +330,19 @@ function scoreTurn({ question, turn, actual }) {
 
   if (!satisfied) {
     if (actual.kind === 'answer' && want.every((w) => nonFigure.includes(w))) {
-      return { pass: false, rootCause: 'honesty', issues: [`answered with a figure where ${want.join('/')} was required: ${actual.plan?.text}`] };
+      /* Distinguish a false claim from the wrong response type. Stating a
+         figure where a clarification was required is dishonest; replying with
+         built-in capability text states nothing false and is a misread of what
+         was asked. Both fail, but calling the second one "honesty" misreports
+         what went wrong. */
+      const text = actual.plan?.text ?? '';
+      const statesFigure = /S\$\s?\d/.test(text)
+        || Boolean(actual.plan?.evidence?.rows?.length)
+        || Boolean(actual.plan?.breakdown) || Boolean(actual.plan?.comparison);
+      return { pass: false, rootCause: statesFigure ? 'honesty' : 'interpretation',
+        issues: [statesFigure
+          ? `answered with a figure where ${want.join('/')} was required: ${text}`
+          : `replied with built-in text stating no figure, where ${want.join('/')} was required: ${text}`] };
     }
     if (actual.kind === 'clarify' && want.includes('answer')) {
       return { pass: false, rootCause: 'unsupported-capability', issues: [`clarified instead of answering: ${actual.question}`] };

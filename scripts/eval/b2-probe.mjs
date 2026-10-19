@@ -18,6 +18,9 @@
  *   node --env-file-if-exists=backend/.env scripts/eval/b2-probe.mjs
  */
 
+import { appendFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { requestIntent, MODEL } from '../../backend/src/provider.js';
 
 const MAX_CALLS = 2;
@@ -84,6 +87,13 @@ for (const probe of PROBES) {
     console.log(`\n  spendingScope RAW VALUE: ${JSON.stringify(q.spendingScope)}`);
   }
   console.log('');
+}
+
+/* Self-logging: a paid-call script that does not write the ledger is a trap,
+   because the next person to run it will not remember to. */
+if (used > 0) {
+  appendFileSync(resolve(process.cwd(), 'scripts/eval/calls.log'),
+    `${new Date().toISOString()}\tstep=2\tcalls=${used}\tset=DIAGNOSTIC\tpurpose=B2 raw pre-validation shape probe\n`);
 }
 
 console.log(`paid calls used: ${used}`);
