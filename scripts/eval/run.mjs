@@ -554,7 +554,15 @@ const summary = {
   byRootCause,
 };
 
-if (!MOCK) writeFileSync(RECORDING_FILE, `${JSON.stringify(fresh, null, 2)}\n`);
+/* MERGE, never replace. A partial live re-run (`--only`) must leave the
+   recordings for untouched questions intact, so a later full replay still
+   scores the whole set — the re-run ids against fresh responses and the rest
+   against the ones already captured. Overwriting would silently shrink the
+   question set and flatter the score. */
+if (!MOCK) {
+  const previous = existsSync(RECORDING_FILE) ? JSON.parse(readFileSync(RECORDING_FILE, 'utf8')) : {};
+  writeFileSync(RECORDING_FILE, `${JSON.stringify({ ...previous, ...fresh }, null, 2)}\n`);
+}
 
 const outJson = p(HOLD ? 'results-holdout.json' : `results-${LABEL}.json`);
 writeFileSync(outJson, `${JSON.stringify({ summary, results }, null, 2)}\n`);
