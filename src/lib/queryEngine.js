@@ -106,14 +106,15 @@ function buildAnswer(raw, {expenses=[],cats=[],today,budgets={},approvedScope=nu
   if (q.spendingScope && JSON.stringify(q.spendingScope)!==JSON.stringify(approvedScope)) return clarify('Review and confirm the proposed spending rules before calculating this scope.');
   if (!validDate(range.start) || !validDate(range.end)) return clarify('The resolved date range is outside supported calendar dates (1900 to 2200).');
   if (range.start > range.end) return clarify('That range is entirely in the future. Choose recorded dates through today.');
-  const scope={...range,start:q.period==='all'?'1900-01-01':range.start,historyStart:q.period==='all'?range.start:null,category:q.category,description:q.description,amountOperator:q.amountOperator,amountCents:q.amountCents,day:q.day,spendingScope:q.spendingScope};
+  const scope={...range,start:q.period==='all'?'1900-01-01':range.start,historyStart:q.period==='all'?range.start:null,category:q.category,description:q.description,categories:q.categories,descriptionTerms:q.descriptionTerms,amountOperator:q.amountOperator,amountCents:q.amountCents,day:q.day,spendingScope:q.spendingScope};
   const rows=matchingRows(expenses,scope);
   const cat=cats.find(c=>c.id===q.category);
   const amountPhrase=amountFilterPhrase(q.amountOperator,dollars(q.amountCents));
   // `dayFilterPhrase` rather than the bare token: "weekday" alone reads as a
   // grouping, which is how a Monday-to-Friday restriction once hid in plain
   // sight and produced a confidently wrong winner.
-  const filters=[cat?.label ?? 'All categories',q.description && `all descriptions mentioning “${q.description}” (case-insensitive substring)`,amountPhrase,dayFilterPhrase(q.day)].filter(Boolean).join(' · ');
+  const listLabels=q.categories.map(id=>cats.find(c=>c.id===id).label);
+  const filters=[listLabels.length && `Categories: ${listLabels.join(' OR ')}`,q.descriptionTerms.length && `Literal descriptions: ${q.descriptionTerms.map(t=>`“${t}”`).join(' OR ')}`,cat?.label ?? (listLabels.length ? null : 'All categories'),q.description && `all descriptions mentioning “${q.description}” (case-insensitive substring)`,amountPhrase,dayFilterPhrase(q.day)].filter(Boolean).join(' · ');
   const interpretation={category:filters,period:`${range.start} to ${range.end} (inclusive, Singapore calendar dates)`};
 
   /* A subject filter that matches nothing ANYWHERE is not a zero total.
@@ -148,7 +149,7 @@ function buildAnswer(raw, {expenses=[],cats=[],today,budgets={},approvedScope=nu
   const evidence=(selected=rows,basis=rows,overrides={})=>captureEvidence(selected,{basis,scope:{...scope,...overrides},cats});
   const total=sumCents(rows), days=calendarDays(range.start,range.end).filter(date=>rowMatches({date,description:'',category:q.category,amount:0},{day:q.day}));
   const result={kind:'answer',approvedScope:q.spendingScope?JSON.parse(JSON.stringify(q.spendingScope)):null,intent:q.operation,interpretation,evidence:evidence(),detail:'Recorded spending only. Missing logs can affect the result.',
-    filterDisclosure:filterDisclosure(activeFilterPhrases({categoryLabel:cat?.label ?? null,description:q.description,amountPhrase,day:q.day}))};
+    filterDisclosure:filterDisclosure(activeFilterPhrases({categoryLabel:cat?.label ?? null,categoryLabels:listLabels,description:q.description,descriptionTerms:q.descriptionTerms,amountPhrase,day:q.day}))};
   // The subject exists but not in this window. S$0.00 is then a true answer,
   // and saying where the matches actually are stops it reading as "never".
   if(subjectNotice?.kind==='outside') result.detail+=` ${subjectNotice.message}`;

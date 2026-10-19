@@ -1,0 +1,518 @@
+{
+  "baseCommit": "a46cfc6b2ecabb65600400fe9c8654efe5b9ed9c",
+  "paidRequests": 6,
+  "retries": 0,
+  "liveSourceHashes": {
+    "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+    "backend/src/provider.js": "d9569c2bd320743317a1106f4b8c5b5596f8b9640fb37b01f0b71b622937b66f",
+    "src/lib/intent.js": "d47900bedc88e1cedb0694fee9fc439c58c8d7c85b3787342e8da5e58608fcc7",
+    "src/lib/queryContract.js": "fc739fd388fe51dc911689fa7fd4a5a7665754f45f901c0490e6a11320b97316",
+    "src/lib/intentLimitations.js": "ba0b914e0b9a79dc5b166fa09114bc279e9b0e87fbfd6591f5a8250b5dfde627",
+    "src/lib/explicitFilterRequest.js": "8c53493b0e6a8c5f01be2608465d555044a16132fd78f3146e0ec1fdf2dd84c1",
+    "src/lib/queryEngine.js": "39f6a718c03c2f4a2740c32696a607b03339cad864b38db64dee3f31f3b8364f"
+  },
+  "finalSourceHashes": {
+    "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+    "backend/src/provider.js": "d9569c2bd320743317a1106f4b8c5b5596f8b9640fb37b01f0b71b622937b66f",
+    "src/lib/intent.js": "9454cbf235b9e2ab54119a1467bf0dbc8fc5feba9789176b7a2d2ba82a1a916d",
+    "src/lib/queryContract.js": "fc739fd388fe51dc911689fa7fd4a5a7665754f45f901c0490e6a11320b97316",
+    "src/lib/intentLimitations.js": "435c856a075701146cc7196d7698e86a421da2a43acad77efb4fd30a2d2f34dc",
+    "src/lib/explicitFilterRequest.js": "5c1f41650d86f02e0fe0e7784fda891cbafc9ddb83b591727b2b80fc23bca86e",
+    "src/lib/queryEngine.js": "39f6a718c03c2f4a2740c32696a607b03339cad864b38db64dee3f31f3b8364f"
+  },
+  "finalGuard": "After live calls, added explicit-list membership checks against the request and preserved the existing unmapped-category metadata safeguard. Also applied the existing ambiguous-coordination reason to model help/clarify paths. No fresh paid call after these guards. Five saved live envelopes pass the final real handler/client unchanged. The sixth remains clarify, but now uses fixed explicit_filter_coverage_incomplete wording retaining the complete original request instead of the original ungrounded Campus meals suggestion. The final handler and browser verify this recorded-live revalidation, not a fresh post-guard model call. Negative guard cases are deterministic tests.",
+  "intendedMainRefresh": [
+    "M66",
+    "M68"
+  ],
+  "changedRecordingKeys": [
+    "M68"
+  ],
+  "otherRecordingKeysPreserved": 73,
+  "mainNumericCaveat": "M68 has no numeric expectation in the unchanged MAIN oracle; its 18200 cents and exact evidence IDs were independently verified here.",
+  "checks": [
+    {
+      "message": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "clarify",
+        "reason": "category_comparison_unsupported",
+        "question": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+        "options": [],
+        "say": ""
+      },
+      "finalIntent": {
+        "type": "clarify",
+        "reason": "category_comparison_unsupported",
+        "question": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+        "options": [],
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": true,
+      "numeric": null
+    },
+    {
+      "message": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Food & Drinks",
+            "Bubble Tea",
+            "Public Transport"
+          ],
+          "categories": [
+            "bbt",
+            "food",
+            "pub"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "finalIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Food & Drinks",
+            "Bubble Tea",
+            "Public Transport"
+          ],
+          "categories": [
+            "bbt",
+            "food",
+            "pub"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": true,
+      "numeric": {
+        "expectedCents": 18200,
+        "actualCents": 18200,
+        "expectedIds": [
+          "f073",
+          "f074",
+          "f075",
+          "f076",
+          "f078",
+          "f079",
+          "f080",
+          "f081",
+          "f084",
+          "f085",
+          "f086",
+          "f087",
+          "f088",
+          "f089",
+          "f090",
+          "f091",
+          "f092",
+          "f094",
+          "f095",
+          "f096",
+          "f098",
+          "f099",
+          "f100"
+        ],
+        "actualIds": [
+          "f073",
+          "f074",
+          "f075",
+          "f076",
+          "f078",
+          "f079",
+          "f080",
+          "f081",
+          "f084",
+          "f085",
+          "f086",
+          "f087",
+          "f088",
+          "f089",
+          "f090",
+          "f091",
+          "f092",
+          "f094",
+          "f095",
+          "f096",
+          "f098",
+          "f099",
+          "f100"
+        ],
+        "groups": null,
+        "text": "S$182.00 recorded spending across 23 transactions. Counting only: categories (any of: Bubble Tea OR Food & Drinks OR Public Transport)."
+      }
+    },
+    {
+      "message": "Total Studio kits and Bicycle upkeep spending this month.",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Studio kits",
+            "Bicycle upkeep"
+          ],
+          "categories": [
+            "cycle-y",
+            "studio-x"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "finalIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Studio kits",
+            "Bicycle upkeep"
+          ],
+          "categories": [
+            "cycle-y",
+            "studio-x"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": true,
+      "numeric": {
+        "expectedCents": 7711,
+        "actualCents": 7711,
+        "expectedIds": [
+          "u1",
+          "u2",
+          "u3",
+          "u6",
+          "u7",
+          "u9"
+        ],
+        "actualIds": [
+          "u1",
+          "u2",
+          "u3",
+          "u6",
+          "u7",
+          "u9"
+        ],
+        "groups": null,
+        "text": "S$77.11 recorded spending across 6 transactions. Counting only: categories (any of: Bicycle upkeep OR Studio kits)."
+      }
+    },
+    {
+      "message": "Show purchases mentioning BlueCab or SwiftVan over the last30days.",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 30,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "bluecab",
+            "swiftvan"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "finalIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 30,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "bluecab",
+            "swiftvan"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": true,
+      "numeric": {
+        "expectedCents": 11816,
+        "actualCents": 11816,
+        "expectedIds": [
+          "u1",
+          "u10",
+          "u2",
+          "u3",
+          "u4",
+          "u5",
+          "u7",
+          "u9"
+        ],
+        "actualIds": [
+          "u1",
+          "u10",
+          "u2",
+          "u3",
+          "u4",
+          "u5",
+          "u7",
+          "u9"
+        ],
+        "groups": null,
+        "text": "8 matching transactions, totalling S$118.16. Expand “See transactions” for all matching rows. Counting only: descriptions containing any of: “bluecab” OR “swiftvan” (literal, case/whitespace-insensitive substrings, not verified merchant identity)."
+      }
+    },
+    {
+      "message": "Break down Studio kits and Bicycle upkeep purchases mentioning BlueCab or SwiftVan by month this year.",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [
+            "Studio kits",
+            "Bicycle upkeep"
+          ],
+          "categories": [
+            "cycle-y",
+            "studio-x"
+          ],
+          "descriptionTerms": [
+            "bluecab",
+            "swiftvan"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "finalIntent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "categoryTerms": [
+            "Studio kits",
+            "Bicycle upkeep"
+          ],
+          "categories": [
+            "cycle-y",
+            "studio-x"
+          ],
+          "descriptionTerms": [
+            "bluecab",
+            "swiftvan"
+          ],
+          "spendingScope": null
+        },
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": true,
+      "numeric": {
+        "expectedCents": 7812,
+        "actualCents": 7812,
+        "expectedIds": [
+          "u1",
+          "u10",
+          "u2",
+          "u3",
+          "u5",
+          "u7",
+          "u9"
+        ],
+        "actualIds": [
+          "u1",
+          "u10",
+          "u2",
+          "u3",
+          "u5",
+          "u7",
+          "u9"
+        ],
+        "groups": [
+          [
+            "2026-09",
+            707
+          ],
+          [
+            "2026-10",
+            7105
+          ]
+        ],
+        "text": "S$78.12 recorded spending across 7 transactions, broken down by month. Counting only: categories (any of: Bicycle upkeep OR Studio kits); descriptions containing any of: “bluecab” OR “swiftvan” (literal, case/whitespace-insensitive substrings, not verified merchant identity)."
+      }
+    },
+    {
+      "message": "Total Studio kits and bubble tea spending this month.",
+      "httpStatus": 200,
+      "originalLiveIntent": {
+        "type": "clarify",
+        "question": "Do you want to include Campus meals as bubble tea spending?",
+        "options": [
+          "Yes, include Campus meals as bubble tea",
+          "No, exclude bubble tea spending"
+        ],
+        "say": "Bubble tea is not a recognized category. Did you mean to include Campus meals for bubble tea spending?"
+      },
+      "finalIntent": {
+        "type": "clarify",
+        "reason": "explicit_filter_coverage_incomplete",
+        "question": "I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection. Your original request: “Total Studio kits and bubble tea spending this month.”",
+        "options": [],
+        "say": ""
+      },
+      "source": "live model interpretation; application figures",
+      "validation": "original live server/client passed; final handler/client pass using saved live intent",
+      "finalEnvelopeUnchanged": false,
+      "numeric": null
+    }
+  ],
+  "browser": {
+    "origin": "http://127.0.0.1:5243",
+    "fictionalData": "scripts/or-filter-fixture.js",
+    "sizes": [
+      [
+        1440,
+        900
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "paidBrowserRequests": 4,
+    "source": "Actual App -> isolated Vite proxy -> fresh handler/provider -> model, then client validation and application calculation. Later views/follow-ups cost zero; saved-response transport explicitly labelled.",
+    "observations": [
+      "All active category and literal rules readable",
+      "Complete full and month-group evidence expanded",
+      "Category union -> month breakdown -> previous month -> amount narrowing -> original transactions succeeded locally",
+      "No horizontal overflow observed",
+      "Ambiguous mixed request clarified without a query; wording suggested Campus meals for bubble tea, a non-ideal model-authored suggestion, not accepted scope or calculation"
+    ],
+    "screenshotsDirectory": "/private/tmp/tallyai-step3b1/",
+    "finalGuardRendering": {
+      "source": "Recorded live interpretation through current real handler/client, zero further paid calls",
+      "reason": "explicit_filter_coverage_incomplete",
+      "contextPreserved": true,
+      "contextCheck": "After guarded clarification, local category breakdown remained 7711 cents (3101+4610), six original rows",
+      "screenshots": [
+        "final-ambiguity-phone.jpg",
+        "final-ambiguity-laptop.jpg",
+        "final-context-after-ambiguity-phone.jpg",
+        "final-context-after-ambiguity-laptop.jpg"
+      ]
+    }
+  }
+}

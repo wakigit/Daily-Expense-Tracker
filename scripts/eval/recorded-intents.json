@@ -1588,10 +1588,34 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "clarify",
-        "reason": "multiple_categories",
-        "question": "I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope? Your original request: “How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?”",
-        "options": [],
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "Food & Drinks",
+            "Bubble Tea",
+            "Public Transport"
+          ],
+          "categories": [
+            "bbt",
+            "food",
+            "pub"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
         "say": ""
       }
     }

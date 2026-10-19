@@ -9,7 +9,7 @@ export function previewSpendingScope(raw, ctx) {
   const query=checked.query, range=queryRange(query,ctx.today,ctx.expenses);
   // Reuse engine validation/date handling without granting approval or calculating.
   if (!validDate(range.start)||!validDate(range.end)||range.start > range.end) return {ok:false,question:'Choose recorded dates through today.'};
-  const filters={...range,start:query.period==='all'?'1900-01-01':range.start,category:query.category,description:query.description,day:query.day,amountOperator:query.amountOperator,amountCents:query.amountCents,spendingScope:query.spendingScope};
+  const filters={...range,start:query.period==='all'?'1900-01-01':range.start,category:query.category,description:query.description,categories:query.categories,descriptionTerms:query.descriptionTerms,day:query.day,amountOperator:query.amountOperator,amountCents:query.amountCents,spendingScope:query.spendingScope};
   const rows=matchingRows(ctx.expenses,filters).sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id)));
   const categories=ctx.cats.map(c=>[c.id,c.label]).sort((a,b)=>a[0].localeCompare(b[0]));
   const fingerprint=JSON.stringify({query,range,categories,rows:rows.map(r=>[r.id,r.date,r.description,r.category,r.amount,r.notes??''])});

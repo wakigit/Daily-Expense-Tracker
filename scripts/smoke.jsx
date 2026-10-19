@@ -1,3 +1,4 @@
+import { orFilterChecks } from './or-filter-checks';
 import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
@@ -2097,6 +2098,7 @@ await roastChecks(logic);
 
 await step2Checks(logic);
 await step3aChecks(logic);
+orFilterChecks(logic);
 scopeChecks(logic);
 queryChecks(logic);
 breakdownChecks(logic);

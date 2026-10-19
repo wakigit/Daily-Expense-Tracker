@@ -1,3 +1,4 @@
+import { activeFilterPhrases } from '../lib/filterWording';
 import { useEffect, useState } from 'react';
 import { money } from '../lib/format';
 export function SpendingScopeRules({ scope, cats=[] }) {
@@ -16,12 +17,13 @@ export default function SpendingScopeReview({ proposal,cats,onConfirm,onCancel,o
   useEffect(()=>setWholeCategoriesAccepted(false),[proposal.preview.fingerprint]);
   const [draft,setDraft]=useState(proposal.query.spendingScope);
   const {query,preview}=proposal;
+  const additionalFilters=activeFilterPhrases({categoryLabel:cats.find(c=>c.id===query.category)?.label,categoryLabels:(query.categories??[]).map(id=>cats.find(c=>c.id===id)?.label??id),description:query.description,descriptionTerms:query.descriptionTerms??[],amountPhrase:query.amountOperator&&`${({gt:'over',lt:'under',gte:'at least',lte:'at most'})[query.amountOperator]} ${money(query.amountCents/100)}`,day:query.day});
   const edit=()=>{setDraft(query.spendingScope);setEditing(true);};
   const toggle=(key,id)=>setDraft(d=>({...d,[key]:d[key].includes(id)?d[key].filter(x=>x!==id):[...d[key],id]}));
   return <section className="proposal scope-review" aria-label="Review related spending scope">
     <h3>Review spending rules</h3>
     <p>{preview.range.start} to {preview.range.end} (inclusive, Singapore)</p>
-    {(query.category||query.description||query.amountOperator||query.day!=='all')&&<p>Additional filters: {[query.category&&cats.find(c=>c.id===query.category)?.label,query.description&&`Descriptions containing “${query.description}”`,query.amountOperator&&`${({gt:'over',lt:'under',gte:'at least',lte:'at most'})[query.amountOperator]} ${money(query.amountCents/100)}`,query.day!=='all'&&query.day].filter(Boolean).join(' · ')}</p>}
+    {additionalFilters.length>0&&<p>Additional filters: {additionalFilters.join(' · ')}</p>}
     <p>Requested result: {query.operation==='breakdown'?`complete ${query.groupBy} breakdown`:query.operation}.</p>
     <SpendingScopeRules scope={query.spendingScope} cats={cats}/>
     {proposal.notice&&<p role="status" className="scope-notice">{proposal.notice}</p>}

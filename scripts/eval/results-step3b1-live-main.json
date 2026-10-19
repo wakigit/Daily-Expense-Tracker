@@ -1,0 +1,118 @@
+{
+  "summary": {
+    "label": "step3b1-live-main",
+    "note": "New Step3B1 code, exact intended MAIN recordings only. M68 has no numeric oracle expectation; independently verify its union arithmetic and evidence.",
+    "set": "MAIN",
+    "mode": "live",
+    "startedAt": "2026-10-19T12:59:53.705Z",
+    "finishedAt": "2026-10-19T12:59:58.572Z",
+    "referenceDate": "2026-10-19",
+    "endpoint": "http://127.0.0.1:8843",
+    "questions": 2,
+    "questionsPassed": 2,
+    "turns": 2,
+    "turnsPassed": 2,
+    "paidCalls": 2,
+    "httpCalls": 2,
+    "offlineTurns": 0,
+    "byCapability": {
+      "complex-two-category": {
+        "total": 1,
+        "passed": 1,
+        "failures": []
+      },
+      "complex-multiple-categories": {
+        "total": 1,
+        "passed": 1,
+        "failures": []
+      }
+    },
+    "byRootCause": {}
+  },
+  "results": [
+    {
+      "id": "M66",
+      "capability": "complex-two-category",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M66",
+          "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 200,
+          "intentType": "clarify",
+          "semanticReason": "category_comparison_unsupported",
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "Two categories in one question. A breakdown containing both is honest; narrowing to one is not.",
+          "actualText": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M68",
+      "capability": "complex-multiple-categories",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M68",
+          "text": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "answer",
+          "httpStatus": 200,
+          "intentType": "analyze",
+          "semanticReason": null,
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.",
+          "actualText": "S$182.00 recorded spending across 23 transactions. Counting only: categories (any of: Bubble Tea OR Food & Drinks OR Public Transport).",
+          "actualQuery": {
+            "operation": "total",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "categoryTerms": [
+              "Food & Drinks",
+              "Bubble Tea",
+              "Public Transport"
+            ],
+            "categories": [
+              "bbt",
+              "food",
+              "pub"
+            ],
+            "descriptionTerms": [],
+            "spendingScope": null
+          }
+        }
+      ]
+    }
+  ]
+}

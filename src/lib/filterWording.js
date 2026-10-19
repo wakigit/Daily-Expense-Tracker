@@ -46,10 +46,12 @@ export function amountFilterPhrase(operator, formattedAmount) {
  * @param parts.day raw day token from the validated query
  * @returns {string[]} possibly empty
  */
-export function activeFilterPhrases({ categoryLabel = null, description = null, amountPhrase = null, day = 'all' } = {}) {
+export function activeFilterPhrases({ categoryLabel = null, categoryLabels = [], description = null, descriptionTerms = [], amountPhrase = null, day = 'all' } = {}) {
   return [
     categoryLabel && `category ${categoryLabel}`,
+    categoryLabels.length && `categories (any of: ${categoryLabels.join(' OR ')})`,
     description && `descriptions containing “${description}”`,
+    descriptionTerms.length && `descriptions containing any of: ${descriptionTerms.map(t=>`“${t}”`).join(' OR ')} (literal, case/whitespace-insensitive substrings, not verified merchant identity)`,
     amountPhrase,
     dayFilterPhrase(day),
   ].filter(Boolean);

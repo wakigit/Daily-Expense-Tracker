@@ -1,6 +1,9 @@
+import { categoryRequestText, unresolvedCoordination } from './explicitFilterRequest.js';
 import { categoryNames } from './categoryVocabulary.js';
 /** Fixed semantic limitations, never exception-text matching or model-authored answers. */
 export const INTENT_LIMITATION = Object.freeze({
+  FILTER_COVERAGE: 'explicit_filter_coverage_incomplete',
+  OR_OPERATION: 'or_operation_unsupported',
   MULTIPLE_CATEGORIES: 'multiple_categories',
   CATEGORY_COMPARISON: 'category_comparison_unsupported',
   SCOPE_REQUIRED: 'scope_rules_required',
@@ -13,7 +16,9 @@ export const INTENT_LIMITATION = Object.freeze({
 export const isLimitationReason = reason => Object.values(INTENT_LIMITATION).includes(reason);
 export function limitationClarification(reason, message = '') {
   const explanations = {
-    [INTENT_LIMITATION.MULTIPLE_CATEGORIES]: 'I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope?',
+    [INTENT_LIMITATION.FILTER_COVERAGE]: 'I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection.',
+    [INTENT_LIMITATION.OR_OPERATION]: 'A combined filter does not define a single category budget or a category/period comparison. I can calculate its recorded total, count, average, transaction list or complete breakdown. Which supported result would you like?',
+    [INTENT_LIMITATION.MULTIPLE_CATEGORIES]: 'Please specify all configured categories for a combined total, or ask for explicit literal description terms. If a term could mean either a category or a description, which do you intend? I will not calculate a narrower selection.',
     [INTENT_LIMITATION.CATEGORY_COMPARISON]: 'I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category.',
     [INTENT_LIMITATION.SCOPE_REQUIRED]: 'Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval.',
     [INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE]: 'The proposed scope rules do not cover every named category. Which single category should I use, or should each requested category be explicitly included in rules for your review? I will not calculate a narrower selection.',
@@ -47,19 +52,26 @@ export function isBroadFinancialAssessment(message) {
 }
 
 export function mentionedCategories(message, cats = []) {
-  const unquoted = String(message).toLowerCase().replace(/[“\"][^”\"]*[”\"]/g, ' ');
-  return cats.filter(c => categoryNames(c).some(label => {
-    const escaped = label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'u').test(unquoted);
-  }));
+  const unquoted = categoryRequestText(message).toLowerCase();
+  let remaining=unquoted;
+  const found=new Set();
+  const vocabulary=cats.flatMap(c=>categoryNames(c).map(label=>({id:c.id,label}))).sort((a,b)=>b.label.length-a.label.length);
+  for(const {id,label} of vocabulary){
+    const escaped=label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re=new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`,'gu');
+    if(re.test(remaining)){found.add(id);remaining=remaining.replace(re,'$1 ');}
+  }
+  return cats.filter(c=>found.has(c.id));
 }
 export function asksCategoryComparison(message, cats = []) {
-  const text=unquotedText(message);
-  return mentionedCategories(text,cats).length > 1 && /\b(?:compare|comparison|versus|vs)\b|\b(?:more|less)\b[^?.]*\bor\b/i.test(text);
+  // Amount thresholds are restrictions, not category comparisons.
+  const text=unquotedText(message).replace(/\b(?:more|less) than\s*(?:s\$|\$|sgd\s*)?\d+(?:\.\d+)?/gi,' ');
+  return mentionedCategories(text,cats).length > 1 && /\b(?:compare|compared|comparing|comparison|versus|vs)\b|\b(?:more|less)\b[^?.]*\b(?:or|and|than)\b|\b(?:or|and)\b[^?.]*\b(?:more|less)\b/i.test(text);
 }
 export function requestLimitation(message, cats = []) {
   if (asksMultipartPercentage(message)) return INTENT_LIMITATION.MULTIPART_PERCENTAGE;
   if (asksCategoryComparison(message,cats)) return INTENT_LIMITATION.CATEGORY_COMPARISON;
+  if (unresolvedCoordination(message,cats)) return INTENT_LIMITATION.FILTER_COVERAGE;
   if (mentionedCategories(message,cats).length > 1) return INTENT_LIMITATION.MULTIPLE_CATEGORIES;
   if (needsScopeRules(message)) return INTENT_LIMITATION.SCOPE_REQUIRED;
   return null;

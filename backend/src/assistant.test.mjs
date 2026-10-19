@@ -267,3 +267,80 @@ test('Step3A unmapped category-word metadata clarifies only an established user 
  const invalidId=await handleIntent({message,context:step3aContext},{request:async()=>({...raw,query:{...raw.query,category:'unknown-id'}})});
  assert.equal(invalidId.status,502);assert.equal(invalidId.body.detail.field,'query.category');
 });
+
+// Step3B1 uses independent custom vocabulary, no MAIN expectations or rows.
+const orCats=[{id:'art-k',label:'Art tools'},{id:'bike-r',label:'Wheel repairs'},{id:'meal-m',label:'Hall meals'}];
+const orContext={today:'2026-10-19',categories:orCats,expenseCount:10};
+const orQuery={operation:'total',period:'month',category:null,description:null,categories:['art-k','bike-r'],descriptionTerms:['  TEAL CAB ','Quick Van'],category_terms:['Art tools','Wheel repairs']};
+test('OR schema is closed, bounded and includes configured category IDs',()=>{
+ const schema=buildSchema(orCats.map(c=>c.id)).properties.query.anyOf[0];
+ assert.equal(schema.properties.categories.maxItems,8);assert.equal(schema.properties.descriptionTerms.maxItems,8);
+ assert.equal(schema.properties.descriptionTerms.items.maxLength,80);
+ assert.deepEqual(schema.properties.categories.items.enum,['art-k','bike-r','meal-m']);
+ assert.ok(schema.required.includes('categories'));assert.ok(schema.required.includes('descriptionTerms'));
+});
+test('OR handler/client normalisation round-trip preserves all explicit filters',async()=>{
+ const message='Total Art tools and Wheel repairs purchases mentioning Teal Cab or Quick Van this month.';
+ const reply=await handleIntent({message,context:orContext},{request:async()=>({type:'analyze',query:orQuery})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'analyze');
+ assert.deepEqual(reply.body.intent.query.categories,['art-k','bike-r']);
+ assert.deepEqual(reply.body.intent.query.descriptionTerms,['quick van','teal cab']);
+ assert.deepEqual(validateIntent(reply.body.intent,{cats:orCats,message}).intent,reply.body.intent);
+});
+for(const [label,patch,field]of [
+ ['unknown category',{categories:['CANARY_ID']},'query.categories'],
+ ['non-array category',{categories:'art-k'},'query.categories'],
+ ['category overflow',{categories:Array(9).fill('art-k')},'query.categories'],
+ ['term overflow',{descriptionTerms:Array(9).fill('a')},'query.descriptionTerms'],
+ ['term length',{descriptionTerms:['x'.repeat(81)]},'query.descriptionTerms'],
+ ['invalid member',{descriptionTerms:['teal',42]},'query.descriptionTerms'],
+ ['empty term',{descriptionTerms:['  ']},'query.descriptionTerms'],
+ ['null list',{descriptionTerms:null},'query.descriptionTerms'],
+ ['conflicting scalar',{category:'art-k'},'query.categories'],
+])test('OR malformed output remains rejected: '+label,async()=>{
+ const reply=await handleIntent({message:'Art tools and Wheel repairs spending this month?',context:orContext},{request:async()=>({type:'analyze',query:{...orQuery,...patch}})});
+ assert.equal(reply.status,502);assert.deepEqual(reply.body,{error:'invalid_intent',detail:{code:'intent_bad_field',field}});
+ assert.equal(JSON.stringify(reply).includes('CANARY_ID'),false);
+});
+for(const [label,message,patch,reason]of [
+ ['missing category','Art tools and Wheel repairs total this month.',{categories:['art-k'],category_terms:[]},'explicit_filter_coverage_incomplete'],
+ ['missing literal term','Show purchases mentioning Teal Cab or Quick Van this month.',{categories:[],category_terms:[],descriptionTerms:['teal cab']},'explicit_filter_coverage_incomplete'],
+ ['unknown coordinated subject','Art tools and bubble tea total this month.',{categories:['art-k'],category_terms:['Art tools'],descriptionTerms:['bubble tea']},'explicit_filter_coverage_incomplete'],
+ ['category comparison','Did I spend more on Art tools or Wheel repairs this month?',{},'category_comparison_unsupported'],
+ ['projection','Budget pace for Art tools and Wheel repairs this month.',{operation:'projection'},'or_operation_unsupported'],
+ ['period comparison','Combined Art tools and Wheel repairs total this month versus last month.',{operation:'compare'},'category_comparison_unsupported'],
+ ['concept','Art-related purchases this month.',{},'scope_rules_required'],
+])test('OR narrow semantic clarification: '+label,async()=>{
+ const reply=await handleIntent({message,context:orContext},{request:async()=>({type:'analyze',query:{...orQuery,...patch}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');assert.equal(reply.body.intent.reason,reason);
+ assert.equal(reply.body.intent.query,undefined);assert.ok(reply.body.intent.question.includes(message));
+ assert.deepEqual(validateIntent(reply.body.intent,{cats:orCats,message}).intent,reply.body.intent);
+});
+test('OR explicit description words that equal categories stay description filters',async()=>{
+ const message='Show purchases mentioning Art tools or Hall meals this month.';
+ const reply=await handleIntent({message,context:orContext},{request:async()=>({type:'analyze',query:{operation:'list',period:'month',descriptionTerms:['Art tools','Hall meals']}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'analyze');
+ assert.deepEqual(reply.body.intent.query.categories,[]);
+ assert.deepEqual(reply.body.intent.query.descriptionTerms,['art tools','hall meals']);
+});
+test('OR model scope remains a proposal alongside explicit lists',async()=>{
+ const message='Review art-related rules this month.';
+ const scope={label:'Review terms',includeCategories:[],includeTerms:['paint'],excludeCategories:[],excludeTerms:[]};
+ const reply=await handleIntent({message,context:orContext},{request:async()=>({type:'analyze',query:{...orQuery,category_terms:[],spendingScope:scope}})});
+ assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'propose_scope');
+ assert.deepEqual(reply.body.intent.query.categories,['art-k','bike-r']);
+});
+test('OR provider failure keeps its error status and never becomes a clarification',async()=>{
+ const reply=await handleIntent({message:'Art tools and Wheel repairs total this month.',context:orContext},{request:async()=>{throw Object.assign(Error('PRIVATE_CANARY'),{code:'provider_timeout',status:504});}});
+ assert.deepEqual(reply,{status:504,body:{error:'provider_timeout'}});
+});
+test('OR recognised ambiguity uses the same safe clarification for model help/clarify',async()=>{
+ const message='Total Art tools and bubble tea spending this month.';
+ for(const type of ['help','clarify']){
+  const reply=await handleIntent({message,context:orContext},{request:async()=>({type,question:'Should I use Hall meals?'})});
+  assert.equal(reply.status,200);assert.equal(reply.body.intent.type,'clarify');
+  assert.equal(reply.body.intent.reason,'explicit_filter_coverage_incomplete');
+  assert.ok(reply.body.intent.question.includes(message));assert.equal(reply.body.intent.question.includes('Hall meals'),false);
+  assert.deepEqual(validateIntent(reply.body.intent,{cats:orCats,message}).intent,reply.body.intent);
+ }
+});

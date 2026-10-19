@@ -1,3 +1,5 @@
+import { descriptionOrRequest } from './explicitFilterRequest.js';
+import { asksCategoryComparison } from './intentLimitations.js';
 import { categoryNames } from './categoryVocabulary.js';
 import { dialogueIntent, stripGreeting, HELP_TEXT, HELP_QUESTIONS } from './assistantDialogue.js';
 import { executeQuery } from './queryEngine';
@@ -18,7 +20,10 @@ export function interpretOffline(question, cats=[]) {
   if (/\bwhat if\b|\bif i (?:cut|cuts|reduce|reduced|halve|halved|stop|stopped|skip|skipped|drop|dropped|spend less)\b|\b(?:cut|reduce|halve|double)\b.*\b(?:in half|by half|by \d+%?|spending)\b|\bhow much (?:would|could) i save\b/.test(text)) return clarify('I cannot calculate hypothetical changes to your spending. I can tell you what you actually recorded — for example “How much did I spend on Bubble Tea this month?” — and you can compare that yourself.');
   if (/\btop \d+\b|\b(?:\d+|two|three|four|five|ten) (?:biggest|largest|most expensive|top)\b|\b(?:biggest|largest|most expensive) (?:\d+|two|three|four|five|ten)\b/.test(text)) return clarify('I can report the single largest transaction, including ties, but not a ranked list of several. Ask for the largest single expense, or list transactions over an amount.');
   if (/\b(?:save|saving|savings)\b.*\b(?:goal|target|by|in \d+ months?|each month|per month)\b|\bi want to save\b/.test(text)) return clarify('I cannot plan a savings goal yet. I can total what you actually recorded for a category or period.');
-  const q={operation:'total',period:'month',start:null,end:null,category:null,description:null,amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',category_terms:[]};
+  if (asksCategoryComparison(question,cats)) return clarify('Comparing named categories is not supported yet. Ask for a combined total or separate category totals, keeping the original dates and filters.');
+  const q={categories:[],descriptionTerms:[],operation:'total',period:'month',start:null,end:null,category:null,description:null,amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',category_terms:[]};
+  const explicitTerms=descriptionOrRequest(text);
+  if(explicitTerms){if(explicitTerms.terms.length===1)q.description=explicitTerms.terms[0];else q.descriptionTerms=explicitTerms.terms;text=text.replace(explicitTerms.span,' ');}
   const quotes=[...text.matchAll(/[“"]([^”"]+)[”"]/g)];
   if(quotes.length>1) return clarify('Please use one description search term in your complete question.');
   if(quotes.length) {q.description=quotes[0][1];text=text.replace(quotes[0][0],' ');}
@@ -80,11 +85,12 @@ export function interpretOffline(question, cats=[]) {
   for(const c of [...cats].sort((a,b)=>b.label.length-a.label.length)) {
     const escaped=categoryNames(c).map(label=>label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
     const re=new RegExp(`(^|[^a-z0-9])(?:${escaped})(?=$|[^a-z0-9])`,'g');
-    if(re.test(text)) {categoryHits.push(c);text=text.replace(re,' ');}
+    if(re.test(text)) {categoryHits.push(c);text=text.replace(re,' __category__ ');}
   }
-  if(categoryHits.length>1) return clarify('Please resubmit the full question with one category. Combining multiple categories is not supported.');
-  if (q.operation!=='day_types' && /\b(and|or)\b/.test(text.replace(/this (month|week)\s+and\s+last (month|week)/g,''))) return clarify('Please resubmit the full question with one category and one description term. Multiple spending subjects are not supported.');
-  q.category=categoryHits[0]?.id??null;q.category_terms=categoryHits.map(c=>c.label);
+  text=text.replace(/__category__(?:\s*(?:,|and|or)\s*__category__)+/g,' ');
+  text=text.replace(/__category__/g,' ');
+  if (q.operation!=='day_types' && /\b(and|or)\b/.test(text.replace(/this (month|week)\s+and\s+last (month|week)/g,''))) return clarify('Please resubmit the full question with configured category names for the whole union and explicit descriptions mentioning literal terms. I could not safely resolve every coordinated subject.');
+  q.category=categoryHits.length===1?categoryHits[0].id:null;q.categories=categoryHits.length>1?categoryHits.map(c=>c.id):[];q.category_terms=categoryHits.map(c=>c.label);
   const threshold=text.match(/\b(over|under|at least|at most|more than|less than)\s*(?:s\$|\$|sgd\s*)?(\d+(?:\.\d{1,2})?)(?![\d.])/i);
   if(threshold) {q.amountOperator=({'over':'gt','more than':'gt','under':'lt','less than':'lt','at least':'gte','at most':'lte'})[threshold[1]];q.amount=threshold[2];text=text.replace(threshold[0],' ');}
   else if(/\b(over|under|at least|at most)\b/.test(text)) return clarify('What dollar threshold should I use? Resubmit the full question with an amount, for example “Show purchases over S$12.50 last week”.');
@@ -104,7 +110,7 @@ export function interpretOffline(question, cats=[]) {
        answer to a question nobody asked. Real description terms are short:
        "starbucks", "chicken rice", "grab ride home". */
     const words=text.split(/\s+/).filter(Boolean);
-    if(q.description || words.length>3 || /\b(and|or)\b|\d|\b(year|tomorrow|fortnight|quarter)\b/.test(text)) return clarify('I could not safely interpret every filter. Please use one category and/or a quoted description term, an amount condition, and a supported period or ISO date range.');
+    if(q.description || q.descriptionTerms.length || words.length>3 || /\b(and|or)\b|\d|\b(year|tomorrow|fortnight|quarter)\b/.test(text)) return clarify('I could not safely interpret every filter. Please use one category and/or a quoted description term, an amount condition, and a supported period or ISO date range.');
     q.description=text;
   }
   if(q.operation==='projection'&&!q.category) return clarify(`Which configured category budget should I estimate? Resubmit the complete question using one of: ${cats.map(c=>c.label).join(', ')}.`);

@@ -1,3 +1,5 @@
+import { descriptionOrRequest, unresolvedCoordination } from './explicitFilterRequest.js';
+import { normaliseScopeText } from './filterMatching.js';
 import { INTENT_LIMITATION, isLimitationReason, limitationClarification, asksMultipartPercentage, mentionedCategories, requestLimitation, needsScopeRules, asksCategoryComparison } from './intentLimitations.js';
 import { dialogueIntent } from './assistantDialogue.js';
 import { validateQuery } from './queryContract.js';
@@ -103,7 +105,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
         // category_terms contains unmapped words, not executable IDs. Only a
         // corresponding limitation in the USER request can rescue that metadata.
         // Invented extra category words on an ordinary single-scope request fail.
-        if ([INTENT_LIMITATION.MULTIPLE_CATEGORIES,INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE].includes(checked.limitation)
+        if ([INTENT_LIMITATION.MULTIPLE_CATEGORIES,INTENT_LIMITATION.SCOPE_CATEGORY_COVERAGE,INTENT_LIMITATION.FILTER_COVERAGE].includes(checked.limitation)
             && !requestLimitation(message,cats)) return bad(INTENT_ERR.BAD_FIELD,{field:'query.category_terms'});
         const reason = asksMultipartPercentage(message) ? INTENT_LIMITATION.MULTIPART_PERCENTAGE : asksCategoryComparison(message,cats) ? INTENT_LIMITATION.CATEGORY_COMPARISON : checked.limitation;
         return {ok:true,intent:limitationClarification(reason,message)};
@@ -113,8 +115,13 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
     let reason = null;
     if (asksMultipartPercentage(message)) reason = INTENT_LIMITATION.MULTIPART_PERCENTAGE;
     else if (asksCategoryComparison(message,cats)) reason = INTENT_LIMITATION.CATEGORY_COMPARISON;
-    else if (!checked.query.spendingScope && mentioned.length > 1) reason = INTENT_LIMITATION.MULTIPLE_CATEGORIES;
     else if (!checked.query.spendingScope && needsScopeRules(message)) reason = INTENT_LIMITATION.SCOPE_REQUIRED;
+    else if (!checked.query.spendingScope && mentioned.length > 1 && !checked.query.categories.length) reason = INTENT_LIMITATION.MULTIPLE_CATEGORIES;
+    else if (!checked.query.spendingScope && mentioned.some(c => ![checked.query.category,...checked.query.categories].includes(c.id))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
+    else if (!checked.query.spendingScope && checked.query.categories.some(id => !mentioned.some(c=>c.id===id))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
+    else if (!checked.query.spendingScope && checked.query.descriptionTerms.some(term => !normaliseScopeText(message).includes(term))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
+    else if (!checked.query.spendingScope && unresolvedCoordination(message,cats)) reason = INTENT_LIMITATION.FILTER_COVERAGE;
+    else if (!checked.query.spendingScope && descriptionOrRequest(message)?.terms.some(t => ![checked.query.description,...checked.query.descriptionTerms].filter(Boolean).map(normaliseScopeText).includes(t))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
     if (reason) return {ok:true,intent:limitationClarification(reason,message)};
     if (type === 'propose_scope' && !checked.query.spendingScope) return bad(INTENT_ERR.BAD_FIELD,{field:'query.spendingScope'});
     return checked.ok ? { ok: true, intent: { type:checked.query.spendingScope?'propose_scope':type, query: checked.query, say } } : bad(INTENT_ERR.BAD_FIELD, { field: `query.${checked.field}` });
@@ -122,6 +129,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
 
   if (type === 'answer') {
     const q = isPlainObject(raw.query) ? raw.query : {};
+    if (q.categories !== undefined || q.descriptionTerms !== undefined) return bad(INTENT_ERR.BAD_FIELD,{field:'query.structure'});
     const metric = trimmed(q.metric);
     if (!METRICS.includes(metric)) return bad(INTENT_ERR.UNKNOWN_METRIC, { metric: q.metric ?? null });
 
@@ -240,6 +248,6 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
 
 /** Public diagnostics contain fixed codes/field names, never model values or category labels. */
 export function intentDiagnostic(error) {
-  const fields=['message','query','query.structure','query.category_terms','query.description','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
+  const fields=['message','query','query.structure','query.category_terms','query.description','query.categories','query.descriptionTerms','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
   return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

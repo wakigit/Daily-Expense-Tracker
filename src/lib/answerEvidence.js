@@ -32,7 +32,7 @@ export function captureEvidence(rows, { basis = rows, scope = {}, cats = [] } = 
   return {
     rows: rows.map((row) => snapshot(row, cats)),
     basis: basis.map((row) => snapshot(row, cats)),
-    scopeCategories: scope.spendingScope ? [...new Set([...scope.spendingScope.includeCategories,...scope.spendingScope.excludeCategories])].sort().map(id=>[id,cats.find(c=>c.id===id)?.label??null]) : null,
+    scopeCategories: scope.spendingScope || scope.categories?.length ? [...new Set([...(scope.categories??[]),...(scope.spendingScope?.includeCategories??[]),...(scope.spendingScope?.excludeCategories??[])])].sort().map(id=>[id,cats.find(c=>c.id===id)?.label??null]) : null,
     scope: JSON.parse(JSON.stringify({ ...scope, category: scope.category ?? null })),
   };
 }
