@@ -1,0 +1,22 @@
+[
+  {
+    "origin": "http://127.0.0.1:5211",
+    "variant": "personal",
+    "audit": "- generic: \"{ \\\"variant\\\": \\\"personal\\\", \\\"results\\\": [ { \\\"key\\\": \\\"ww_exp\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_cats\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_bud\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_theme\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_roast_preferences\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_name\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_motion\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_sample\\\", \\\"unchanged\\\": true } ] }\""
+  },
+  {
+    "origin": "http://127.0.0.1:5211",
+    "variant": "sample",
+    "audit": "- generic: \"{ \\\"variant\\\": \\\"sample\\\", \\\"results\\\": [ { \\\"key\\\": \\\"ww_exp\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_cats\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_bud\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_theme\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_roast_preferences\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_name\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_motion\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_sample\\\", \\\"unchanged\\\": true } ] }\""
+  },
+  {
+    "origin": "http://127.0.0.1:5212",
+    "variant": "personal",
+    "audit": "- generic: \"{ \\\"variant\\\": \\\"personal\\\", \\\"results\\\": [ { \\\"key\\\": \\\"ww_exp\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_cats\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_bud\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_theme\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_roast_preferences\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_name\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_motion\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_sample\\\", \\\"unchanged\\\": true } ] }\""
+  },
+  {
+    "origin": "http://127.0.0.1:5212",
+    "variant": "sample",
+    "audit": "- generic: \"{ \\\"variant\\\": \\\"sample\\\", \\\"results\\\": [ { \\\"key\\\": \\\"ww_exp\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_cats\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_bud\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_theme\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_roast_preferences\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_name\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_motion\\\", \\\"unchanged\\\": true }, { \\\"key\\\": \\\"ww_sample\\\", \\\"unchanged\\\": true } ] }\""
+  }
+]

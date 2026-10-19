@@ -1,0 +1,852 @@
+{
+  "personal": {
+    "ww_exp": [
+      {
+        "id": "old-food",
+        "date": "2026-10-13",
+        "category": "food",
+        "amount": 10.01,
+        "description": "Fictional Food",
+        "notes": ""
+      },
+      {
+        "id": "old-hire",
+        "date": "2026-10-14",
+        "category": "hire",
+        "amount": 20.01,
+        "description": "Fictional Private hire",
+        "notes": ""
+      },
+      {
+        "id": "old-pub",
+        "date": "2026-10-15",
+        "category": "pub",
+        "amount": 30.01,
+        "description": "Fictional Public transport",
+        "notes": ""
+      },
+      {
+        "id": "old-shop",
+        "date": "2026-10-16",
+        "category": "shop",
+        "amount": 40.01,
+        "description": "Fictional Shopping",
+        "notes": ""
+      },
+      {
+        "id": "old-needs",
+        "date": "2026-10-17",
+        "category": "needs",
+        "amount": 50.01,
+        "description": "Fictional Needs",
+        "notes": ""
+      },
+      {
+        "id": "old-misc",
+        "date": "2026-10-18",
+        "category": "misc",
+        "amount": 60.01,
+        "description": "Fictional Miscellaneous",
+        "notes": ""
+      },
+      {
+        "id": "old-custom",
+        "date": "2026-10-19",
+        "category": "books",
+        "amount": 7.07,
+        "description": "Course textbook",
+        "notes": ""
+      },
+      {
+        "id": "sep-food",
+        "date": "2026-09-09",
+        "category": "food",
+        "amount": 12.34,
+        "description": "Campus lunch",
+        "notes": ""
+      },
+      {
+        "id": "aug-food",
+        "date": "2026-08-08",
+        "category": "food",
+        "amount": 8.76,
+        "description": "Campus breakfast",
+        "notes": ""
+      }
+    ],
+    "ww_cats": [
+      {
+        "id": "food",
+        "label": "Food",
+        "color": "#D85A30"
+      },
+      {
+        "id": "hire",
+        "label": "Private hire",
+        "color": "#1D9E75"
+      },
+      {
+        "id": "pub",
+        "label": "Public transport",
+        "color": "#378ADD"
+      },
+      {
+        "id": "shop",
+        "label": "Shopping",
+        "color": "#7F77DD"
+      },
+      {
+        "id": "needs",
+        "label": "Needs",
+        "color": "#BA7517"
+      },
+      {
+        "id": "misc",
+        "label": "Miscellaneous",
+        "color": "#888780"
+      },
+      {
+        "id": "books",
+        "label": "My Books",
+        "color": "#639922"
+      }
+    ],
+    "ww_bud": {
+      "food": 100,
+      "hire": 90,
+      "pub": 80,
+      "shop": 70,
+      "needs": 60,
+      "misc": 50,
+      "books": 40
+    },
+    "ww_theme": "forest",
+    "ww_roast_preferences": {
+      "enabled": false,
+      "name": "Fictional W",
+      "singapore": false,
+      "smu": true
+    },
+    "ww_name": "TallyAI",
+    "ww_motion": "auto",
+    "ww_sample": null
+  },
+  "sample": {
+    "ww_exp": [
+      {
+        "id": "old-food",
+        "date": "2026-10-13",
+        "category": "food",
+        "amount": 10.01,
+        "description": "Fictional Food",
+        "notes": ""
+      },
+      {
+        "id": "old-hire",
+        "date": "2026-10-14",
+        "category": "hire",
+        "amount": 20.01,
+        "description": "Fictional Private hire",
+        "notes": ""
+      },
+      {
+        "id": "old-pub",
+        "date": "2026-10-15",
+        "category": "pub",
+        "amount": 30.01,
+        "description": "Fictional Public transport",
+        "notes": ""
+      },
+      {
+        "id": "old-shop",
+        "date": "2026-10-16",
+        "category": "shop",
+        "amount": 40.01,
+        "description": "Fictional Shopping",
+        "notes": ""
+      },
+      {
+        "id": "old-needs",
+        "date": "2026-10-17",
+        "category": "needs",
+        "amount": 50.01,
+        "description": "Fictional Needs",
+        "notes": ""
+      },
+      {
+        "id": "old-misc",
+        "date": "2026-10-18",
+        "category": "misc",
+        "amount": 60.01,
+        "description": "Fictional Miscellaneous",
+        "notes": ""
+      },
+      {
+        "id": "old-custom",
+        "date": "2026-10-19",
+        "category": "books",
+        "amount": 7.07,
+        "description": "Course textbook",
+        "notes": ""
+      },
+      {
+        "id": "sep-food",
+        "date": "2026-09-09",
+        "category": "food",
+        "amount": 12.34,
+        "description": "Campus lunch",
+        "notes": ""
+      },
+      {
+        "id": "aug-food",
+        "date": "2026-08-08",
+        "category": "food",
+        "amount": 8.76,
+        "description": "Campus breakfast",
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-01-0",
+        "date": "2026-09-01",
+        "category": "needs",
+        "description": "Phone bill",
+        "amount": 28,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-01-1",
+        "date": "2026-09-01",
+        "category": "food",
+        "description": "Kaya toast set",
+        "amount": 5.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-02-2",
+        "date": "2026-09-02",
+        "category": "pub",
+        "description": "EZ-Link top up",
+        "amount": 20,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-02-3",
+        "date": "2026-09-02",
+        "category": "food",
+        "description": "Chicken rice",
+        "amount": 6.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-03-4",
+        "date": "2026-09-03",
+        "category": "food",
+        "description": "Kopi and curry puff",
+        "amount": 4.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-04-5",
+        "date": "2026-09-04",
+        "category": "hire",
+        "description": "Grab to campus",
+        "amount": 14.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-04-6",
+        "date": "2026-09-04",
+        "category": "food",
+        "description": "Laksa",
+        "amount": 8.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-05-7",
+        "date": "2026-09-05",
+        "category": "shop",
+        "description": "Notebook and pens",
+        "amount": 18.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-05-8",
+        "date": "2026-09-05",
+        "category": "food",
+        "description": "Economy rice",
+        "amount": 5.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-06-9",
+        "date": "2026-09-06",
+        "category": "food",
+        "description": "Bubble tea",
+        "amount": 6.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-07-10",
+        "date": "2026-09-07",
+        "category": "food",
+        "description": "Dinner with friends",
+        "amount": 32,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-08-11",
+        "date": "2026-09-08",
+        "category": "food",
+        "description": "Mee pok",
+        "amount": 5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-08-12",
+        "date": "2026-09-08",
+        "category": "pub",
+        "description": "Bus top up",
+        "amount": 10,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-09-13",
+        "date": "2026-09-09",
+        "category": "food",
+        "description": "Cai fan",
+        "amount": 5.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-10-14",
+        "date": "2026-09-10",
+        "category": "misc",
+        "description": "Birthday gift",
+        "amount": 25,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-10-15",
+        "date": "2026-09-10",
+        "category": "food",
+        "description": "Kopi O",
+        "amount": 1.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-11-16",
+        "date": "2026-09-11",
+        "category": "food",
+        "description": "Katong laksa",
+        "amount": 9.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-12-17",
+        "date": "2026-09-12",
+        "category": "hire",
+        "description": "Grab home late",
+        "amount": 16.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-12-18",
+        "date": "2026-09-12",
+        "category": "food",
+        "description": "Supper prata",
+        "amount": 4.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-13-19",
+        "date": "2026-09-13",
+        "category": "food",
+        "description": "Lunch set",
+        "amount": 11.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-14-20",
+        "date": "2026-09-14",
+        "category": "shop",
+        "description": "T-shirt",
+        "amount": 24.9,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-14-21",
+        "date": "2026-09-14",
+        "category": "food",
+        "description": "Toast Box",
+        "amount": 7.3,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-15-22",
+        "date": "2026-09-15",
+        "category": "needs",
+        "description": "Printing credit",
+        "amount": 12,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-15-23",
+        "date": "2026-09-15",
+        "category": "food",
+        "description": "Chicken chop",
+        "amount": 13.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-16-24",
+        "date": "2026-09-16",
+        "category": "food",
+        "description": "Kopi and kaya toast",
+        "amount": 4.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-17-25",
+        "date": "2026-09-17",
+        "category": "pub",
+        "description": "MRT top up",
+        "amount": 15,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-17-26",
+        "date": "2026-09-17",
+        "category": "food",
+        "description": "Yong tau foo",
+        "amount": 7.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-18-27",
+        "date": "2026-09-18",
+        "category": "food",
+        "description": "Nasi lemak",
+        "amount": 6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-19-28",
+        "date": "2026-09-19",
+        "category": "misc",
+        "description": "Concert ticket",
+        "amount": 48,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-20-29",
+        "date": "2026-09-20",
+        "category": "food",
+        "description": "Fishball noodles",
+        "amount": 5.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-21-30",
+        "date": "2026-09-21",
+        "category": "hire",
+        "description": "Grab in the rain",
+        "amount": 12.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-21-31",
+        "date": "2026-09-21",
+        "category": "food",
+        "description": "Bubble tea",
+        "amount": 6.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-22-32",
+        "date": "2026-09-22",
+        "category": "food",
+        "description": "Chicken rice",
+        "amount": 6.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-23-33",
+        "date": "2026-09-23",
+        "category": "shop",
+        "description": "Phone case",
+        "amount": 16.9,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-24-34",
+        "date": "2026-09-24",
+        "category": "food",
+        "description": "Ban mian",
+        "amount": 6.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-25-35",
+        "date": "2026-09-25",
+        "category": "food",
+        "description": "Hotpot with friends",
+        "amount": 28,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-26-36",
+        "date": "2026-09-26",
+        "category": "food",
+        "description": "Kopi C",
+        "amount": 1.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-27-37",
+        "date": "2026-09-27",
+        "category": "pub",
+        "description": "EZ-Link top up",
+        "amount": 20,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-27-38",
+        "date": "2026-09-27",
+        "category": "food",
+        "description": "Duck rice",
+        "amount": 7.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-09-28-39",
+        "date": "2026-09-28",
+        "category": "food",
+        "description": "Mala xiang guo",
+        "amount": 14,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-01-40",
+        "date": "2026-10-01",
+        "category": "needs",
+        "description": "Phone bill",
+        "amount": 28,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-01-41",
+        "date": "2026-10-01",
+        "category": "food",
+        "description": "Kaya toast set",
+        "amount": 5.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-02-42",
+        "date": "2026-10-02",
+        "category": "pub",
+        "description": "EZ-Link top up",
+        "amount": 20,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-02-43",
+        "date": "2026-10-02",
+        "category": "food",
+        "description": "Chicken rice",
+        "amount": 6.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-03-44",
+        "date": "2026-10-03",
+        "category": "food",
+        "description": "Kopi and curry puff",
+        "amount": 4.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-04-45",
+        "date": "2026-10-04",
+        "category": "hire",
+        "description": "Grab to campus",
+        "amount": 14.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-04-46",
+        "date": "2026-10-04",
+        "category": "food",
+        "description": "Laksa",
+        "amount": 8.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-05-47",
+        "date": "2026-10-05",
+        "category": "shop",
+        "description": "Notebook and pens",
+        "amount": 18.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-05-48",
+        "date": "2026-10-05",
+        "category": "food",
+        "description": "Economy rice",
+        "amount": 5.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-06-49",
+        "date": "2026-10-06",
+        "category": "food",
+        "description": "Bubble tea",
+        "amount": 6.2,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-07-50",
+        "date": "2026-10-07",
+        "category": "food",
+        "description": "Dinner with friends",
+        "amount": 32,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-08-51",
+        "date": "2026-10-08",
+        "category": "food",
+        "description": "Mee pok",
+        "amount": 5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-08-52",
+        "date": "2026-10-08",
+        "category": "pub",
+        "description": "Bus top up",
+        "amount": 10,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-09-53",
+        "date": "2026-10-09",
+        "category": "food",
+        "description": "Cai fan",
+        "amount": 5.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-10-54",
+        "date": "2026-10-10",
+        "category": "misc",
+        "description": "Birthday gift",
+        "amount": 25,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-10-55",
+        "date": "2026-10-10",
+        "category": "food",
+        "description": "Kopi O",
+        "amount": 1.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-11-56",
+        "date": "2026-10-11",
+        "category": "food",
+        "description": "Katong laksa",
+        "amount": 9.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-12-57",
+        "date": "2026-10-12",
+        "category": "hire",
+        "description": "Grab home late",
+        "amount": 16.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-12-58",
+        "date": "2026-10-12",
+        "category": "food",
+        "description": "Supper prata",
+        "amount": 4.4,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-13-59",
+        "date": "2026-10-13",
+        "category": "food",
+        "description": "Lunch set",
+        "amount": 11.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-14-60",
+        "date": "2026-10-14",
+        "category": "shop",
+        "description": "T-shirt",
+        "amount": 24.9,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-14-61",
+        "date": "2026-10-14",
+        "category": "food",
+        "description": "Toast Box",
+        "amount": 7.3,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-15-62",
+        "date": "2026-10-15",
+        "category": "needs",
+        "description": "Printing credit",
+        "amount": 12,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-15-63",
+        "date": "2026-10-15",
+        "category": "food",
+        "description": "Chicken chop",
+        "amount": 13.5,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-16-64",
+        "date": "2026-10-16",
+        "category": "food",
+        "description": "Kopi and kaya toast",
+        "amount": 4.6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-17-65",
+        "date": "2026-10-17",
+        "category": "pub",
+        "description": "MRT top up",
+        "amount": 15,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-17-66",
+        "date": "2026-10-17",
+        "category": "food",
+        "description": "Yong tau foo",
+        "amount": 7.8,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-18-67",
+        "date": "2026-10-18",
+        "category": "food",
+        "description": "Nasi lemak",
+        "amount": 6,
+        "notes": ""
+      },
+      {
+        "id": "sample-2026-10-19-68",
+        "date": "2026-10-19",
+        "category": "misc",
+        "description": "Concert ticket",
+        "amount": 48,
+        "notes": ""
+      }
+    ],
+    "ww_cats": [
+      {
+        "id": "food",
+        "label": "Food",
+        "color": "#D85A30"
+      },
+      {
+        "id": "hire",
+        "label": "Private hire",
+        "color": "#1D9E75"
+      },
+      {
+        "id": "pub",
+        "label": "Public transport",
+        "color": "#378ADD"
+      },
+      {
+        "id": "shop",
+        "label": "Shopping",
+        "color": "#7F77DD"
+      },
+      {
+        "id": "needs",
+        "label": "Needs",
+        "color": "#BA7517"
+      },
+      {
+        "id": "misc",
+        "label": "Miscellaneous",
+        "color": "#888780"
+      },
+      {
+        "id": "books",
+        "label": "My Books",
+        "color": "#639922"
+      }
+    ],
+    "ww_bud": {
+      "food": 120,
+      "hire": 50,
+      "pub": 50,
+      "shop": 40,
+      "needs": 40,
+      "misc": 20
+    },
+    "ww_theme": "forest",
+    "ww_roast_preferences": {
+      "enabled": false,
+      "name": "Fictional W",
+      "singapore": false,
+      "smu": true
+    },
+    "ww_name": "TallyAI",
+    "ww_motion": "auto",
+    "ww_sample": {
+      "loadedAt": "2026-10-18T00:00:00.000Z",
+      "todayYmd": "2026-10-19",
+      "months": [
+        "2026-09",
+        "2026-10"
+      ],
+      "rowCount": 69,
+      "previousBudgets": {
+        "food": 100,
+        "hire": 90,
+        "pub": 80,
+        "shop": 70,
+        "needs": 60,
+        "misc": 50,
+        "books": 40
+      },
+      "appliedBudgets": {
+        "food": 120,
+        "hire": 50,
+        "pub": 50,
+        "shop": 40,
+        "needs": 40,
+        "misc": 20
+      }
+    }
+  },
+  "fresh": {
+    "ww_exp": [],
+    "ww_theme": "forest",
+    "ww_roast_preferences": {
+      "enabled": false,
+      "name": "Fictional W",
+      "singapore": false,
+      "smu": true
+    }
+  }
+}

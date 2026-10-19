@@ -2,3 +2,9 @@
 2026-10-18T21:52:01.381Z	step=1	calls=73	set=MAIN	purpose=Step 1 Part B baseline live run of MAIN question set
 2026-10-19T02:03:21.963Z	step=2	calls=27	set=MAIN	purpose=Step 2 re-run: all baseline failures needing a model call, plus regression-risk questions whose intent instructions changed
 2026-10-19T01:57:00.000Z	step=2	calls=2	set=DIAGNOSTIC	purpose=B2 raw pre-validation shape probe (scripts/eval/b2-probe.mjs, M36 and M40)
+2026-10-19T04:29:07.835Z	step=publish-gate	calls=1	set=BROWSER	purpose=How much did I spend in September?	retries=0
+2026-10-19T04:29:15.272Z	step=publish-gate	calls=1	set=BROWSER	purpose=What did I spend on food in August?	retries=0
+2026-10-19T04:29:22.813Z	step=publish-gate	calls=1	set=BROWSER	purpose=How much did I spend this month?	retries=0
+2026-10-19T04:29:36.732Z	step=publish-gate	calls=1	set=BROWSER	purpose=Compare my September food spending with my August food spending.	retries=0
+2026-10-19T04:29:41.231Z	step=publish-gate	calls=1	set=BROWSER	purpose=How much did I spend on Food on weekdays over S$5 this month?	retries=0
+2026-10-19T04:29:51.509Z	step=publish-gate	calls=1	set=BROWSER	purpose=How much did I spend on student-related purchases this year?	retries=0

@@ -48,6 +48,9 @@ venv/
 .matrix-build/
 .eval-build/
 
+# Fictional browser publication-gate screenshots remain local review artifacts.
+scripts/eval/screens/publish-gate/
+
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/
 .vercel
