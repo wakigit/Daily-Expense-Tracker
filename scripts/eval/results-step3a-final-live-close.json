@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "label": "step3a-final-live-close",
+    "note": "Fresh final-code subset from 8d71dcf. Exactly two requests. No expectation changes.",
+    "set": "MAIN",
+    "mode": "live",
+    "startedAt": "2026-10-19T12:45:54.284Z",
+    "finishedAt": "2026-10-19T12:45:59.671Z",
+    "referenceDate": "2026-10-19",
+    "endpoint": "http://127.0.0.1:8842",
+    "questions": 2,
+    "questionsPassed": 2,
+    "turns": 2,
+    "turnsPassed": 2,
+    "paidCalls": 2,
+    "httpCalls": 2,
+    "offlineTurns": 0,
+    "byCapability": {
+      "complex-two-category": {
+        "total": 1,
+        "passed": 1,
+        "failures": []
+      },
+      "complex-multiple-categories": {
+        "total": 1,
+        "passed": 1,
+        "failures": []
+      }
+    },
+    "byRootCause": {}
+  },
+  "results": [
+    {
+      "id": "M66",
+      "capability": "complex-two-category",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M66",
+          "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 200,
+          "intentType": "clarify",
+          "semanticReason": "category_comparison_unsupported",
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "Two categories in one question. A breakdown containing both is honest; narrowing to one is not.",
+          "actualText": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M68",
+      "capability": "complex-multiple-categories",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M68",
+          "text": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 200,
+          "intentType": "clarify",
+          "semanticReason": "multiple_categories",
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.",
+          "actualText": "I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope? Your original request: “How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?”",
+          "actualQuery": null
+        }
+      ]
+    }
+  ]
+}

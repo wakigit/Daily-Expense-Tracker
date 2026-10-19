@@ -1547,12 +1547,14 @@
     }
   },
   "M66": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.category_terms"
+      "intent": {
+        "type": "clarify",
+        "reason": "category_comparison_unsupported",
+        "question": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+        "options": [],
+        "say": ""
       }
     }
   },
@@ -1583,12 +1585,14 @@
     }
   },
   "M68": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.category_terms"
+      "intent": {
+        "type": "clarify",
+        "reason": "multiple_categories",
+        "question": "I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope? Your original request: “How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?”",
+        "options": [],
+        "say": ""
       }
     }
   },

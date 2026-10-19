@@ -1,6 +1,42 @@
 # Assistant roadmap Step3A, local handling result
 
-Implemented locally, with a final-code live-verification gap for M66/M68. This does not complete their requested financial capabilities, and does not change production.
+Implemented locally. The final-code live-verification gap for M66/M68 is now closed by the separate verification below. Both produce useful clarifications, not the requested financial calculations. Production is unchanged.
+
+## 0. Final-code live closure, 2026-10-19
+
+Tested exact source `8d71dcf6312b1b05dfdd382bb18b181c4bb14e31` on `checkpoint/2026-10-19-wip`. Starting tree was clean, the published checkpoint remains an ancestor, and the final category-word metadata guard was present. A fresh isolated backend on port 8842 imported the current handler, provider and shared validators. Startup source hashes were checked again after verification and are unchanged. The user's normal frontend/backend and existing browser data were preserved.
+
+Exactly two paid provider requests ran, one per existing MAIN question, with SDK retries disabled and an independent backend hard cap of two. No retry, prompt edit, application repair, expectation change, HOLDOUT access, push or deployment occurred. The existing merge-safe recorder changed **only M66 and M68**; all **72 other recording keys** were preserved. Actual calls are logged in `scripts/eval/calls.log` under `step=3A-close`. These two calls are separate from the prior task's seven calls (nine across the two authorised tasks).
+
+| Case and exact question | HTTP | Validated intent | Safe semantic reason | Source and result |
+| --- | --- | --- | --- | --- |
+| M66: Did I spend more on Food & Drinks or Bubble Tea this month? | 200 | clarify | category_comparison_unsupported | Fresh live model interpretation, code-authored clarification; handling pass |
+| M68: How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month? | 200 | clarify | multiple_categories | Fresh live model interpretation, code-authored clarification; handling pass |
+
+M66 clarification shown:
+
+> I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”
+
+M68 clarification shown:
+
+> I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope? Your original request: “How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?”
+
+Both server and client validation passed, including an explicit shared-validator round-trip. Every named subject/category and “this month” remains in each clarification. Neither response contains an executable query, financial answer or silently narrowed calculation. Neither is built-in or offline. No scope proposal was returned, so this task did not re-exercise scope approval; the existing requirement for approval before calculation remains unchanged.
+
+Fresh subset: **2/2 questions, 2/2 turns**, two paid calls, zero offline fallbacks. Subsequent MAIN replay: **74/76 questions, 80/82 turns**, zero HTTP/paid calls and zero offline fallbacks. This improves the prior mixed replay's 72/76 and 78/82 by refreshing the two pre-guard HTTP502 envelopes. Remaining failures are **M46** (useful clarification, but unchanged expectation requires scope proposal/answer) and **M48.2** (free-form scope exclusion, deferred). The full score is mixed-age replay, not wholly fresh live accuracy and not proof of support for the missing calculations.
+
+Browser coverage: used the current actual App at isolated fictional origin `http://127.0.0.1:5242`, seeded with the fictional MAIN ledger. At **390×844**, submitted each exact question through the real client. The isolated transport returned the **exact saved HTTP envelopes from the two fresh calls**, without another provider request or a fabricated/mock intent. This verifies recorded-live rendering, not a second live browser interpretation. Both clarifications were fully readable, retained all categories and month, showed Edit original question, and had no misleading offline notice or financial answer. No material text clipping was observed. Scope controls were not exercised because neither response proposed a scope. The temporary viewport was reset and the verification tab closed. Only task-created servers were stopped.
+
+Screenshots, outside tracked source:
+
+- `/private/tmp/tallyai-step3a-live-close/M66-phone.jpg`
+- `/private/tmp/tallyai-step3a-live-close/M68-phone.jpg`
+
+Durable safe evidence: `scripts/eval/step3a-final-live-provenance.json`, `results-step3a-final-live-close.json`, `SCORECARD-step3a-final-live-close.md`, `results-step3a-live-closed.json`, and `SCORECARD-step3a-live-closed.md`. No raw provider output or credentials were retained in these artifacts. `git diff --check` passed. No broad suite was rerun for this documentation/recording-only task.
+
+Recommendation: the Step3A final-code live handling gap passes. The next separate capability task is bounded OR filters and generalised comparisons, with explicit category/period semantics and complete evidence. This task does not implement or publish that work. Existing unsupported combinations, M46's expectation gap and M48.2 remain documented.
+
+The following sections retain the earlier implementation task's observations and call provenance. Its pre-guard M66/M68 failures are historical, superseded only by the fresh verification above.
 
 ## 1. Git state and logical commits
 
@@ -36,7 +72,7 @@ New fictional vocabulary/data, not the MAIN fixture: Lunches, Craft supplies and
 
 Final `npm run build`: pass. `npm run smoke`: **1745/1745**. Backend provider checks: **28/28**. Backend node tests: **132/132**. `git diff --check`: pass. No evaluation expectation changed. HOLDOUT cases were not inspected, run or altered.
 
-## 5. Replay versus fresh live
+## 5. Earlier task: replay versus fresh live
 
 | Run | Questions | Turns | Meaning |
 | --- | --- | --- | --- |
@@ -64,7 +100,7 @@ Final replay failures remain M46, M48.2, M66 and M68. M46 is useful handling but
 
 Exactly five MAIN recording keys changed: M46, M50, M65, M66, M68. The other 69 stored keys are byte-equivalent as parsed JSON. M54's old help recording remains but is bypassed locally. Complete safe per-case details are in `scripts/eval/step3a-handling-provenance.json`.
 
-## 6. Paid-call count
+## 6. Earlier task paid-call count
 
 **Seven actual provider calls**, maximum eight. Five MAIN families once plus two diagnostic paraphrases. Automatic retries disabled; no repeated failed case or score-chasing call. Broad assessment, deterministic tests, mock calculations/failure checks and replay cost zero. Ledger: `scripts/eval/calls.log` (one five-call MAIN entry and two one-call browser entries). An independent task provider counter also recorded seven.
 
@@ -86,10 +122,10 @@ Amounts and clarification text were readable on phone. Long conversations use th
 
 Local screenshots and observations, kept outside commits under `/private/tmp/tallyai-step3a/`: `unsupported-laptop.jpg`, `unsupported-phone.jpg`, `assessment-laptop.jpg`, `assessment-phone.jpg`, `supported-laptop.jpg`, `supported-phone.jpg`, `context-after-clarifications-phone.jpg`, `provider-failure-laptop.jpg`, `provider-failure-phone.jpg`, `browser-safe-results.json`.
 
-## 8. Remaining limitations
+## 8. Earlier task remaining limitations
 
-No missing financial capability was implemented. Arbitrary periods, category OR/comparison semantics and multipart results still need separate design/implementation. M48.2 is deferred. No final-code fresh live success is claimed for M66/M68. The final guard's coverage is deterministic/mock, and its original rejected raw payloads were intentionally not retained. No physical phone, screen-reader, receipt, voice, production, roast or HOLDOUT verification was added.
+No missing financial capability was implemented. Arbitrary periods, category OR/comparison semantics and multipart results still need separate design/implementation. M48.2 is deferred. At the end of the earlier task, no final-code fresh live success could be claimed for M66/M68. Section 0 closes that gap. Original rejected raw payloads were intentionally not retained. No physical phone, screen-reader, receipt, voice, production, roast or HOLDOUT verification was added.
 
 ## 9. Next task recommendation
 
-The automated and final-code mock-browser Step3A handling gates pass. Accepting the live-coverage limitation is a review decision; do not describe the original two failures as freshly resolved live or publish on that claim. If this gate is accepted, the next task is bounded OR filters and generalised comparisons with explicit period/category semantics and complete evidence. Do not start it here. No next task, push or deployment occurred.
+The automated, final-code mock-browser and separate final-code live clarification gates pass, with provenance distinguished in section 0. The next task is bounded OR filters and generalised comparisons with explicit period/category semantics and complete evidence. Do not start it here. No next task, push or deployment occurred.

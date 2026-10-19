@@ -1,0 +1,79 @@
+{
+  "sourceCommit": "8d71dcf6312b1b05dfdd382bb18b181c4bb14e31",
+  "verifiedAt": "2026-10-19T12:47:42.096Z",
+  "backend": "Fresh process on 8842 importing current handler/provider/shared validator; no old backend used",
+  "sourceHashes": {
+    "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+    "backend/src/provider.js": "0d04229691de896663e9c5a9fd7c0e5757ee02b7c6ab6e36eff69926dd3d293e",
+    "src/lib/intent.js": "f26d6e4a0321b4a61109f198257abfd33a6cfb2cae1107fd769ce6e01d1c4e72",
+    "src/lib/queryContract.js": "869be2a0322e53afeebe51bdd68bee83367713bb52490eeba303eb26a1bb0ff1"
+  },
+  "actualProviderCalls": 2,
+  "retries": 0,
+  "recordingKeysChanged": [
+    "M66",
+    "M68"
+  ],
+  "unrelatedRecordingKeysPreserved": 72,
+  "serverAndClientValidation": "Both pass, HTTP200, clarify, no executable query or financial answer",
+  "cases": [
+    {
+      "id": "M66",
+      "key": "M66",
+      "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+      "wantOutcome": [
+        "clarify",
+        "propose_scope",
+        "answer"
+      ],
+      "gotOutcome": "clarify",
+      "httpStatus": 200,
+      "intentType": "clarify",
+      "semanticReason": "category_comparison_unsupported",
+      "source": "model",
+      "paid": true,
+      "pass": true,
+      "rootCause": null,
+      "issues": [],
+      "note": "Two categories in one question. A breakdown containing both is honest; narrowing to one is not.",
+      "actualText": "I cannot directly compare several categories in one calculation. Would you like separate totals for each category, keeping the requested periods and filters? Please name the first category. Your original request: “Did I spend more on Food & Drinks or Bubble Tea this month?”",
+      "actualQuery": null
+    },
+    {
+      "id": "M68",
+      "key": "M68",
+      "text": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+      "wantOutcome": [
+        "clarify",
+        "propose_scope",
+        "answer"
+      ],
+      "gotOutcome": "clarify",
+      "httpStatus": 200,
+      "intentType": "clarify",
+      "semanticReason": "multiple_categories",
+      "source": "model",
+      "paid": true,
+      "pass": true,
+      "rootCause": null,
+      "issues": [],
+      "note": "Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.",
+      "actualText": "I cannot directly combine or compare several category filters. Which single category should I use, or would you like to review explicit inclusion rules for a combined scope? Your original request: “How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?”",
+      "actualQuery": null
+    }
+  ],
+  "browser": {
+    "origin": "http://127.0.0.1:5242",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "transport": "Exact cached HTTP envelopes from these two fresh calls, rendered by current actual App and client validator. No new model request, no mocked intent.",
+    "storage": "Fictional MAIN fixture, isolated origin; no existing user origin accessed",
+    "screenshots": [
+      "/private/tmp/tallyai-step3a-live-close/M66-phone.jpg",
+      "/private/tmp/tallyai-step3a-live-close/M68-phone.jpg"
+    ],
+    "observations": "Full subjects and month readable; Edit original question visible; no offline notice or financial result; no scope proposal returned, so scope-approval path not re-exercised."
+  }
+}
