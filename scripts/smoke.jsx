@@ -190,6 +190,24 @@ run('SettingsView sample loaded', <SettingsView
   'Sample data is loaded', '67', 'None of it is real', 'Remove sample data',
   'September 2026 and October 2026');
 
+// Public-release sample budgets were fixed at S$320, not the new 76% target.
+// A preserved legacy sample must describe the saved budget without that claim.
+run('SettingsView legacy sample uses saved budgets', <SettingsView
+  themeId="forest" motion="auto" appName="TallyAI"
+  cats={[
+    { id: 'food', label: 'Food', color: '#D85A30' },
+    { id: 'hire', label: 'Private hire', color: '#1D9E75' },
+    { id: 'pub', label: 'Public transport', color: '#378ADD' },
+    { id: 'shop', label: 'Shopping', color: '#7F77DD' },
+    { id: 'needs', label: 'Needs', color: '#BA7517' },
+    { id: 'misc', label: 'Miscellaneous', color: '#888780' },
+  ]}
+  budDraft={{ food: 120, hire: 50, pub: 50, shop: 40, needs: 40, misc: 20 }}
+  newCat={{ label: '', color: '#D85A30' }}
+  sample={{ loaded: true, rowCount: 69, ownRows: 9, months: 'September 2026 and October 2026' }} />,
+  'Your saved budgets determine the current status', 'including any personal spending',
+  'S$320.00', 'Your own ', '9', 'entries are', 'still here');
+
 run('MonthSheet', <MonthSheet
   histByYear={[['2026', ['2026-09']]]} ym="2026-09"
   monthTotals={() => ({ spent: 47.6, count: 3 })}

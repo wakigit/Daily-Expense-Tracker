@@ -169,7 +169,7 @@ export default function SettingsView({
           <>
             <p className="set-note">
               <strong>Sample data is loaded.</strong> {sampleState.rowCount} invented
-              transactions across {sampleState.months}. Sample-only spending starts near 76% of its demo budget; personal spending changes the combined status.
+              transactions across {sampleState.months}. Your saved budgets determine the current status, including any personal spending.
               None of it is real.
             </p>
             {sampleState.ownRows > 0 && (
