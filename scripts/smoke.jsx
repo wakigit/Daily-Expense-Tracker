@@ -1,3 +1,4 @@
+import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
 import { followupChecks } from './followup-checks';
 import { breakdownChecks } from './breakdown-checks';
@@ -2075,6 +2076,7 @@ await roastChecks(logic);
     Object.keys(plan.budgets).length > 0, true);
 }
 
+await step2Checks(logic);
 scopeChecks(logic);
 queryChecks(logic);
 breakdownChecks(logic);
