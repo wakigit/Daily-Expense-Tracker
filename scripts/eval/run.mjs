@@ -265,7 +265,7 @@ async function runTurn({ text, key, session, ledger }) {
   /* The app's offline fallback. Never counted as a live pass. */
   if (!res.ok) {
     const parsed = interpretOffline(text, ledger.cats);
-    const reply = parsed.query ? executeQuery(parsed.query, ledger) : parsed;
+    const reply = parsed.query ? executeQuery(parsed.query, { ...ledger, message: text }) : parsed;
     session.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
     const notice = explainIntentFailure(res.reason);
     if (reply.kind === 'answer') {
@@ -285,7 +285,7 @@ async function runTurn({ text, key, session, ledger }) {
       approved: approved.kind === 'confirmed' ? approved.plan : null, approvedKind: approved.kind };
   }
 
-  const plan = planFromIntent(res.intent, ledger);
+  const plan = planFromIntent(res.intent, { ...ledger, message: text });
   const source = res.source ?? 'model';
   if (plan.kind === 'answer') {
     const query = res.intent.type === 'analyze' ? res.intent.query : null;

@@ -400,7 +400,7 @@ export default function App() {
     if (!res.ok) {
       const ctx = ledgerRef.current;
       const parsed = interpretOffline(text, ctx.cats);
-      const reply = parsed.query ? executeQuery(parsed.query, ctx) : parsed;
+      const reply = parsed.query ? executeQuery(parsed.query, { ...ctx, message: text }) : parsed;
       sessionRef.current.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
       setAsking(false);
       if (reply.kind === 'answer') publishAnswer({...reply,detail:[explainIntentFailure(res.reason),reply.detail].filter(Boolean).join(' ')}, {source:'offline'}, ticket, parsed.query, !sessionRef.current.getContext());
@@ -416,7 +416,7 @@ export default function App() {
       setScopeProposal({ticket,query:preview.query,preview,referenceDate:ledgerRef.current.today,meta});
       return;
     }
-    const plan = planFromIntent(res.intent, { ...ledgerRef.current, actionLog });
+    const plan = planFromIntent(res.intent, { ...ledgerRef.current, actionLog, message: text });
     setAsking(false);
     const meta = {source:res.source ?? 'model',endpoint:res.endpoint,httpStatus:res.httpStatus};
     if (plan.kind === 'answer') return publishAnswer(plan, meta, ticket, res.intent.type === 'analyze' ? res.intent.query : null);

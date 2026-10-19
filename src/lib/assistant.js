@@ -259,12 +259,14 @@ function planDelete(intent, { expenses, cats }) {
  * @returns a plan. `confirm_add` and `confirm_delete` carry
  *   `needsConfirmation: true` and change nothing on their own.
  */
-export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [], budgets = {} } = {}) {
+export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [], budgets = {}, message = '' } = {}) {
   switch (intent.type) {
     case 'help': return {kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS};
     case 'propose_scope': return {kind:'clarify',question:'Review and approve the proposed spending scope before calculation.'};
     case 'analyze':
-      return executeQuery(intent.query, { expenses, cats, today, budgets });
+      // `message` reaches the engine so it can refuse to answer a question
+      // about months its resolved range does not cover.
+      return executeQuery(intent.query, { expenses, cats, today, budgets, message });
     case 'answer':
       return planAnswer(intent, { expenses, cats, today });
 
