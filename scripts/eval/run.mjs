@@ -65,7 +65,11 @@ const noteAt = argv.indexOf('--note');
 const NOTE = noteAt >= 0 ? argv[noteAt + 1] : null;
 const labelAt = argv.indexOf('--label');
 const LABEL = labelAt >= 0 ? argv[labelAt + 1] : (HOLD ? 'holdout' : 'baseline');
-const ENDPOINT = 'http://127.0.0.1:8787';
+const endpointAt = argv.indexOf('--endpoint');
+const ENDPOINT = endpointAt >= 0 ? argv[endpointAt + 1] : 'http://127.0.0.1:8787';
+const capAt = argv.indexOf('--max-calls');
+const MAX_CALLS = capAt >= 0 ? Number(argv[capAt + 1]) : Infinity;
+if (capAt >= 0 && (!Number.isInteger(MAX_CALLS) || MAX_CALLS < 0)) throw new Error('Invalid request cap');
 
 const SET = HOLD ? HOLDOUT : MAIN;
 const questions = ONLY ? SET.filter((q) => ONLY.includes(q.id)) : SET;
@@ -93,6 +97,7 @@ function transportFor(key) {
     };
   }
   return async (url, init) => {
+    if (httpCalls >= MAX_CALLS) throw new Error('Evaluation HTTP request cap reached; no retry');
     httpCalls += 1;
     const res = await fetch(url, init);
     const status = res.status;
@@ -261,6 +266,7 @@ async function runTurn({ text, key, session, ledger }) {
   const before = httpCalls;
   const res = await requestIntent(text, { ...ledger, fetchImpl: transportFor(key), url: ENDPOINT });
   const paid = httpCalls > before;
+  const metadata = {httpStatus:res.httpStatus ?? null,intentType:res.ok ? res.intent.type : null,semanticReason:res.ok ? res.intent.reason ?? null : res.diagnostic ?? res.reason};
 
   /* The app's offline fallback. Never counted as a live pass. */
   if (!res.ok) {
@@ -269,18 +275,18 @@ async function runTurn({ text, key, session, ledger }) {
     session.failed(ticket, reply.kind === 'answer' && Boolean(reply.evidence || reply.comparison));
     const notice = explainIntentFailure(res.reason);
     if (reply.kind === 'answer') {
-      return { kind: 'answer', source: 'offline', paid, plan: { ...reply, detail: [notice, reply.detail].filter(Boolean).join(' ') },
+      return { ...metadata, kind: 'answer', source: 'offline', paid, plan: { ...reply, detail: [notice, reply.detail].filter(Boolean).join(' ') },
         query: parsed.query ?? null, reason: res.reason, offlineNotice: notice };
     }
-    return { kind: 'clarify', source: 'offline', paid, question: reply.question ?? reply.text, reason: res.reason, offlineNotice: notice };
+    return { ...metadata, kind: 'clarify', source: 'offline', paid, question: reply.question ?? reply.text, reason: res.reason, offlineNotice: notice };
   }
 
   /* Stage 4: propose, then simulate approving exactly what came back. */
   if (res.intent.type === 'propose_scope') {
     const preview = previewSpendingScope(res.intent.query, ledger);
-    if (!preview.ok) return { kind: 'clarify', source: res.source ?? 'model', paid, question: preview.question };
+    if (!preview.ok) return { ...metadata, kind: 'clarify', source: res.source ?? 'model', paid, question: preview.question };
     const approved = confirmSpendingScope({ query: preview.query, preview }, ledger);
-    return { kind: 'propose_scope', source: res.source ?? 'model', paid,
+    return { ...metadata, kind: 'propose_scope', source: res.source ?? 'model', paid,
       proposal: { query: preview.query, count: preview.count, hasAggregate: ['total', 'totalCents', 'amount'].some((k) => Object.hasOwn(preview, k)) },
       approved: approved.kind === 'confirmed' ? approved.plan : null, approvedKind: approved.kind };
   }
@@ -291,10 +297,10 @@ async function runTurn({ text, key, session, ledger }) {
     const query = res.intent.type === 'analyze' ? res.intent.query : null;
     const answerId = session.accept(ticket, query, plan, ledger);
     if (!query && (plan.evidence || plan.comparison)) session.failed(ticket, true);
-    return { kind: 'answer', source, paid, plan, query, answerId };
+    return { ...metadata, kind: 'answer', source, paid, plan, query, answerId };
   }
-  if (plan.kind === 'clarify') return { kind: 'clarify', source, paid, question: plan.question };
-  return { kind: plan.kind, source, paid, plan };
+  if (plan.kind === 'clarify') return { ...metadata, kind: 'clarify', source, paid, question: plan.question };
+  return { ...metadata, kind: plan.kind, source, paid, plan };
 }
 
 /* ── Scoring ─────────────────────────────────────────────────────── */
@@ -510,6 +516,9 @@ for (const question of questions) {
       key, text: turn.text,
       wantOutcome: accepted(turn.outcome ?? question.outcome),
       gotOutcome: actual.kind,
+      httpStatus:actual.httpStatus ?? null,
+      intentType:actual.intentType ?? null,
+      semanticReason:actual.semanticReason ?? null,
       source: actual.source,
       paid: Boolean(actual.paid),
       pass: score.pass,

@@ -1,0 +1,102 @@
+{
+  "note": "Five intended MAIN requests were made once before the final category-word metadata guard. No live retry; final-code HTTP502 records cannot be upgraded by replay. Diagnostic7 also preceded that last guard.",
+  "cases": [
+    {
+      "key": "M46",
+      "text": "How much have I spent on bubble tea related purchases this year?",
+      "httpStatus": 200,
+      "intentType": "clarify",
+      "semanticReason": "scope_rules_required",
+      "source": "model",
+      "paid": true,
+      "pass": false,
+      "actualText": "Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval. Your original request: \u201cHow much have I spent on bubble tea related purchases this year?\u201d"
+    },
+    {
+      "key": "M50",
+      "text": "How much did I spend on Food & Drinks and Entertainment this month?",
+      "httpStatus": 200,
+      "intentType": "propose_scope",
+      "semanticReason": null,
+      "source": "model",
+      "paid": true,
+      "pass": true,
+      "actualText": null
+    },
+    {
+      "key": "M54",
+      "text": "Am I doing well with my money?",
+      "httpStatus": null,
+      "intentType": "clarify",
+      "semanticReason": "financial_assessment_needs_scope",
+      "source": "builtin",
+      "paid": false,
+      "pass": true,
+      "actualText": "What would you like to assess: recorded spending against a category budget, a change from a previous period, or a particular category? Please name the category and period you want. An expense ledger alone cannot establish your overall financial health. Your original request: \u201cAm I doing well with my money?\u201d"
+    },
+    {
+      "key": "M65",
+      "text": "What did I spend this month, and what percentage of it was Food & Drinks?",
+      "httpStatus": 200,
+      "intentType": "clarify",
+      "semanticReason": "multipart_percentage_unsupported",
+      "source": "model",
+      "paid": true,
+      "pass": true,
+      "actualText": "I cannot combine a spending total with a separate category-percentage answer. Would you like the recorded total or a complete category breakdown? Keep the original subject, dates and other filters in your next question. Your original request: \u201cWhat did I spend this month, and what percentage of it was Food & Drinks?\u201d"
+    },
+    {
+      "key": "M66",
+      "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+      "httpStatus": 502,
+      "intentType": null,
+      "semanticReason": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      },
+      "source": "offline",
+      "paid": true,
+      "pass": false,
+      "actualText": "Please resubmit the full question with one category. Combining multiple categories is not supported."
+    },
+    {
+      "key": "M68",
+      "text": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+      "httpStatus": 502,
+      "intentType": null,
+      "semanticReason": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      },
+      "source": "offline",
+      "paid": true,
+      "pass": false,
+      "actualText": "Please resubmit the full question with one category. Combining multiple categories is not supported."
+    }
+  ],
+  "diagnostics": [
+    {
+      "at": "2026-10-19T07:21:46.614Z",
+      "message": "What's my recorded spending total for the current month?",
+      "status": 200,
+      "intentType": "analyze",
+      "reason": null,
+      "clarification": null,
+      "mock": null
+    },
+    {
+      "at": "2026-10-19T07:31:31.387Z",
+      "message": "Did I spend more on Lunches or Craft supplies this month?",
+      "status": 502,
+      "intentType": null,
+      "reason": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      },
+      "clarification": null,
+      "mock": null
+    }
+  ],
+  "actualPaidCalls": 7,
+  "automaticRetries": 0
+}

@@ -1,0 +1,268 @@
+{
+  "summary": {
+    "label": "step3a-live-subset",
+    "note": "Fresh local server handling for five intended MAIN families; broad financial assessment handled locally. No repeated requests. A clarification is handling success, not capability implementation.",
+    "set": "MAIN",
+    "mode": "live",
+    "startedAt": "2026-10-19T07:17:49.542Z",
+    "finishedAt": "2026-10-19T07:18:01.104Z",
+    "referenceDate": "2026-10-19",
+    "endpoint": "http://127.0.0.1:8841",
+    "questions": 6,
+    "questionsPassed": 3,
+    "turns": 6,
+    "turnsPassed": 3,
+    "paidCalls": 5,
+    "httpCalls": 5,
+    "offlineTurns": 2,
+    "byCapability": {
+      "scope": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M46"
+        ]
+      },
+      "must-clarify": {
+        "total": 2,
+        "passed": 2,
+        "failures": []
+      },
+      "complex-multipart-percentage": {
+        "total": 1,
+        "passed": 1,
+        "failures": []
+      },
+      "complex-two-category": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M66"
+        ]
+      },
+      "complex-multiple-categories": {
+        "total": 1,
+        "passed": 0,
+        "failures": [
+          "M68"
+        ]
+      }
+    },
+    "byRootCause": {
+      "unsupported-capability": 1,
+      "contract": 2
+    }
+  },
+  "results": [
+    {
+      "id": "M46",
+      "capability": "scope",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M46",
+          "text": "How much have I spent on bubble tea related purchases this year?",
+          "wantOutcome": [
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 200,
+          "intentType": "clarify",
+          "semanticReason": "scope_rules_required",
+          "source": "model",
+          "paid": true,
+          "pass": false,
+          "rootCause": "unsupported-capability",
+          "issues": [
+            "clarified instead of answering: Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval. Your original request: “How much have I spent on bubble tea related purchases this year?”"
+          ],
+          "note": "Bubble Tea is a real category, so a plain category total is also honest. A reviewed scope is equally acceptable.",
+          "actualText": "Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval. Your original request: “How much have I spent on bubble tea related purchases this year?”",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M50",
+      "capability": "must-clarify",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M50",
+          "text": "How much did I spend on Food & Drinks and Entertainment this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope"
+          ],
+          "gotOutcome": "propose_scope",
+          "httpStatus": 200,
+          "intentType": "propose_scope",
+          "semanticReason": null,
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "Two categories. Silently answering for one is the failure being tested.",
+          "actualText": null,
+          "actualQuery": {
+            "operation": "total",
+            "period": "month",
+            "start": null,
+            "end": null,
+            "dayCount": null,
+            "category": null,
+            "description": null,
+            "amountOperator": null,
+            "amount": null,
+            "amountCents": null,
+            "day": "all",
+            "groupBy": null,
+            "aggregate": "total",
+            "categoryTerms": [
+              "food",
+              "entertainment"
+            ],
+            "spendingScope": {
+              "label": "Food & Drinks and Entertainment combined",
+              "includeCategories": [
+                "entertainment",
+                "food"
+              ],
+              "includeTerms": [],
+              "excludeCategories": [],
+              "excludeTerms": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "M54",
+      "capability": "must-clarify",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M54",
+          "text": "Am I doing well with my money?",
+          "wantOutcome": [
+            "clarify",
+            "unsupported"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": null,
+          "intentType": "clarify",
+          "semanticReason": "financial_assessment_needs_scope",
+          "source": "builtin",
+          "paid": false,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "No figure answers this. It must ask what to measure rather than invent a verdict.",
+          "actualText": "What would you like to assess: recorded spending against a category budget, a change from a previous period, or a particular category? Please name the category and period you want. An expense ledger alone cannot establish your overall financial health. Your original request: “Am I doing well with my money?”",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M65",
+      "capability": "complex-multipart-percentage",
+      "chain": false,
+      "pass": true,
+      "turns": [
+        {
+          "key": "M65",
+          "text": "What did I spend this month, and what percentage of it was Food & Drinks?",
+          "wantOutcome": [
+            "answer",
+            "clarify"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 200,
+          "intentType": "clarify",
+          "semanticReason": "multipart_percentage_unsupported",
+          "source": "model",
+          "paid": true,
+          "pass": true,
+          "rootCause": null,
+          "issues": [],
+          "note": "A complete category breakdown answers both parts: the grand total and the share. Subtotals must recombine to the total exactly.",
+          "actualText": "I cannot combine a spending total with a separate category-percentage answer. Would you like the recorded total or a complete category breakdown? Keep the original subject, dates and other filters in your next question. Your original request: “What did I spend this month, and what percentage of it was Food & Drinks?”",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M66",
+      "capability": "complex-two-category",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M66",
+          "text": "Did I spend more on Food & Drinks or Bubble Tea this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 502,
+          "intentType": null,
+          "semanticReason": {
+            "code": "intent_bad_field",
+            "field": "query.category_terms"
+          },
+          "source": "offline",
+          "paid": true,
+          "pass": false,
+          "rootCause": "contract",
+          "issues": [
+            "fell back to offline (invalid_intent)"
+          ],
+          "note": "Two categories in one question. A breakdown containing both is honest; narrowing to one is not.",
+          "actualText": "Please resubmit the full question with one category. Combining multiple categories is not supported.",
+          "actualQuery": null
+        }
+      ]
+    },
+    {
+      "id": "M68",
+      "capability": "complex-multiple-categories",
+      "chain": false,
+      "pass": false,
+      "turns": [
+        {
+          "key": "M68",
+          "text": "How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?",
+          "wantOutcome": [
+            "clarify",
+            "propose_scope",
+            "answer"
+          ],
+          "gotOutcome": "clarify",
+          "httpStatus": 502,
+          "intentType": null,
+          "semanticReason": {
+            "code": "intent_bad_field",
+            "field": "query.category_terms"
+          },
+          "source": "offline",
+          "paid": true,
+          "pass": false,
+          "rootCause": "contract",
+          "issues": [
+            "fell back to offline (invalid_intent)"
+          ],
+          "note": "Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.",
+          "actualText": "Please resubmit the full question with one category. Combining multiple categories is not supported.",
+          "actualQuery": null
+        }
+      ]
+    }
+  ]
+}

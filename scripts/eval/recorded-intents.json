@@ -1205,12 +1205,14 @@
     }
   },
   "M46": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.spendingScope"
+      "intent": {
+        "type": "clarify",
+        "reason": "scope_rules_required",
+        "question": "Related purchases need explicit inclusion rules before a calculation. Which purchase-description terms or categories should count? I can propose literal rules for your review and approval. Your original request: “How much have I spent on bubble tea related purchases this year?”",
+        "options": [],
+        "say": ""
       }
     }
   },
@@ -1256,12 +1258,40 @@
     }
   },
   "M50": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "multiple_categories"
+      "intent": {
+        "type": "propose_scope",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "categoryTerms": [
+            "food",
+            "entertainment"
+          ],
+          "spendingScope": {
+            "label": "Food & Drinks and Entertainment combined",
+            "includeCategories": [
+              "entertainment",
+              "food"
+            ],
+            "includeTerms": [],
+            "excludeCategories": [],
+            "excludeTerms": []
+          }
+        },
+        "say": ""
       }
     }
   },
@@ -1505,12 +1535,14 @@
     }
   },
   "M65": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.category_terms"
+      "intent": {
+        "type": "clarify",
+        "reason": "multipart_percentage_unsupported",
+        "question": "I cannot combine a spending total with a separate category-percentage answer. Would you like the recorded total or a complete category breakdown? Keep the original subject, dates and other filters in your next question. Your original request: “What did I spend this month, and what percentage of it was Food & Drinks?”",
+        "options": [],
+        "say": ""
       }
     }
   },
@@ -1520,7 +1552,7 @@
       "error": "invalid_intent",
       "detail": {
         "code": "intent_bad_field",
-        "field": "multiple_categories"
+        "field": "query.category_terms"
       }
     }
   },
@@ -1556,7 +1588,7 @@
       "error": "invalid_intent",
       "detail": {
         "code": "intent_bad_field",
-        "field": "multiple_categories"
+        "field": "query.category_terms"
       }
     }
   },
