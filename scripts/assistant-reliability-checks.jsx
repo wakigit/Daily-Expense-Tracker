@@ -42,7 +42,13 @@ export async function assistantReliabilityChecks(check) {
  check('largest arbitrary description filter',ids(run({operation:'largest',description:'KFC'})),['a']);
  check('largest amount and day filter exact',ids(run({operation:'largest',day:'weekend',amountOperator:'lte',amount:'20'})),['f']);
  check('largest future-dated candidate is excluded',ids(executeQuery({operation:'largest',period:'month'},{...ctx,expenses:[...ctx.expenses,{id:'future',date:'2026-10-19',description:'Future',amount:999,category:'food'}]})),['c','d']);
- check('largest empty does not invent winner',run({operation:'largest',description:'Not recorded'}).evidence.rows,[]);
+ // A term the ledger has never contained now clarifies rather than reporting
+ // an empty winner, because "no largest transaction" reads as a fact about the
+ // term rather than about the ledger. The no-invented-winner guarantee is still
+ // asserted, using a term that exists but falls outside the requested period.
+ const unseen=run({operation:'largest',description:'Not recorded'});
+ check('largest unseen term clarifies instead of an empty winner',[unseen.kind,Boolean(unseen.evidence)],['clarify',false]);
+ check('largest empty does not invent winner',executeQuery({operation:'largest',period:'range',start:'2026-01-01',end:'2026-01-31',description:'KFC'},ctx).evidence.rows,[]);
  check('largest previous month tied support',ids(executeQuery({operation:'largest',period:'lastmonth'},ctx)),['g']);
 
  // ---- latest: recency by date, which 'largest' silently answered before ----

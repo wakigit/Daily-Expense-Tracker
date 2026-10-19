@@ -11,6 +11,13 @@ export function interpretOffline(question, cats=[]) {
   const clarify=question=>({kind:'clarify',intent:'clarify',question,text:question});
   if (!/\b(pay|paid|spend|spending|spent|purchases?|transactions?|expenses?|expenditure|entries|budget|compare|comparison|show|list|find|average|count|how much|breakdown|break down)\b/.test(text)) return {kind:'clarify',intent:'clarify',text:'I support recorded spending queries, not unrestricted questions. Please ask for a total, filtered transactions, a weekday pattern, comparison or category budget pace.',question:'Which supported spending calculation do you want?'};
   if (/\brelated\b|\bincluding\b|\bexclude\b/.test(text)) return clarify('Related spending needs reviewed rules. Please specify literal descriptions and categories to include, then review a scope proposal; offline interpretation cannot infer this concept.');
+  /* Hypotheticals and top-N are not operations this app has. Offline used to
+     fall through to a plain total here, strip the unrecognised words, and keep
+     whatever was left as a description filter — which matched nothing and
+     reported S$0.00, i.e. "you would save nothing". */
+  if (/\bwhat if\b|\bif i (?:cut|cuts|reduce|reduced|halve|halved|stop|stopped|skip|skipped|drop|dropped|spend less)\b|\b(?:cut|reduce|halve|double)\b.*\b(?:in half|by half|by \d+%?|spending)\b|\bhow much (?:would|could) i save\b/.test(text)) return clarify('I cannot calculate hypothetical changes to your spending. I can tell you what you actually recorded — for example “How much did I spend on Bubble Tea this month?” — and you can compare that yourself.');
+  if (/\btop \d+\b|\b(?:\d+|two|three|four|five|ten) (?:biggest|largest|most expensive|top)\b|\b(?:biggest|largest|most expensive) (?:\d+|two|three|four|five|ten)\b/.test(text)) return clarify('I can report the single largest transaction, including ties, but not a ranked list of several. Ask for the largest single expense, or list transactions over an amount.');
+  if (/\b(?:save|saving|savings)\b.*\b(?:goal|target|by|in \d+ months?|each month|per month)\b|\bi want to save\b/.test(text)) return clarify('I cannot plan a savings goal yet. I can total what you actually recorded for a category or period.');
   const q={operation:'total',period:'month',start:null,end:null,category:null,description:null,amountOperator:null,amount:null,day:'all',groupBy:null,aggregate:'total',category_terms:[]};
   const quotes=[...text.matchAll(/[“"]([^”"]+)[”"]/g)];
   if(quotes.length>1) return clarify('Please use one description search term in your complete question.');
@@ -91,7 +98,13 @@ export function interpretOffline(question, cats=[]) {
     .replace(/\b(give|complete|did|have|has|had|am|are|is|was|will|when|which|what|how|does|do|can|could|would|should|my|me|i|you|the|a|an|and|or|money|pay|paid|spend|spending|spent|purchases?|transactions?|expenses?|expenditure|entries|recorded|single|individual|largest|expensive|most|highest|biggest|top|total|totals|less|more|same|compare|compared|comparison|with|to|than|on|for|of|in|from|all|show|list|find|count|number|many|much|amount|average|usually|over|during|past|day|days|week|month|category|categories|weekdays?|weekends?|yesterday|today|overall|ever|budget|pace|current|based|out|exhaust|last|per|by|descriptions?|mentioning|recent|latest|newest)\b/g,' ')
     .replace(/[?.,!'’]/g,' ').replace(/\s+/g,' ').trim();
   if(text) {
-    if(q.description || /\b(and|or)\b|\d|\b(year|tomorrow|fortnight|quarter)\b/.test(text)) return clarify('I could not safely interpret every filter. Please use one category and/or a quoted description term, an amount condition, and a supported period or ISO date range.');
+    /* Leftover words become a description filter only if they could plausibly
+       BE a purchase name. A whole unparsed clause ("if cut half save each")
+       became a description, matched nothing, and was reported as S$0.00 — an
+       answer to a question nobody asked. Real description terms are short:
+       "starbucks", "chicken rice", "grab ride home". */
+    const words=text.split(/\s+/).filter(Boolean);
+    if(q.description || words.length>3 || /\b(and|or)\b|\d|\b(year|tomorrow|fortnight|quarter)\b/.test(text)) return clarify('I could not safely interpret every filter. Please use one category and/or a quoted description term, an amount condition, and a supported period or ISO date range.');
     q.description=text;
   }
   if(q.operation==='projection'&&!q.category) return clarify(`Which configured category budget should I estimate? Resubmit the complete question using one of: ${cats.map(c=>c.label).join(', ')}.`);

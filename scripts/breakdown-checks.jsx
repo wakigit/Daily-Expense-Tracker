@@ -36,9 +36,18 @@ export function breakdownChecks(check) {
   check('breakdown missing category never loses spending',unknown.breakdown.totalCents,6109);
   check('breakdown missing category honest labels',unknown.breakdown.groups.filter(g=>['gone',null].includes(g.key)).map(g=>g.label).sort(),['Uncategorised','Unknown category (gone)']);
   check('breakdown missing categories readable in evidence',unknown.evidence.rows.filter(r=>['deleted-category','null-category'].includes(r.id)).map(r=>r.categoryLabel),['Unknown category (gone)','Uncategorised']);
-  const empty=run({description:'No Such Purchase'});
+  /* A term the ledger has never contained is no longer answered as S$0.00:
+     that reads as "you spent nothing on this" when the truth is "this was
+     never recorded". An empty PERIOD is still a legitimate zero, so the honest
+     empty-result path is exercised with a term that exists outside the range. */
+  const neverSeen=run({description:'No Such Purchase'});
+  check('breakdown unseen term clarifies instead of totalling zero',neverSeen.kind,'clarify');
+  check('breakdown unseen term names the term',neverSeen.question.includes('No recorded purchase description contains “No Such Purchase”'),true);
+  check('breakdown unseen term lists the categories',neverSeen.question.includes('Shopping, Books, Household'),true);
+  const empty=run({period:'range',start:'2026-01-01',end:'2026-01-31',dayCount:null});
   check('breakdown empty exact totals',[empty.breakdown.totalCents,empty.breakdown.count,empty.breakdown.groups.length,empty.evidence.rows.length],[0,0,0,0]);
   check('breakdown empty useful message',empty.text.includes('No matching recorded expenses'),true);
+  check('breakdown empty period says where the matches are',empty.detail.includes('outside this period'),true);
   const many=Array.from({length:15},(_,i)=>row(`many-${i}`,'2026-10-01','Amazon',1,`category-${i}`));
   const complete=run({}, {...ctx,expenses:many});
   check('breakdown never truncates groups or evidence',[complete.breakdown.groups.length,complete.evidence.rows.length,complete.breakdown.totalCents],[15,15,1500]);
