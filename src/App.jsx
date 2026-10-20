@@ -1,5 +1,6 @@
+import { planEvidenceSelection } from './lib/planPresentation.js';
 import { previewSpendingScope, confirmSpendingScope } from './lib/spendingScope';
-import { createAssistantSession, resolveFollowup } from './lib/assistantFollowup';
+import { createAssistantSession, resolveFollowup, interpretationPublication } from './lib/assistantFollowup';
 import { interpretOffline } from './lib/queryOffline';
 import { executeQuery } from './lib/queryEngine';
 import RoastCard from './components/RoastCard';
@@ -14,7 +15,7 @@ import {
 import { sumAmounts, fromCents, toCents } from './lib/money';
 import { budgetStatus, decayLevel } from './lib/status';
 import { planFromIntent } from './lib/assistant';
-import { markOutdatedAnswers } from './lib/answerEvidence';
+import { markOutdatedAnswers, planIsStale } from './lib/answerEvidence';
 import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
 import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
@@ -52,7 +53,7 @@ const blankForm = (catId) => ({
   notes: '',
 });
 
-export default function App() {
+export default function App({ assistantRequest = requestIntent, referenceDate = today } = {}) {
   const {
     ready,
     roastPrefs, setRoastPrefs, roastSeed,
@@ -90,7 +91,7 @@ export default function App() {
   const sessionRef = useRef(null);
   if (!sessionRef.current) sessionRef.current = createAssistantSession();
   const ledgerRef = useRef(null);
-  ledgerRef.current = { expenses, cats, budgets, today: today() };
+  ledgerRef.current = { expenses, cats, budgets, today: referenceDate() };
   useEffect(() => () => sessionRef.current.cancel(), []);
   useEffect(() => {
     setChat((messages) => markOutdatedAnswers(messages, expenses, cats, budgets));
@@ -372,8 +373,18 @@ export default function App() {
     if (remember && !query && (plan.evidence || plan.comparison)) sessionRef.current.failed(ticket, true);
     say({ from: 'bot', ...meta, answerId, text: plan.text, suggestions: plan.suggestions,
       detail: plan.detail, interpretation: plan.interpretation, breakdown: plan.breakdown,
-      comparison: plan.comparison, evidence: plan.evidence, budgetEvidence: plan.budgetEvidence,
+      planResult: plan.planResult, comparison: plan.comparison, evidence: plan.evidence, budgetEvidence: plan.budgetEvidence,
       outdated: plan.outdated, followup: plan.followup, approvedScope: plan.approvedScope, scopeCategories: plan.approvedScope ? ledgerRef.current.cats.map(c=>({id:c.id,label:c.label})) : null });
+  };
+
+  const choosePlanEvidence = (answerId,partId) => {
+    const original=markOutdatedAnswers(chat,expenses,cats,budgets).find(m=>m.answerId===answerId&&m.planResult);
+    if(!original)return;
+    const selected=planEvidenceSelection(original.planResult,partId);
+    if(!selected)return;
+    sessionRef.current.cancel();setAsking(false);setScopeProposal(null);setPending(null);
+    say({from:'bot',source:'builtin',text:`Original evidence from answer #${answerId}. Figures and transactions remain historical snapshots.`,
+      planResult:selected,outdated:planIsStale(selected),followup:{answerId,mode:'snapshot'}});
   };
 
   const clearChat = () => {
@@ -392,11 +403,18 @@ export default function App() {
       setAsking(false);
       if (followup.proposal) { setScopeProposal({ticket,query:followup.query,preview:followup.preview,referenceDate:followup.referenceDate,meta:{source:'builtin'}}); return; }
       if (followup.plan.kind === 'answer') publishAnswer(followup.plan, {source:'builtin'}, ticket, followup.query, !followup.snapshot);
-      else say({from:'bot',source:'builtin',text:followup.plan.question,clarificationDraft:text});
+      else say({from:'bot',source:'builtin',text:followup.plan.question,planChoices:followup.plan.planChoices,clarificationDraft:text});
       return;
     }
-    const res = await requestIntent(text, { ...ledgerRef.current, signal: ticket.signal });
-    if (!sessionRef.current.current(ticket)) return;
+    const requestDate = referenceDate();
+    const res = await assistantRequest(text, { ...ledgerRef.current, today:requestDate, signal: ticket.signal });
+    const publication=interpretationPublication(sessionRef.current,ticket,requestDate,referenceDate());
+    if (publication.reason==='cancelled') return;
+    if (!publication.publish) {
+      setAsking(false);
+      return say({from:'bot',source:'builtin',text:'The Singapore calendar date changed while interpreting this request. Please submit the complete question again so all parts use one reference date.',clarificationDraft:text});
+    }
+    ledgerRef.current = {...ledgerRef.current,today:requestDate};
     if (!res.ok) {
       const ctx = ledgerRef.current;
       const parsed = interpretOffline(text, ctx.cats,ctx.today);
@@ -419,7 +437,7 @@ export default function App() {
     const plan = planFromIntent(res.intent, { ...ledgerRef.current, actionLog, message: text });
     setAsking(false);
     const meta = {source:res.source ?? 'model',endpoint:res.endpoint,httpStatus:res.httpStatus};
-    if (plan.kind === 'answer') return publishAnswer(plan, meta, ticket, res.intent.type === 'analyze' ? res.intent.query : null);
+    if (plan.kind === 'answer') return publishAnswer(plan, meta, ticket, res.intent.type === 'plan' ? {type:'plan',plan:res.intent.plan} : res.intent.type === 'analyze' ? res.intent.query : null);
     if (plan.kind === 'clarify') return say({from:'bot',...meta,text:plan.question,suggestions:plan.options,clarificationDraft:text});
 
     if (plan.kind === 'undo') {
@@ -653,6 +671,7 @@ export default function App() {
             scopeProposal={scopeProposal} cats={cats} onScopeConfirm={approveScope} onScopeCancel={cancelScope} onScopeRevise={reviseScope}
             messages={markOutdatedAnswers(chat, expenses, cats, budgets)}
             onSend={askQuestion}
+            onPlanEvidence={choosePlanEvidence}
             onClear={clearChat}
             onStop={stopAsking}
             hasData={expenses.length > 0}

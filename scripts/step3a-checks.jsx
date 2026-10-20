@@ -20,7 +20,7 @@ export async function step3aChecks(check) {
     ['Lunches and Craft supplies totals in September, only weekends above S$9?',{...query,day:'weekend',amountOperator:'gt',amount:'9'},L.MULTIPLE_CATEGORIES],
     ['Compare Lunches with Rail fares during the previous month.',{...query,operation:'compare',category_terms:['Lunches','Rail fares']},L.CATEGORY_COMPARISON],
     ['How much for workshop-related purchases this year?',{...query,period:'year'},L.SCOPE_REQUIRED],
-    ['Give the total this week and also the percentage spent on Lunches.',query,L.MULTIPART_PERCENTAGE],
+    ['Give the total this week and also the percentage spent on Lunches.',query,L.PLAN],
     ['Combine Lunches and Craft supplies for September.',{...query,category_terms:['Lunches','Craft supplies'],spendingScope:{label:'Workshop',includeCategories:['meal-x'],includeTerms:[],excludeCategories:[],excludeTerms:[]}},L.SCOPE_CATEGORY_COVERAGE],
     ['Compare March with June spending.',{...query,operation:'compare',period:'range',start:'2026-03-01',end:'2026-06-30'},L.COMPARISON_PERIOD],
   ];

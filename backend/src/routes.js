@@ -71,7 +71,7 @@ export async function handleIntent(rawBody, { request = requestIntent } = {}) {
 
   try {
     const raw = dialogueIntent(message, cats) ?? await request({ message, context });
-    const checked = validateIntent(raw, { cats, message });
+    const checked = validateIntent(raw, { cats, message, today:context.today });
     if (!checked.ok) {
       return { status: 502, body: { error: 'invalid_intent', detail: intentDiagnostic(checked.error) } };
     }

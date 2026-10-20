@@ -38,8 +38,7 @@ function protect(message,cats){
       return prefix+ctoken(ids[0]);
     })).join('');
   }
-  if(ambiguous)return null;
-  return {text:text.replace(/[?.!]\s*$/,'').replace(/,\s*/g,', ').replace(/^please\s+/,''),terms,cats};
+  return {ambiguous,text:text.replace(/[?.!]\s*$/,'').replace(/,\s*/g,', ').replace(/^please\s+/,''),terms,cats};
 }
 
 /** Parse period WORDS only. All calendar arithmetic remains in queryDates. */
@@ -104,18 +103,21 @@ const percent=(n,d)=>({operation:'percent_of',numerator:planRef(n),denominator:p
 const difference=(l,r)=>({operation:'difference',left:planRef(l),right:planRef(r)});
 const totalPrefix=/^(?:what did i spend|how much did i spend|what (?:was|is) my total spending|show (?:my )?total spending)\b\s*/;
 
-/** Independent request requirements. Not wired to live interpretation or offline UI. */
+/** Independent bounded request requirements, shared by routing and execution audit. */
 export function recognizePlanRequest(message,{cats=[],today}={}){
   const fail=()=>({recognized:true,...planFailure('plan_request_unsupported',message)});
-  if(typeof message!=='string'||jsonBytes(message)>PLAN_LIMITS.instructionBytes||!validDate(today)||!validPlanCategories(cats))return fail();
+  if(typeof message!=='string'||jsonBytes(message)>PLAN_LIMITS.instructionBytes||!validPlanCategories(cats))return fail();
   const env=protect(message,cats);
   if(!env)return fail();
-  if(/\b(?:compare|compared|comparison|comparisons|versus|vs)\b/.test(env.text)&&
-    !/\b(?:share|percentage|percent|then)\b/.test(env.text))return {ok:false,recognized:false};
   // Quoted terms and complete category names are protected before these markers.
-  const potential=/\b(?:share|percentage|percent)\b/.test(env.text)||
+  const additional=/\b(?:spend|spent|spending|total)\b/.test(env.text) &&
+    /\band\s+(?:also\s+)?(?:(?:what|how)\b|(?:show|give)\b|(?:my\s+)?(?:transaction\s+count|count|average|forecast|top\s+\d|savings?)\b)/.test(env.text);
+  if(!additional && /\b(?:compare|compared|comparison|comparisons|versus|vs)\b/.test(env.text) &&
+    !/\b(?:share|percentage|percent|then)\b/.test(env.text))return {ok:false,recognized:false};
+  const potential=additional || /\b(?:share|percentage|percent)\b/.test(env.text)||
     (/^(?:show|give me|tell me)\b/.test(env.text)&&(env.text.match(/\bspending\b/g)??[]).length>1&&/\band\b/.test(env.text));
   if(!potential)return {ok:false,recognized:false};
+  if(env.ambiguous||!validDate(today))return fail();
   const dates=commonPeriod(env.text,today);if(!dates)return fail();
   const text=dates.text.replace(/\s*,\s*/g,', ');
   let expected=null,family=null;
@@ -172,7 +174,7 @@ export function auditPlanRequest(plan,context={}){
   return {ok:true,family:request.family};
 }
 
-/** Future integration guard. Calling this does not change any existing intent path. */
+/** Independent consumer guard; validateIntent also checks the closed intent structure. */
 export function guardPlanResponse(message,intent,context={}){
   const req=recognizePlanRequest(message,context);
   if(!req.recognized)return {handled:false};

@@ -187,7 +187,7 @@ for(const [label,message,patch,reason] of [
  ['two explicit categories','Pottery and Cycle repairs spending last month, weekends only, over S$14?',{period:'lastmonth',day:'weekend',amountOperator:'gt',amount:'14'},'multiple_categories'],
  ['structured multiple labels','Compare Pottery with Canteen for this month.',{operation:'compare',category_terms:['Pottery','Canteen']},'category_comparison_unsupported'],
  ['scope rules omitted','Study-related purchases this year including paper and ink?',{period:'year',description:'paper'},'scope_rules_required'],
- ['multipart','Give my spending total and also the percentage for Pottery this week.',{period:'week'},'multipart_percentage_unsupported'],
+ ['multipart','Give my spending total and also the percentage for Pottery this week.',{period:'week'},'plan_complete_request_required'],
  ['arbitrary comparison','Compare April with September spending.',{operation:'compare',period:'range',start:'2026-04-01',end:'2026-09-18'},'comparison_period_unsupported'],
 ]) {
  test('Step3A valid semantic limitation: '+label,async()=>{

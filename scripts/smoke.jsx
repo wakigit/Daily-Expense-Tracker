@@ -1,3 +1,4 @@
+import { planIntegrationChecks } from './plan-integration-checks';
 import { planChecks } from './plan-checks';
 import { comparisonInterpretationChecks } from './comparison-interpretation-checks';
 import { comparisonV2Checks } from './comparison-v2-checks';
@@ -2113,6 +2114,7 @@ await assistantReliabilityChecks(logic);
 voiceMoneyChecks(logic);
 
 await sampleCategoryChecks(logic);
+await planIntegrationChecks(logic);
 
 let failed = 0;
 for (const c of checks) {

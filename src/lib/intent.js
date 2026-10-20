@@ -1,3 +1,5 @@
+import { validatePlanIntent } from './planContract.js';
+import { auditPlanRequest, recognizePlanRequest } from './planRequest.js';
 import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { descriptionOrRequest, unresolvedCoordination } from './explicitFilterRequest.js';
 import { normaliseScopeText } from './filterMatching.js';
@@ -24,6 +26,7 @@ import { validateQuery } from './queryContract.js';
  */
 
 export const INTENT_TYPES = [
+  'plan',
   'help',
   'answer',
   'analyze',
@@ -75,7 +78,7 @@ const trimmed = (v) => (typeof v === 'string' ? v.trim() : '');
  * category id is the kind of error that stays invisible, because the total is
  * still right and only a budget looks wrong later.
  */
-export function validateIntent(raw, { cats = [], message = '' } = {}) {
+export function validateIntent(raw, { cats = [], message = '', today = '' } = {}) {
   if (!isPlainObject(raw)) return bad(INTENT_ERR.NOT_OBJECT);
 
   // Greetings and genuinely ambiguous highest requests cannot turn into arbitrary totals.
@@ -89,6 +92,31 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
      `say` is dropped here rather than forwarded, so a model that returns help
      can choose the RESPONSE TYPE and never the words. Rejecting it outright
      sent five honest replies down the offline fallback instead. */
+
+  if (type === 'plan') {
+    const checked = validatePlanIntent(raw, {cats,message,today});
+    if (!checked.ok) return checked.kind === 'clarify'
+      ? {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)}
+      : bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
+    const audit = auditPlanRequest(checked.intent.plan,{cats,message,today});
+    return audit.ok ? checked : {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
+  }
+  // A null sibling is compatible with old captures; never discard an active plan.
+  if (raw.plan != null) return bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
+  const multipart = recognizePlanRequest(message,{cats,today}).recognized;
+  if(multipart && Object.keys(raw).some(k=>!['type','plan','say','query','expense','filter','scope','question','options','reason'].includes(k)))return bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
+  // Check structure first: malformed output must remain an error, not a semantic success.
+  if (multipart && ['answer','analyze','propose_scope'].includes(type)) {
+    const structural = type === 'answer' ? METRICS.includes(raw.query?.metric)
+      && PERIODS.includes(raw.query?.period ?? 'month')
+      && (raw.query?.category == null || cats.some(c=>c.id===raw.query.category))
+      && Object.keys(raw.query).every(k=>['metric','period','category','category_terms','categoryTerms'].includes(k))
+      : validateQuery(raw.query,cats).ok;
+    if (!structural) return bad(INTENT_ERR.BAD_FIELD,{field:'query'});
+    return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
+  }
+  if (multipart && type !== 'clarify') return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
+
   if(type==='help') {
     const reason=requiresTwoSidedAnswer(message,cats)?(asksCategoryComparison(message,cats)?INTENT_LIMITATION.CATEGORY_COMPARISON:INTENT_LIMITATION.COMPARISON_SHAPE):requestLimitation(message,cats);
     return {ok:true,intent:reason ? limitationClarification(reason,message) : {type:'help'}};
@@ -239,7 +267,7 @@ export function validateIntent(raw, { cats = [], message = '' } = {}) {
   const options = Array.isArray(raw.options)
     ? raw.options.map(trimmed).filter(Boolean).slice(0, 6)
     : [];
-  const reason = raw.reason ?? requestLimitation(message,cats);
+  const reason = multipart ? INTENT_LIMITATION.PLAN : raw.reason ?? requestLimitation(message,cats);
   return { ok: true, intent: reason ? limitationClarification(reason,message) : { type, question, options, say } };
 }
 
@@ -264,6 +292,6 @@ export function buildContext({ cats = [], today = '', expenses = [] } = {}) {
 
 /** Public diagnostics contain fixed codes/field names, never model values or category labels. */
 export function intentDiagnostic(error) {
-  const fields=['message','query','query.structure','query.category_terms','query.description','query.categories','query.descriptionTerms','query.comparison','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
+  const fields=['plan','message','query','query.structure','query.category_terms','query.description','query.categories','query.descriptionTerms','query.comparison','query.amount','query.projection_filters','query.operation','query.period','query.day','query.aggregate','query.category','query.groupBy','query.range','query.dayCount','query.spendingScope','multiple_categories','expense','filter','question','scope','period','reason'];
   return {code:Object.values(INTENT_ERR).includes(error?.code)?error.code:INTENT_ERR.BAD_FIELD,field:fields.includes(error?.field)?error.field:null};
 }

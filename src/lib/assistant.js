@@ -1,3 +1,4 @@
+import { executePlan } from './planEngine.js';
 import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { HELP_TEXT, HELP_QUESTIONS } from './assistantDialogue.js';
 import { executeQuery } from './queryEngine';
@@ -263,6 +264,11 @@ function planDelete(intent, { expenses, cats }) {
  */
 export function planFromIntent(intent, { expenses = [], cats = [], today = '', actionLog = [], budgets = {}, message = '' } = {}) {
   switch (intent.type) {
+    case 'plan': {
+      const result=executePlan(intent.plan,{expenses,cats,today,message});
+      return result.kind==='plan_answer' ? {kind:'answer',text:'Recorded spending, calculated together from one ledger snapshot.',planResult:result}
+        : {kind:'clarify',question:result.question};
+    }
     case 'help': return {kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS};
     case 'propose_scope': return {kind:'clarify',question:'Review and approve the proposed spending scope before calculation.'};
     case 'analyze':

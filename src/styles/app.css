@@ -2143,3 +2143,11 @@ body:has(.toast) .roast-popup { bottom: calc(140px + env(safe-area-inset-bottom,
 .scope-review button:disabled { opacity: .45; cursor: not-allowed; }
 
 .scope-review input[type=checkbox] { appearance: auto; -webkit-appearance: checkbox; accent-color: var(--accent); min-height: 18px; width: 18px; height: 18px; padding: 0; border-radius: 3px; }
+
+/* Bounded plan parts reuse the existing answer/evidence layout. */
+.plan-answer { display: grid; gap: 12px; margin-top: 12px; min-width: 0; }
+.plan-answer .comparison-heading strong { min-width: 0; overflow-wrap: anywhere; }
+.plan-answer a { color: var(--accent); text-decoration: underline; }
+.plan-answer a:focus-visible, .plan-answer button:focus-visible, .ask-suggestions button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}

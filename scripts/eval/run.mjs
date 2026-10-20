@@ -1,3 +1,4 @@
+import { extractPlanResult, scorePlanResult } from './plan-results.mjs';
 /**
  * The evaluation harness.
  *
@@ -202,6 +203,7 @@ function reportedRange(plan) {
 }
 
 function actualFigures(plan) {
+  if (plan.planResult) return extractPlanResult(plan);
   const out = { range: reportedRange(plan), text: plan.text };
   if (plan.breakdown) {
     out.shape = 'breakdown';
@@ -260,7 +262,7 @@ async function runTurn({ text, key, session, ledger }) {
       const answerId = followup.snapshot ? null : session.accept(ticket, followup.query, followup.plan, ledger);
       return { kind: 'answer', source: 'builtin', paid: false, plan: followup.plan, query: followup.query ?? null, answerId, snapshot: Boolean(followup.snapshot) };
     }
-    return { kind: 'clarify', source: 'builtin', paid: false, question: followup.plan.question ?? followup.plan.text };
+    return { kind: 'clarify', source: 'builtin', paid: false, question: followup.plan.question ?? followup.plan.text, planChoices: followup.plan.planChoices ?? null };
   }
 
   const before = httpCalls;
@@ -294,7 +296,7 @@ async function runTurn({ text, key, session, ledger }) {
   const plan = planFromIntent(res.intent, { ...ledger, message: text });
   const source = res.source ?? 'model';
   if (plan.kind === 'answer') {
-    const query = res.intent.type === 'analyze' ? res.intent.query : null;
+    const query = res.intent.type === 'plan' ? {type:'plan',plan:res.intent.plan} : res.intent.type === 'analyze' ? res.intent.query : null;
     const answerId = session.accept(ticket, query, plan, ledger);
     if (!query && (plan.evidence || plan.comparison)) session.failed(ticket, true);
     return { ...metadata, kind: 'answer', source, paid, plan, query, answerId };
@@ -344,7 +346,7 @@ function scoreTurn({ question, turn, actual }) {
       const text = actual.plan?.text ?? '';
       const statesFigure = /S\$\s?\d/.test(text)
         || Boolean(actual.plan?.evidence?.rows?.length)
-        || Boolean(actual.plan?.breakdown) || Boolean(actual.plan?.comparison);
+        || Boolean(actual.plan?.breakdown) || Boolean(actual.plan?.comparison) || Boolean(actual.plan?.planResult);
       return { pass: false, rootCause: statesFigure ? 'honesty' : 'interpretation',
         issues: [statesFigure
           ? `answered with a figure where ${want.join('/')} was required: ${text}`
@@ -380,6 +382,13 @@ function scoreTurn({ question, turn, actual }) {
     return { pass: issues.length === 0, rootCause: issues.length ? 'UX' : null, issues };
   }
 
+  // A future explicitly reviewed plan oracle requires every numeric part.
+  // A safe clarification cannot earn a plan capability pass.
+  if (expect?.shape === 'plan') {
+    const scored=scorePlanResult(actual.plan,expect);
+    return {pass:scored.pass,rootCause:scored.pass?null:actual.kind==='clarify'?'unsupported-capability':'engine',issues:scored.failures};
+  }
+
   /* Nothing further to assert for a required clarification. */
   if (actual.kind === 'clarify') return { pass: true, rootCause: null, issues };
 
@@ -387,7 +396,7 @@ function scoreTurn({ question, turn, actual }) {
 
   /* Answers: compare figures, ranges and evidence exactly. */
   const got = actualFigures(actual.plan);
-  const oracleOfActual = actual.query ? oracleForQuery(actual.query) : null;
+  const oracleOfActual = actual.query && actual.query.type!=='plan' ? oracleForQuery(actual.query) : null;
 
   /* A frozen snapshot replay only claims its rows. */
   if (expect.shape === 'snapshot') {

@@ -51,15 +51,28 @@ export function evidenceIsOutdated(evidence, expenses, cats = []) {
   return evidence.basis.some((row) => JSON.stringify(byId.get(row.id)) !== JSON.stringify(row));
 }
 
+export function stalePlan(result, expenses, cats) {
+  if (!result) return result;
+  const base=result.base.map(part=>part.outdated || !evidenceIsOutdated(part.evidence,expenses,cats)
+    ? part : {...part,outdated:true});
+  const derived=result.derived.map(part=>part.outdated || !part.provenance.dependencies.some(id=>base.find(b=>b.id===id)?.outdated)
+    ? part : {...part,outdated:true});
+  return base.every((p,i)=>p===result.base[i]) && derived.every((p,i)=>p===result.derived[i]) ? result : {...result,base,derived};
+}
+export const planIsStale = result => Boolean(result && [...result.base,...result.derived].some(p=>p.outdated));
+
 /** Preserve the warning even if a subsequent Undo restores the original rows. */
 export function markOutdatedAnswers(messages, expenses, cats, budgets = {}) {
   let changed = false;
   const next = messages.map((message) => {
+    const planResult = stalePlan(message.planResult,expenses,cats);
+    if (planResult !== message.planResult) changed=true;
+    const planChanged = planIsStale(planResult);
     const evidence = [message.evidence, ...(message.breakdown?.groups ?? []).map(group => group.evidence), ...(message.comparison?.sides ?? []).map(side => side.evidence)];
     const budgetChanged = message.budgetEvidence && toCents(budgets[message.budgetEvidence.category] ?? 0) !== message.budgetEvidence.amountCents;
-    if (message.outdated || (!budgetChanged && !evidence.some(item => evidenceIsOutdated(item, expenses, cats)))) return message;
+    if ((message.outdated || (!planChanged && !budgetChanged && !evidence.some(item => evidenceIsOutdated(item, expenses, cats)))) && planResult === message.planResult) return message;
     changed = true;
-    return { ...message, outdated: true };
+    return { ...message, ...(planResult?{planResult}:{}), outdated: Boolean(message.outdated || planChanged || budgetChanged || evidence.some(item=>evidenceIsOutdated(item,expenses,cats))) };
   });
   return changed ? next : messages;
 }

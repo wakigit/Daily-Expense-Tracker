@@ -3,7 +3,7 @@ import { resolveQueryRange } from './queryDates.js';
 import { categoryNames } from './categoryVocabulary.js';
 import { normaliseScopeText } from './filterMatching.js';
 
-/** Dormant shared contract. Neither live validateIntent nor the provider imports this. */
+/** Shared bounded plan contract, validated on both sides of the transport. */
 export const PLAN_LIMITS = Object.freeze({steps:4, derived:2, instructionBytes:16384,
   metadataBytes:16384, matchedRows:10000, memberships:20000, headingLength:160});
 export const PLAN_MONEY_UNIT = Object.freeze({kind:'money',currency:'SGD',scale:'cents'});
@@ -18,7 +18,7 @@ export function jsonBytes(value) {
 }
 export function planFailure(reason, message='', kind='clarify', field=null) {
   return {ok:false,kind,reason,...(field?{field}:{}),question:
-    `I cannot safely answer this complete multi-part request (${reason}). Please give the requested totals, one common period, and the exact share or subtraction to calculate. Nothing has been calculated.${message?` Your original request: “${message}”`:''}`};
+    `I cannot safely answer this complete multi-part request. Please give the requested totals, one common period, and the exact share or subtraction to calculate. Nothing has been calculated.${message?` Your original request: “${message}”`:''}`};
 }
 export const planQuery = patch => ({operation:'total',period:'month',start:null,end:null,
   dayCount:null,category:null,categories:[],description:null,descriptionTerms:[],
@@ -102,7 +102,7 @@ export function validatePlan(raw,{cats=[],today,expenses=[],message=''}={}) {
   return {ok:true,plan,ranges};
 }
 
-/** Independent schema export only; deliberately not attached to buildSchema. */
+/** Closed total-only schema, selected only for recognised bounded multipart requests. */
 export function buildPlanSchema(categoryIds=[]) {
   const category={type:['string','null'],enum:[...categoryIds,null]};
   const variants=providerQuerySchemas(category).filter(q=>q.properties.comparison.type==='null');

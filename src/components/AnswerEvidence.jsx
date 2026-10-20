@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { money } from '../lib/format';
 
 /** These are the rows at answer time, never live rows that could change the figure. */
-export default function AnswerEvidence({ evidence, outdated = false, showWarning = true }) {
+export default function AnswerEvidence({ evidence, outdated = false, showWarning = true, pageSize = Infinity }) {
+  const [visible,setVisible]=useState(pageSize);
   if (!evidence) return null;
   return (
     <>
@@ -18,7 +20,7 @@ export default function AnswerEvidence({ evidence, outdated = false, showWarning
             {outdated ? 'Historical transactions at the time of this answer.' : 'Transactions used for this answer.'}
           </p>
           <ul tabIndex={0} aria-label="Transactions behind this answer">
-            {evidence.rows.map((row) => (
+            {evidence.rows.slice(0,visible).map((row) => (
               <li key={row.id}>
                 <div className="evidence-description">
                   <strong>{row.description}</strong>
@@ -28,6 +30,7 @@ export default function AnswerEvidence({ evidence, outdated = false, showWarning
               </li>
             ))}
           </ul>
+          {visible < evidence.rows.length && <button type="button" className="btn-ghost" onClick={()=>setVisible(n=>n+pageSize)}>Show next {Math.min(pageSize,evidence.rows.length-visible)} transactions ({visible} of {evidence.rows.length} shown)</button>}
         </details>
       )}
     </>

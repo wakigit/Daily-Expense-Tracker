@@ -30,7 +30,7 @@ export function boundPlanQuestion(query,range){
     description:query.description,descriptionTerms:query.descriptionTerms,day:query.day,amountOperator:query.amountOperator,amount:query.amount})}`;
 }
 
-/** Pure, synchronous, atomic and dormant. No live intent/App dispatcher calls it. */
+/** Pure synchronous atomic execution, called only after whole-request validation. */
 export function executePlan(raw,context={}){
   const message=typeof context.message==='string'?context.message:'';
   const reject=reason=>({kind:'clarify',...planFailure(reason,message)});

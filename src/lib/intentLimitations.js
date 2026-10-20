@@ -2,6 +2,7 @@ import { categoryRequestText, unresolvedCoordination } from './explicitFilterReq
 import { categoryNames } from './categoryVocabulary.js';
 /** Fixed semantic limitations, never exception-text matching or model-authored answers. */
 export const INTENT_LIMITATION = Object.freeze({
+  PLAN: 'plan_complete_request_required',
   COMPARISON_SHAPE: 'comparison_shape_unsupported',
   FILTER_COVERAGE: 'explicit_filter_coverage_incomplete',
   OR_OPERATION: 'or_operation_unsupported',
@@ -17,6 +18,7 @@ export const INTENT_LIMITATION = Object.freeze({
 export const isLimitationReason = reason => Object.values(INTENT_LIMITATION).includes(reason);
 export function limitationClarification(reason, message = '') {
   const explanations = {
+    [INTENT_LIMITATION.PLAN]: 'I cannot safely answer every part together. Please give the requested totals, one common period, and the exact share or ordered subtraction. Only total queries with difference or percentage share are supported together. Nothing has been calculated.',
     [INTENT_LIMITATION.COMPARISON_SHAPE]: 'I can compare exactly two periods with the same spending filters, or two configured categories over one shared period. Which two sides should I use? Different filters and periods on each side, or reviewed related concepts, need separate totals. I will not discard a third side.',
     [INTENT_LIMITATION.FILTER_COVERAGE]: 'I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection.',
     [INTENT_LIMITATION.OR_OPERATION]: 'A combined filter does not define a single category budget or a category/period comparison. I can calculate its recorded total, count, average, transaction list or complete breakdown. Which supported result would you like?',

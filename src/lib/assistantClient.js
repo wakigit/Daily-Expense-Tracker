@@ -33,7 +33,7 @@ export function explainIntentFailure(reason) {
     case 'provider_access_denied': return 'Answered offline. AI access was denied. Check the server key and model permissions.';
     case 'unreachable': case 'no_fetch': case 'provider_connection_failed': return 'Answered offline. Connection to the assistant failed.';
     case 'timeout': case 'provider_timeout': return 'Answered offline. The assistant request timed out.';
-    case 'invalid_intent': case 'unreadable_response': case 'empty_response': case 'unparsable_response': return 'Answered offline. AI interpretation failed validation.';
+    case 'truncated_response': case 'invalid_intent': case 'unreadable_response': case 'empty_response': case 'unparsable_response': return 'Answered offline. AI interpretation failed validation.';
     case 'provider_error': return 'Answered offline. The model provider request failed.';
     case 'http_404': case 'http_405': return 'Answered offline. The assistant endpoint is unavailable.';
     default: return reason?.startsWith('intent_') ? 'Answered offline. AI interpretation failed validation.' : 'Answered offline. The assistant request failed.';
@@ -53,7 +53,7 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
   }
   const local=dialogueIntent(message, cats);
   if(local) {
-    const checked=validateIntent(local,{cats,message});
+    const checked=validateIntent(local,{cats,message,today});
     if(checked.ok) return {ok:true,intent:checked.intent,source:'builtin'};
   }
   if (signal?.aborted) return {ok:false,reason:'cancelled'};
@@ -90,7 +90,7 @@ export async function requestIntent(message, { cats, today, expenses, fetchImpl,
     // Validated again on arrival. The server already checked, but a frontend
     // that trusts its backend is one compromised backend away from executing
     // whatever it is handed.
-    const checked = validateIntent(body.intent, { cats, message });
+    const checked = validateIntent(body.intent, { cats, message, today });
     if (!checked.ok) {
       const diagnostic=intentDiagnostic(checked.error);
       console.info('[assistant diagnostic]',JSON.stringify({phase:'client',httpStatus:res.status,...diagnostic}));

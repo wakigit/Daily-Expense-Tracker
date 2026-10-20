@@ -1,3 +1,5 @@
+import { recognizePlanRequest } from './planRequest.js';
+import { limitationClarification, INTENT_LIMITATION } from './intentLimitations.js';
 import { interpretComparisonOffline } from './comparisonOffline.js';
 import { descriptionOrRequest } from './explicitFilterRequest.js';
 import { asksCategoryComparison } from './intentLimitations.js';
@@ -9,6 +11,10 @@ import { validateQuery, WEEKDAYS } from './queryContract.js';
 export function interpretOffline(question, cats=[], referenceDate=null) {
   const dialogue=dialogueIntent(question, cats);
   if(dialogue) return dialogue.type==='help'?{kind:'answer',text:HELP_TEXT,suggestions:HELP_QUESTIONS}:{kind:'clarify',text:dialogue.question,question:dialogue.question,suggestions:dialogue.options};
+  if (recognizePlanRequest(question,{cats,today:referenceDate}).recognized) {
+    const intent=limitationClarification(INTENT_LIMITATION.PLAN,question);
+    return {kind:'clarify',question:intent.question,text:intent.question};
+  }
   let text=stripGreeting(question).toLowerCase().trim();
   if (!text) return {kind:'clarify',intent:'none',text:'Ask about recorded spending.',question:'What would you like to calculate?'};
   const clarify=question=>({kind:'clarify',intent:'clarify',question,text:question});

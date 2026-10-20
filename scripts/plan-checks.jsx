@@ -155,8 +155,8 @@ export function planChecks(check){
   const membershipPlan=recognizePlanRequest(membershipMessage,ctx).plan;
   const membershipRows=Array.from({length:10000},(_,i)=>({...ctx.expenses[i%2],id:'membership'+i,description:'Shared'}));
   check('P membership limit independent of distinct-ID limit',run(membershipPlan,membershipMessage,{expenses:membershipRows}).reason,'plan_evidence_limit');
-  check('P old intent still rejects unactivated plan type',validateIntent(wrap(sharePlan()),{cats:ctx.cats,message:FOOD_REQUEST}).ok,false);
-  check('P live provider schema still has no plan type',buildSchema(ctx.cats.map(c=>c.id)).properties.type.enum.includes('plan'),false);
+  check('P shared intent now accepts audited plan type',validateIntent(wrap(sharePlan()),{...ctx,message:FOOD_REQUEST}).ok,true);
+  check('P ordinary provider decoder excludes plan type',buildSchema(ctx.cats.map(c=>c.id)).properties.type.enum.includes('plan'),false);
   check('P ordinary scalar duplicate behaviour unchanged',executeQuery({operation:'total',period:'month'},{...ctx,expenses:[...ctx.expenses,ctx.expenses[0]]}).evidence.rows.length,4);
   check('P existing OR total exact evidence',executeQuery({operation:'total',period:'month',categories:['meal-p','transit-p']},ctx).evidence.rows.map(r=>r.id),['p1','p2']);
   const comparison=executeQuery({operation:'compare',period:'month'},ctx);

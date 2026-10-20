@@ -1,3 +1,4 @@
+import PlanAnswer from '../components/PlanAnswer';
 import SpendingScopeReview, { SpendingScopeRules } from '../components/SpendingScopeReview';
 import { completeQuestionChoices } from '../lib/assistantDialogue';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ import AnswerEvidence from '../components/AnswerEvidence';
  * expense list has not moved.
  */
 export default function AskView({
-  scopeProposal=null, cats=[], onScopeConfirm, onScopeCancel, onScopeRevise, messages, onSend, hasData, busy = false, pending = null, onConfirm, onCancel, onLoadSample, onClear, onStop}) {
+  scopeProposal=null, cats=[], onScopeConfirm, onScopeCancel, onScopeRevise, messages, onSend, hasData, busy = false, pending = null, onConfirm, onCancel, onLoadSample, onClear, onStop, onPlanEvidence}) {
   const [draft, setDraft] = useState('');
   const endRef = useRef(null);
   const inputRef = useRef(null);
@@ -74,6 +75,8 @@ export default function AskView({
               {m.clarificationDraft && <button type="button" className="btn-ghost" onClick={() => { setDraft(m.clarificationDraft); inputRef.current?.focus(); }}>Edit original question</button>}
               {completeQuestionChoices(m.suggestions).length>0 && <div className="ask-suggestions" aria-label="Complete follow-up questions">{completeQuestionChoices(m.suggestions).map(question=><button key={question} type="button" className="btn-ghost" onClick={()=>send(question)}>{question}</button>)}</div>}
               {m.approvedScope && <details className="approved-scope"><summary>Approved spending rules: {m.approvedScope.label}</summary><SpendingScopeRules scope={m.approvedScope} cats={m.scopeCategories ?? cats}/></details>}
+              {m.planChoices&&<div className="ask-suggestions" aria-label={`Evidence choices for answer ${m.planChoices.answerId}`}>{m.planChoices.parts.map(part=><button key={part.id} type="button" className="btn-ghost" onClick={()=>onPlanEvidence?.(m.planChoices.answerId,part.id)}>{part.label}</button>)}</div>}
+              <PlanAnswer result={m.planResult} answerId={m.answerId ?? `snapshot-${i}`} outdated={m.outdated} source={m.source}/>
               <AnswerEvidence evidence={m.evidence} outdated={m.outdated} />
               <BreakdownEvidence breakdown={m.breakdown} outdated={m.outdated} />
               <ComparisonEvidence comparison={m.comparison} outdated={m.outdated} />

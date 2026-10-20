@@ -65,7 +65,7 @@ test('generated tokens are protected from adversarial configured token-like labe
  assert.equal(recognizePlanRequest('What share of total spending was at Amazon?',{...ctx,cats:[...ctx.cats,{id:'total',label:'total'}]}).ok,false);
  assert.equal(recognizePlanRequest('What share of this month spending was at Amazon?',{...ctx,cats:[...ctx.cats,{id:'calendar',label:'This month'}]}).ok,false);
 });
-test('whole-request guard remains exported only; live ordinary contracts unchanged',()=>{
+test('whole-request helper and ordinary decoder retain comparison boundaries',()=>{
  assert.equal(guardPlanResponse(FOOD_REQUEST,{type:'analyze'},ctx).handled,true);
  for(const m of ['Total Food and Transit spending this month.','Compare spending in September with July.'])assert.deepEqual(guardPlanResponse(m,{type:'analyze'},ctx),{handled:false});
  assert.equal(buildSchema(ctx.cats.map(c=>c.id)).properties.type.enum.includes('plan'),false);

@@ -1,0 +1,93 @@
+{
+  "stage": "Step4B2",
+  "startedAtUtc": "2026-10-20 06:50:14 UTC",
+  "verificationCompletedAtUtc": "2026-10-20 07:43:52 UTC",
+  "elapsedAtVerificationSeconds": 3218,
+  "milestones": [
+    {
+      "scheduledMinutes": 30,
+      "checkedAtUtc": "2026-10-20 07:21:42 UTC",
+      "actualElapsedSeconds": 1888
+    }
+  ],
+  "branch": "checkpoint/2026-10-19-wip",
+  "startingHead": "32353dea8f539330b7249ec2a1d03e26a65d3358",
+  "startingUnexpectedWork": "Untracked TallyAI/ media/project directory, preserved and excluded from staging",
+  "implemented": true,
+  "accepted": false,
+  "blockers": [
+    "Mock browser visual/keyboard acceptance unavailable: empty browser inventory and native bridge startup failure; stale binding rejected by automatic approval review"
+  ],
+  "paidCalls": 0,
+  "realProviderCalls": 0,
+  "automaticRetries": 0,
+  "callsLogChanged": false,
+  "providerBudgets": {
+    "ordinary": 700,
+    "planCapable": 4096,
+    "tokenSufficiencyMeasured": false
+  },
+  "gates": {
+    "build": "pass",
+    "smoke": {
+      "passed": 2262,
+      "total": 2262,
+      "newSinceB1": 89
+    },
+    "provider": {
+      "passed": 39,
+      "total": 39
+    },
+    "backendNode": {
+      "passed": 230,
+      "total": 230,
+      "newSinceB1": 22
+    },
+    "diffCheck": "pass",
+    "isolatedHttpScenarios": 11
+  },
+  "coverage": {
+    "liveModel": false,
+    "mockHttp": true,
+    "realLocalCalculation": true,
+    "serverClientValidation": true,
+    "staticReactRendering": true,
+    "browser": false,
+    "screenshots": [],
+    "mainReplayRun": false,
+    "mainExpectationsChanged": false,
+    "mainRecordingsChanged": false,
+    "holdoutAccessed": false
+  },
+  "buildAssets": [
+    "index-IN6CaaLn.js",
+    "index-CaBZ-uKt.css"
+  ],
+  "sourceFingerprints": {
+    "backend/package.json": "c43e0a4cb2c8ddc48b44d5b3802e6727b9a9070262adc8441b5d2a3a8452d1d2",
+    "backend/src/assistant.test.mjs": "93342bf232a0842705e9747c5c9654ba2ed760b111ac344cf94d553db0d3b1ed",
+    "backend/src/plan-integration.test.mjs": "371f706ad437f46962addeff655def02b8f7b1f9e6d68926fe1ab87dd60cf0a9",
+    "backend/src/plan.test.mjs": "c31e060a6b2acdca0abd9d853f46c2e00d54094547bc61fff1d829f25e858ccf",
+    "backend/src/provider.js": "2ee6873d82727bd017e8cd6f724a87cb42117478a0ec4cb30f93b1811485cf04",
+    "backend/src/routes.js": "f12fa866da9e1d8afe84cb2b94feb5253b38ea1a18ea341205d06ebaf340d253",
+    "src/App.jsx": "89bdf4094521324855473f47970af16ee2e5178fc9d02269cfeb6a22780d6d86",
+    "src/components/AnswerEvidence.jsx": "3da77f28b89d9947020cc85ffb96a2e0d44b7159b78d25b539b184d2a9b0fcc3",
+    "src/components/PlanAnswer.jsx": "9ef61aeae9efce6bbebc90a627314c06fb5474838f8e0396c9db4266f7bc5feb",
+    "src/lib/answerEvidence.js": "63caeebfc598ae9ef40f6de79e30a405af45a220ae5671b265c9cdcd97193626",
+    "src/lib/assistant.js": "8f149f057c1a23da0007733728108e5594d8d7e96b6d9e7d481381c9275c2925",
+    "src/lib/assistantClient.js": "d976b451d51c39abe6ef2ec781eba2b026823d517799bc05ee0fff43b4760895",
+    "src/lib/assistantFollowup.js": "7c341f28c4de62706d3fefafc3f78d37576f449827dcf3f4428d481406d6ceb8",
+    "src/lib/intent.js": "cd6e547c32b5825796b4f0b580b65f49ab88eec9f9f65b992ab1f0e1354665df",
+    "src/lib/intentLimitations.js": "d40d67058ba70e03e043cb17371f17539824edec94519e20eb2619fc4d148bb8",
+    "src/lib/planContract.js": "5cd22ce0143c87d3f9900d970d2ed9ff5b23a9c8d624e202483cc4ab9616bd6a",
+    "src/lib/planEngine.js": "994defbb0b9dbbbf45bee4c32176d080cddff91412dda5765a0b0c13540b68ec",
+    "src/lib/planPresentation.js": "26b607cdc19a2a63dee01717f7417013d1c0a072ae74861aa27774abe5d8d4bc",
+    "src/lib/planRequest.js": "b282751adcb368b923d8841b97bfc4307f11cfdb491b2a016e459d7791388e84",
+    "src/lib/queryOffline.js": "b640192e5229709d3fcc26cce968f11b619d1c1332aea40b883b794452ea8141",
+    "src/styles/app.css": "a2baf0adbced4781e75a4a68774fa383c25c8ebd2698c7f3a8acf1f51f8a65a7",
+    "src/views/AskView.jsx": "67fac587cfed1cbed7aeaf5b3ccf27cd9913aba2dc8a31043f1d4d6486144da1"
+  },
+  "isolatedHandlerFingerprintsMatchCurrentSource": true,
+  "artifacts": "/private/tmp/tallyai-step4b2/",
+  "recovery": "Focused normal revert of local integration commit only; no automatic recovery or history rewriting"
+}

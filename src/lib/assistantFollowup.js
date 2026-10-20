@@ -1,3 +1,4 @@
+import { planEvidenceChoices } from './planPresentation.js';
 import { validateQuery, validDate } from './queryContract.js';
 import { executeQuery, queryRange } from './queryEngine';
 import { markOutdatedAnswers } from './answerEvidence';
@@ -55,6 +56,9 @@ export function resolveFollowup(message, context, ctx) {
   if (!context) return reject('There is no financial query to follow up yet. Please ask a complete question with a description or category and a date range.');
   if (context.ambiguous) return reject('The latest provider request failed and its fallback answer has a different possible scope. Please submit the complete question so I do not attach your follow-up to the wrong answer.');
   const changed = contextIsOutdated(context, ctx);
+  if(context.kind==='plan') return amendment.kind==='evidence'
+    ? {handled:true,plan:{kind:'clarify',question:'Which labelled part do you mean? A derived result uses both of its input evidence sets.',planChoices:planEvidenceChoices(context.answer.planResult,context.answerId)}}
+    : reject('A multi-part answer has several scopes. Please submit the complete request again with every part, common dates and calculation; changes to an implied part are not supported.');
   if(context.query.operation==='compare')return reject(amendment.kind==='evidence'?'Which comparison side do you mean? Expand either labelled side below the original comparison, or ask a complete transaction question naming its dates and filters.':'A comparison has two scopes. Please submit a complete comparison with both periods/categories and filters instead of changing only one implied side.');
   if (amendment.kind === 'exclude') {
     if (!context.query.spendingScope) return reject('Exclusions require a reviewed related-spending scope. Please ask a complete question describing the inclusion rules first.');
@@ -101,7 +105,14 @@ export function resolveFollowup(message, context, ctx) {
   } };
 }
 
-/** One in-memory query and one request generation, never localStorage or model history. */
+/** Shared publication barrier for async interpretation, including mock transports ignoring abort. */
+export function interpretationPublication(session,ticket,referenceDate,currentDate) {
+  if(!session.current(ticket))return {publish:false,reason:'cancelled'};
+  if(referenceDate!==currentDate)return {publish:false,reason:'reference_date_changed'};
+  return {publish:true};
+}
+
+/** One tagged in-memory context and request generation, never persistent model history. */
 export function createAssistantSession() {
   let generation = 0, active = null, context = null, ambiguous = false, answerNumber = 0;
   const current = ticket => ticket?.generation === generation;
@@ -112,7 +123,9 @@ export function createAssistantSession() {
     noteLedger(ctx) { if (context && contextIsOutdated(context, ctx)) context = { ...context, changed: true }; },
     accept(ticket, query, plan, ctx) {
       if (!current(ticket) || !query || plan.kind !== 'answer') return null;
-      const next = captureQueryContext(query, plan, ctx, answerNumber + 1);
+      const next = query.type==='plan' && plan.planResult
+        ? {kind:'plan',plan:plan.planResult.plan,answer:plan,answerId:answerNumber+1,referenceDate:plan.planResult.referenceDate,changed:false}
+        : captureQueryContext(query, plan, ctx, answerNumber + 1);
       if (!next) return null;
       context = next; ambiguous = false; return ++answerNumber;
     },
