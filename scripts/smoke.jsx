@@ -1,3 +1,4 @@
+import { planChecks } from './plan-checks';
 import { comparisonInterpretationChecks } from './comparison-interpretation-checks';
 import { comparisonV2Checks } from './comparison-v2-checks';
 import { orFilterChecks } from './or-filter-checks';
@@ -2103,6 +2104,7 @@ await step3aChecks(logic);
 orFilterChecks(logic);
 await comparisonV2Checks(logic);
 comparisonInterpretationChecks(logic);
+planChecks(logic);
 scopeChecks(logic);
 queryChecks(logic);
 breakdownChecks(logic);

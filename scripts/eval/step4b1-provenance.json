@@ -1,0 +1,251 @@
+{
+  "startedAt": "2026-10-20T00:51:07Z",
+  "baseCommit": "3f760aa31a5bdd8ba50a5f943457844fef2b8cf3",
+  "startingChanges": [
+    "docs/ASSISTANT-UPGRADE-PLAN.md, approved Step4A design"
+  ],
+  "approvedDesignDiffSha256": "9da7931ea3003c8f262e338c574879429d15cf2920f3f1e22f9dc04b2ed6a813",
+  "paidCalls": 0,
+  "liveActivation": false,
+  "browserCoverage": "Not run, explicitly deferred; no provider/App/session/UI plan wiring",
+  "newCoreSourceHashes": {
+    "src/lib/planContract.js": "2678a9a88ff91fcc9e109d4380804f7b14bf30924179b40ba72c0ae2110bf8de",
+    "src/lib/planRequest.js": "de4d2f612c485f424181ee6b379f121c76289eb81b7658bb63dc3a26910b40f3",
+    "src/lib/planEngine.js": "a8106cf1939dbd4f79d19c0176e9c9e1f5884978c16caad00e4e295170c6e3ab"
+  },
+  "unchangedFilesVerifiedAgainstBase": {
+    "backend/src/provider.js": "ebdcedac8eeeebb3bbecfb9b027f6de8d0c35fadc64f5e757d2e0e3d9dd93647",
+    "backend/src/routes.js": "647fca4c8739019128a021b2ddb9fa6d25e59245486d17141eb8b46bb7ffccca",
+    "src/App.jsx": "a7f76d42dc0d332e09b80fb264b8e5ffbbcf5b1d155c11d9bc18ef67b8733de7",
+    "src/lib/intent.js": "8d916d440aa1d0d2606eeb0fbb55e6e0417ca6e3345fdef67fcae7eb3717ed82",
+    "src/lib/queryContract.js": "7cabbca66997b2e907be250b039b7d421fb9c148bd2ebd225ee9d69d72c296ec",
+    "src/lib/queryEngine.js": "1e41df9e47906df0e02c6a10988450bb66dce0145045a4e423c7a19aba5b630a",
+    "src/lib/comparison.js": "440663c9139165d9534eac98f9d823769006dd79c080d459ae62356820c5a716",
+    "src/lib/assistant.js": "f3f70de370ea2cbe76da236034b87b8d5165c78a631e0acd2490ddf217a73cec",
+    "src/lib/queryOffline.js": "f2f8632afaf8b43c4e0af131e184d92b810bbd5d62f35e7bd794e3a83a34d542",
+    "src/lib/assistantFollowup.js": "3087c857841acd7a10f61c307bc2d3ffe029a3fcccce134fe5170cfb7426a110",
+    "src/lib/answerEvidence.js": "2a7505f01c5331f71885d110b4e4bcfdc7484347fbeec17060c5ccb2731ee1fe",
+    "src/views/AskView.jsx": "bc417b526a03acc621ab3a9ee63e20cd630fa0d05ce33ac8d4b212f12e634dd7",
+    "scripts/eval/run.mjs": "18f185516136e1855755138acccdefcd4a866cf3ac83b13c4d75a89a8848a6f3",
+    "scripts/eval/recorded-intents.json": "74c2580134a93500406c2dfd7f41ecf11f27abdc639926faefbad91bb4e3a67e",
+    "scripts/eval/calls.log": "7c00131640dffe94a479cfc8887bce4a701914a0b52654edb727b82b2569745b"
+  },
+  "recordingsChanged": [],
+  "expectationsChanged": false,
+  "holdoutCasesInspectedOrRun": false,
+  "tests": {
+    "build": "pass",
+    "smoke": {
+      "passed": 2173,
+      "total": 2173,
+      "newChecks": 184
+    },
+    "provider": {
+      "passed": 39,
+      "total": 39
+    },
+    "backend": {
+      "passed": 208,
+      "total": 208,
+      "newChecks": 34
+    },
+    "diffCheck": "pass"
+  },
+  "cases": [
+    {
+      "name": "Food share",
+      "message": "What did I spend this month, and what percentage was Food & Drinks?",
+      "source": "deterministic pure executor, no model call",
+      "expected": {
+        "totals": [
+          4000,
+          1000
+        ],
+        "derived": "25.00%"
+      },
+      "actual": {
+        "totals": [
+          4000,
+          1000
+        ],
+        "counts": [
+          3,
+          1
+        ],
+        "ranges": [
+          {
+            "start": "2027-03-01",
+            "end": "2027-03-10"
+          },
+          {
+            "start": "2027-03-01",
+            "end": "2027-03-10"
+          }
+        ],
+        "evidenceIds": [
+          [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          [
+            "p1"
+          ]
+        ],
+        "derived": "25.00%"
+      },
+      "metadataBytes": 2800
+    },
+    {
+      "name": "Transit difference",
+      "message": "Show my total spending and my Transit spending, then the difference.",
+      "source": "deterministic pure executor, no model call",
+      "expected": {
+        "totals": [
+          4000,
+          1200
+        ],
+        "derived": 2800
+      },
+      "actual": {
+        "totals": [
+          4000,
+          1200
+        ],
+        "counts": [
+          3,
+          1
+        ],
+        "ranges": [
+          {
+            "start": "2027-03-01",
+            "end": "2027-03-10"
+          },
+          {
+            "start": "2027-03-01",
+            "end": "2027-03-10"
+          }
+        ],
+        "evidenceIds": [
+          [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          [
+            "p2"
+          ]
+        ],
+        "derived": 2800
+      },
+      "metadataBytes": 2625
+    },
+    {
+      "name": "90-day literal share",
+      "message": "What share of last 90 days spending was at Amazon?",
+      "source": "deterministic pure executor, no model call",
+      "expected": {
+        "totals": [
+          7000,
+          1800
+        ],
+        "derived": "25.71%"
+      },
+      "actual": {
+        "totals": [
+          7000,
+          1800
+        ],
+        "counts": [
+          6,
+          1
+        ],
+        "ranges": [
+          {
+            "start": "2026-12-11",
+            "end": "2027-03-10"
+          },
+          {
+            "start": "2026-12-11",
+            "end": "2027-03-10"
+          }
+        ],
+        "evidenceIds": [
+          [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ],
+          [
+            "p3"
+          ]
+        ],
+        "derived": "25.71%"
+      },
+      "metadataBytes": 2863
+    }
+  ],
+  "outputSize": {
+    "tokenMeasurement": "No reliable model tokenizer found in existing dependencies; no tokens measured.",
+    "heuristic": "bytes / 4 is a rough estimate only, not a tokenizer count or guaranteed bound. JSON, uncommon IDs, Unicode and punctuation can differ substantially.",
+    "cases": [
+      {
+        "name": "two-query share",
+        "instructionBytes": 815,
+        "intentBytes": 935,
+        "structurallyValid": true,
+        "roughTokenEstimate": 234
+      },
+      {
+        "name": "two-query difference",
+        "instructionBytes": 801,
+        "intentBytes": 921,
+        "structurallyValid": true,
+        "roughTokenEstimate": 231
+      },
+      {
+        "name": "90-day literal share",
+        "instructionBytes": 804,
+        "intentBytes": 924,
+        "structurallyValid": true,
+        "roughTokenEstimate": 231
+      },
+      {
+        "name": "four-query two-derived",
+        "instructionBytes": 1600,
+        "intentBytes": 1720,
+        "structurallyValid": true,
+        "roughTokenEstimate": 430
+      },
+      {
+        "name": "four-query maximum filter lists",
+        "instructionBytes": 7565,
+        "intentBytes": 7685,
+        "structurallyValid": true,
+        "roughTokenEstimate": 1922
+      }
+    ],
+    "standaloneIntentSchemaBytes": 10240,
+    "liveOutputCeilingUnchanged": 700,
+    "recommendedReviewCeiling": 4096,
+    "recommendation": "Review a bounded 4096-token allowance for four full queries after reliable token measurement or separately authorised final-code trials. This is provisional, not a guarantee for every 16 KiB/filter-boundary input. Preserve honest truncation and zero retries; do not shorten fields or weaken validation to fit."
+  },
+  "largestInstructionBoundaryOutcome": {
+    "reason": "plan_output_limit",
+    "partialResultsReturned": false
+  },
+  "verdict": "Step4B1 deterministic core passes; no live capability or browser integration acceptance claimed",
+  "verifiedAt": "2026-10-20T01:16:25.147921+00:00",
+  "elapsedSecondsAtVerification": 1518.15,
+  "milestoneChecks": [],
+  "milestonesNotReachedAtVerification": [
+    30,
+    60,
+    90,
+    110
+  ],
+  "deadlineFunctionalityCutoffReached": false
+}
