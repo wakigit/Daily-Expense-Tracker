@@ -8,6 +8,12 @@
       "scheduledMinutes": 30,
       "checkedAtUtc": "2026-10-20 07:21:42 UTC",
       "actualElapsedSeconds": 1888
+    },
+    {
+      "scheduledMinutes": 60,
+      "checkedAtUtc": "2026-10-20 07:52:02 UTC",
+      "actualElapsedSeconds": 3708,
+      "status": "Implementation committed; owned test servers stopped; timing documentation correction only"
     }
   ],
   "branch": "checkpoint/2026-10-19-wip",
@@ -89,5 +95,15 @@
   },
   "isolatedHandlerFingerprintsMatchCurrentSource": true,
   "artifacts": "/private/tmp/tallyai-step4b2/",
-  "recovery": "Focused normal revert of local integration commit only; no automatic recovery or history rewriting"
+  "recovery": "Focused normal revert of local integration commit only; no automatic recovery or history rewriting",
+  "implementationCommit": "29dd74fd5f3779dcfab51d3986f3e9274f54845a",
+  "cleanup": {
+    "ownedMockBackend8846": "stopped",
+    "ownedFrontend5246": "stopped",
+    "userBackend8787Pid52618": "preserved running",
+    "trackedTreeAfterImplementation": "clean",
+    "untrackedPreserved": [
+      "TallyAI/"
+    ]
+  }
 }

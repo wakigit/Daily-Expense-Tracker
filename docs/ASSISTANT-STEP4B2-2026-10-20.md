@@ -6,7 +6,7 @@
 
 Started 2026-10-20 06:50:14 UTC on `checkpoint/2026-10-19-wip`, `32353dea8f539330b7249ec2a1d03e26a65d3358`. Tracked source was clean. The unexpected untracked `TallyAI/` media/project directory was identified and preserved without edits or staging. Published `6cf9345` is an ancestor. No repository AGENTS.md was found; user-supplied instructions apply. Read the Step4A design, B1 report, current runtime boundaries and latest comparison repair scorecard. The comparison repair remains locally accepted, with its historical failures and limitations preserved.
 
-The first elapsed checkpoint was 07:21:42 UTC, 31m28s after start. Work finished before the 60/90/110-minute milestones; none of those deadlines was reached. Final timing/Git details are also saved outside tracked source under `/private/tmp/tallyai-step4b2/`.
+The first elapsed checkpoint was 07:21:42 UTC, 31m28s after start. Required gates were verified at 07:43:52 UTC (53m38s). The 60-minute check was recorded at 07:52:02 UTC (61m48s), after source checkpoint `29dd74fd5f3779dcfab51d3986f3e9274f54845a` and owned-server cleanup. A documentation-only follow-up corrects the timing record; it changes no application code. The 90/110-minute milestones were not reached. Final timing/Git details are also saved outside tracked source under `/private/tmp/tallyai-step4b2/`.
 
 Zero paid requests and zero real provider calls. No credentials loaded into the mock adapter, no provider verification command, HOLDOUT inspection/run/change, MAIN expectation/recording edits, dependency/model changes, storage migration, publication or next-stage work. `calls.log` has no new entry because no actual paid call occurred.
 
@@ -62,7 +62,7 @@ Additional checks cover closed schema construction, budgets/routing, SDK call co
 
 ## Zero-call enforcement and browser limitation
 
-Reproducible isolated adapter: `scripts/step4b2-mock-server.mjs`, port **8846**. It injects only registered fictional responses into the real handler, clears its own key environment, refuses unregistered routes and throws on any external fetch. SDK-construction tests use an explicit stub and a forbidden-network fetch. The HTTP runner permits only `127.0.0.1:8846`. No normal backend/frontend was restarted or stopped; the user's backend on **8787**, PID **52618**, remained running. Only the owned mock backend was restarted to import changed shared modules. No localhost5185 storage was accessed.
+Reproducible isolated adapter: `scripts/step4b2-mock-server.mjs`, port **8846**. It injects only registered fictional responses into the real handler, clears its own key environment, refuses unregistered routes and throws on any external fetch. SDK-construction tests use an explicit stub and a forbidden-network fetch. The HTTP runner permits only `127.0.0.1:8846`. Owned mock servers were stopped after verification. No normal backend/frontend was restarted or stopped; the user's backend on **8787**, PID **52618**, remained running. Only the owned mock backend was restarted to import changed shared modules. No localhost5185 storage was accessed.
 
 Prepared browser fixture: `/private/tmp/tallyai-step4b2/browser/`, isolated origin **127.0.0.1:5246**, fictional storage, explicit mock banner/reference date and disabled fictional roast preferences. Its injected transport and global fetch guard allow only same-origin mock intent/control/status routes. No browser storage was actually loaded or changed because no browser connection could be established.
 
