@@ -91,6 +91,38 @@ const compareOf = (period, spec = {}) => {
     differenceCents: r.differenceCents, direction: r.direction,
   };
 };
+/**
+ * A bounded multipart plan: ordered base totals over one common period plus
+ * one derived percentage. Every figure comes from the independent oracle, and
+ * the two-decimal share is re-derived here with integer arithmetic rather than
+ * imported from `src/`, so the oracle stays independent of the implementation
+ * it scores.
+ */
+const sharePercentHundredths = (numerator, denominator) => {
+  const scaled = numerator * 10000;
+  const whole = Math.floor(scaled / denominator);
+  const remainder = scaled - whole * denominator;
+  return remainder * 2 >= denominator ? whole + 1 : whole; // half away from zero; both inputs are non-negative
+};
+const planShareOf = (wholeSpec, partSpec) => {
+  const w = O.answer(wholeSpec);
+  const p = O.answer(partSpec);
+  const hundredths = sharePercentHundredths(p.totalCents, w.totalCents);
+  return {
+    shape: 'plan',
+    base: [
+      { id: 'q1', range: { start: w.start, end: w.end }, totalCents: w.totalCents, count: w.count, ids: [...w.ids].sort() },
+      { id: 'q2', range: { start: p.start, end: p.end }, totalCents: p.totalCents, count: p.count, ids: [...p.ids].sort() },
+    ],
+    derived: [{
+      id: 'd1', operation: 'percent_of', status: 'available',
+      numeratorCents: p.totalCents, denominatorCents: w.totalCents,
+      hundredthsPercent: hundredths,
+      display: `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, '0')}%`,
+    }],
+  };
+};
+
 const projectionOf = (category) => {
   const r = O.projection(category);
   return {
@@ -242,12 +274,40 @@ export const MAIN = [
   { id: 'M64', capability: 'robustness-noise', text: '???? 🧋🧋🧋 ....', outcome: ['clarify', 'unsupported', 'answer'] },
 
   /* ── Target complex capabilities ── */
-  { id: 'M65', capability: 'complex-multipart-percentage', text: 'What did I spend this month, and what percentage of it was Food & Drinks?', outcome: ['answer', 'clarify'], expect: breakdownBy({ period: 'month' }, 'category'),
-    note: 'A complete category breakdown answers both parts: the grand total and the share. Subtotals must recombine to the total exactly.' },
+  /* Capability-based correction, Step 4 acceptance (2026-11-10).
+     The old expectation was a complete category breakdown, which was the
+     honest SUBSTITUTE available while bounded multipart plans did not exist:
+     a breakdown contains the grand total and the Food & Drinks subtotal, so a
+     reader could do the division themselves. Step 4 implements this exact
+     capability — ordered base totals over one common period plus a visible
+     percent_of — so the breakdown substitute is no longer the right oracle,
+     and `clarify` is no longer a pass for the one case named after this
+     capability. This is strictly harder than what it replaces, and the
+     figures are still derived from expected.js rather than typed by hand. */
+  { id: 'M65', capability: 'complex-multipart-percentage', text: 'What did I spend this month, and what percentage of it was Food & Drinks?', outcome: 'answer',
+    expect: planShareOf({ period: 'month' }, { period: 'month', category: 'food' }),
+    note: 'A bounded plan: total this month, Food & Drinks this month, and the share of one by the other. Every base total, count, evidence set and the two-decimal percentage must match.' },
   { id: 'M66', capability: 'complex-two-category', text: 'Did I spend more on Food & Drinks or Bubble Tea this month?', outcome: ['clarify', 'propose_scope', 'answer'],
     note: 'Two categories in one question. A breakdown containing both is honest; narrowing to one is not.' },
-  { id: 'M67', capability: 'complex-arbitrary-periods', text: 'Compare my September spending with my July spending.', outcome: 'unsupported',
-    note: 'Comparison supports only this month vs last month and this week vs last week.' },
+  /* Capability-based correction, Step 4 acceptance (2026-11-10).
+     The old note — "comparison supports only this month vs last month and
+     this week vs last week" — described the contract before Step 3B2. That
+     step added an explicit two-sided period descriptor, named months resolve
+     to full calendar months in code, and a missing year uses the Singapore
+     reference year, so September versus July is now inside the contract.
+     Keeping `unsupported` would require the assistant to state a limitation
+     that no longer exists in order to score a pass. The honest expectation is
+     therefore an answer. This is a tightening: it cannot be satisfied by the
+     clarification this case currently produces.
+
+     KNOWN GAP, deliberately not papered over: there is still no numeric
+     oracle here. run.mjs reads comparison figures only from the legacy
+     current/earlier side keys, while an explicit named-month comparison uses
+     first/second, so a numeric expectation would need a harness change that
+     is outside this correction. Until that lands, M67 scores the honest
+     OUTCOME only, and a passing M67 is not evidence of correct figures. */
+  { id: 'M67', capability: 'complex-arbitrary-periods', text: 'Compare my September spending with my July spending.', outcome: 'answer',
+    note: 'Two explicit named months. Both full calendar months, with the difference and both evidence sets. Outcome-only scoring; see the comment above.' },
   { id: 'M68', capability: 'complex-multiple-categories', text: 'How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?', outcome: ['clarify', 'propose_scope', 'answer'],
     note: 'Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.' },
   { id: 'M69', capability: 'complex-share-per-category', text: 'What share of my spending this month went to each category?', outcome: 'answer', expect: breakdownBy({ period: 'month' }, 'category') },
