@@ -1,4 +1,5 @@
-import { extractPlanResult, scorePlanResult } from './plan-results.mjs';
+import { scorePlanResult } from './plan-results.mjs';
+import { actualFigures, sortIds, sumRows } from './actual-figures.mjs';
 /**
  * The evaluation harness.
  *
@@ -185,63 +186,6 @@ function oracleForQuery(q) {
   } catch (err) {
     return { error: String(err?.message ?? err) };
   }
-}
-
-/* ── Reading figures back out of an application plan ─────────────── */
-
-const sortIds = (rows = []) => rows.map((row) => row.id).slice().sort();
-const sumRows = (rows = []) => rows.reduce((n, row) => n + Math.round(Number(row.amount) * 100 + 1e-9), 0);
-
-/** Parse the resolved range the app reports in its own interpretation string. */
-function reportedRange(plan) {
-  const text = plan?.interpretation?.period ?? '';
-  const single = text.match(/^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})/);
-  if (single) return { start: single[1], end: single[2] };
-  const versus = text.match(/^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}) vs (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})/);
-  if (versus) return { start: versus[1], end: versus[2], earlier: { start: versus[3], end: versus[4] } };
-  return null;
-}
-
-function actualFigures(plan) {
-  if (plan.planResult) return extractPlanResult(plan);
-  const out = { range: reportedRange(plan), text: plan.text };
-  if (plan.breakdown) {
-    out.shape = 'breakdown';
-    out.totalCents = plan.breakdown.totalCents;
-    out.count = plan.breakdown.count;
-    out.groups = plan.breakdown.groups.map((g) => ({ key: g.key, totalCents: g.totalCents, count: g.count, ids: sortIds(g.evidence?.rows) }));
-    out.ids = plan.breakdown.groups.flatMap((g) => sortIds(g.evidence?.rows)).slice().sort();
-    return out;
-  }
-  if (plan.comparison?.sides) {
-    const sides = plan.comparison.sides;
-    if (sides.length === 2 && sides[0].key === 'current') {
-      out.shape = 'compare';
-      out.current = { range: { start: sides[0].start, end: sides[0].end }, totalCents: sides[0].totalCents, ids: sortIds(sides[0].evidence?.rows) };
-      out.earlier = { range: { start: sides[1].start, end: sides[1].end }, totalCents: sides[1].totalCents, ids: sortIds(sides[1].evidence?.rows) };
-      out.differenceCents = plan.comparison.differenceCents;
-    } else {
-      out.shape = 'day_types';
-      const weekday = sides.find((s) => s.key === 'weekday');
-      const weekend = sides.find((s) => s.key === 'weekend');
-      out.weekday = { totalCents: weekday?.totalCents, calendarDays: weekday?.calendarDays, ids: sortIds(weekday?.evidence?.rows) };
-      out.weekend = { totalCents: weekend?.totalCents, calendarDays: weekend?.calendarDays, ids: sortIds(weekend?.evidence?.rows) };
-    }
-    return out;
-  }
-  if (plan.budgetEvidence) {
-    out.shape = 'projection';
-    out.budgetCents = plan.budgetEvidence.amountCents;
-    out.spentCents = sumRows(plan.evidence?.rows);
-    out.remainingCents = out.budgetCents - out.spentCents;
-    out.ids = sortIds(plan.evidence?.rows);
-    return out;
-  }
-  out.shape = plan.intent ?? 'total';
-  out.ids = sortIds(plan.evidence?.rows);
-  out.totalCents = sumRows(plan.evidence?.rows);
-  out.count = plan.evidence?.rows?.length ?? 0;
-  return out;
 }
 
 /* ── One turn, through the real app path ─────────────────────────── */
@@ -452,6 +396,14 @@ function scoreTurn({ question, turn, actual }) {
     add('earlier total', got.earlier?.totalCents, expect.earlier.totalCents);
     add('difference', got.differenceCents, expect.differenceCents);
     if (!sameRange(got.earlier?.range, expect.earlier.range)) figureChecks.push(`earlier range ${got.earlier?.range?.start}..${got.earlier?.range?.end} vs expected ${expect.earlier.range.start}..${expect.earlier.range.end}`);
+    /* Matching totals from the wrong rows is still a wrong answer, and a
+       comparison is the shape where that is easiest to miss: two sides can
+       agree on cents while one of them selected a different window. */
+    for (const [slot, want] of [['current', expect.current], ['earlier', expect.earlier]]) {
+      if (want?.evidenceIds && !sameIds(got[slot]?.ids ?? [], want.evidenceIds)) {
+        figureChecks.push(`${slot} evidence ids [${(got[slot]?.ids ?? []).join(' ')}] vs expected [${want.evidenceIds.join(' ')}]`);
+      }
+    }
   } else if (expect.shape === 'day_types') {
     add('weekday total', got.weekday?.totalCents, expect.weekday.totalCents);
     add('weekday calendar days', got.weekday?.calendarDays, expect.weekday.calendarDays);

@@ -123,6 +123,39 @@ const planShareOf = (wholeSpec, partSpec) => {
   };
 };
 
+/**
+ * Two explicitly named calendar months, compared.
+ *
+ * `current` and `earlier` are the slot names run.mjs scores; for an explicit
+ * pair they hold the FIRST and SECOND side the question named, in that order,
+ * which is also the order the application labels its sides and signs its
+ * difference in. The month end comes from the oracle's own
+ * `O.lastDayOfMonth`, so there is one month-end calculation in this directory
+ * rather than two, and none of it is imported from `src/`.
+ */
+const monthRange = (ym) => ({ start: `${ym}-01`, end: `${ym}-${String(O.lastDayOfMonth(ym)).padStart(2, '0')}` });
+const compareMonthsOf = (firstYm, secondYm, spec = {}) => {
+  const side = (ym) => {
+    const range = monthRange(ym);
+    /* A month that has not finished is a different question. The application
+       caps any side at the reference date, so a full-month expectation for the
+       current or a future month would be wrong in a way that reads as an
+       application defect. Refuse at authoring time instead. */
+    if (range.end > TODAY) throw new Error(`compareMonthsOf(${ym}) is not a complete month at the ${TODAY} reference date; the application caps that side at ${TODAY}.`);
+    return O.answer({ ...spec, period: 'range', ...range });
+  };
+  const first = side(firstYm);
+  const second = side(secondYm);
+  const differenceCents = first.totalCents - second.totalCents;
+  return {
+    shape: 'compare', period: 'range',
+    current: { range: { start: first.start, end: first.end }, totalCents: first.totalCents, evidenceIds: first.ids },
+    earlier: { range: { start: second.start, end: second.end }, totalCents: second.totalCents, evidenceIds: second.ids },
+    differenceCents,
+    direction: differenceCents > 0 ? 'more' : differenceCents < 0 ? 'less' : 'the same',
+  };
+};
+
 const projectionOf = (category) => {
   const r = O.projection(category);
   return {
@@ -300,14 +333,15 @@ export const MAIN = [
      therefore an answer. This is a tightening: it cannot be satisfied by the
      clarification this case currently produces.
 
-     KNOWN GAP, deliberately not papered over: there is still no numeric
-     oracle here. run.mjs reads comparison figures only from the legacy
-     current/earlier side keys, while an explicit named-month comparison uses
-     first/second, so a numeric expectation would need a harness change that
-     is outside this correction. Until that lands, M67 scores the honest
-     OUTCOME only, and a passing M67 is not evidence of correct figures. */
+     The gap recorded here on 2026-11-10 — no numeric oracle, because run.mjs
+     read comparison figures only from the legacy current/earlier side keys —
+     is now closed. run.mjs also reads the explicit first/second keys, and the
+     expectation below states both full calendar months, their totals, their
+     evidence sets and the signed first-minus-second difference. The outcome
+     type is unchanged by that: it was already `answer`. */
   { id: 'M67', capability: 'complex-arbitrary-periods', text: 'Compare my September spending with my July spending.', outcome: 'answer',
-    note: 'Two explicit named months. Both full calendar months, with the difference and both evidence sets. Outcome-only scoring; see the comment above.' },
+    expect: compareMonthsOf('2026-09', '2026-07'),
+    note: 'Two explicit named months, both complete calendar months at the 2026-10-19 reference date. September is the first side, July the second, and the difference is signed September minus July.' },
   { id: 'M68', capability: 'complex-multiple-categories', text: 'How much did I spend on Food & Drinks, Bubble Tea and Public Transport this month?', outcome: ['clarify', 'propose_scope', 'answer'],
     note: 'Three categories. A reviewed scope or a breakdown is honest; a single-category total is not.' },
   { id: 'M69', capability: 'complex-share-per-category', text: 'What share of my spending this month went to each category?', outcome: 'answer', expect: breakdownBy({ period: 'month' }, 'category') },

@@ -11,7 +11,8 @@
     "eval": "vite build --ssr scripts/eval/run.mjs --outDir .eval-build --logLevel error && node .eval-build/run.js",
     "eval:self-check": "node scripts/eval/self-check.mjs",
     "eval:fixture-checks": "node scripts/eval/fixture-checks.mjs",
-    "eval:main:mock": "vite build --ssr scripts/eval/run.mjs --outDir .eval-build --logLevel error && node .eval-build/run.js --mock --label main-mock && node scripts/eval/main-mock-diff.mjs"
+    "eval:main:mock": "vite build --ssr scripts/eval/run.mjs --outDir .eval-build --logLevel error && node .eval-build/run.js --mock --label main-mock && node scripts/eval/main-mock-diff.mjs",
+    "eval:harness-checks": "vite build --ssr scripts/eval/harness-checks.mjs --outDir .eval-build --logLevel error && node .eval-build/harness-checks.js"
   },
   "dependencies": {
     "openai": "^7.28.0",
