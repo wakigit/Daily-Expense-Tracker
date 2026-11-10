@@ -1,5 +1,5 @@
 import { scorePlanResult } from './plan-results.mjs';
-import { actualFigures, sortIds, sumRows } from './actual-figures.mjs';
+import { actualFigures } from './actual-figures.mjs';
 /**
  * The evaluation harness.
  *

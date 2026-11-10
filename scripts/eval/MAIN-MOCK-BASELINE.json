@@ -1,4 +1,8 @@
 {
+  "set": "MAIN",
+  "mode": "mock",
+  "referenceDate": "2026-10-19",
+  "acceptedAt": "2026-11-10T08:33:08.554Z",
   "questions": 70,
   "questionTotal": 76,
   "turns": 76,

@@ -12,14 +12,19 @@
  */
 import { extractPlanResult } from './plan-results.mjs';
 
+/* Only `actualFigures` and the side-key list are another file's business.
+   The row helpers and the interpretation-string parser are this reader's
+   internals; exporting them would invite a second caller to read figures some
+   other way, which is the shape of problem this module exists to prevent. */
+
 /** The side keys an explicit or implicit two-sided comparison leads with. */
 export const COMPARISON_HEAD_KEYS = ['current', 'first'];
 
-export const sortIds = (rows = []) => rows.map((row) => row.id).slice().sort();
-export const sumRows = (rows = []) => rows.reduce((n, row) => n + Math.round(Number(row.amount) * 100 + 1e-9), 0);
+const sortIds = (rows = []) => rows.map((row) => row.id).slice().sort();
+const sumRows = (rows = []) => rows.reduce((n, row) => n + Math.round(Number(row.amount) * 100 + 1e-9), 0);
 
 /** Parse the resolved range the app reports in its own interpretation string. */
-export function reportedRange(plan) {
+function reportedRange(plan) {
   const text = plan?.interpretation?.period ?? '';
   const single = text.match(/^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})/);
   if (single) return { start: single[1], end: single[2] };

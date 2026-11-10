@@ -48,6 +48,11 @@ if (run.summary.paidCalls) {
 }
 
 const snapshot = {
+  /* Provenance, so the committed baseline says what it is. Every other
+     tracked artifact in this directory does; a bare score does not tell a
+     reviewer which set, which mode or which reference date produced it. */
+  set: run.summary.set, mode: run.summary.mode, referenceDate: run.summary.referenceDate,
+  acceptedAt: run.summary.finishedAt,
   questions: run.summary.questionsPassed, questionTotal: run.summary.questions,
   turns: run.summary.turnsPassed, turnTotal: run.summary.turns,
   cases: Object.fromEntries(run.results.map((c) => [c.id, {
@@ -69,6 +74,18 @@ if (!existsSync(BASELINE)) {
   process.exit(2);
 }
 const base = JSON.parse(readFileSync(BASELINE, 'utf8'));
+
+/* Shift the fixture's reference date and every period in the bank resolves
+   somewhere else, so the baseline describes questions that no longer exist in
+   the form it recorded them. Comparing across that is worse than not
+   comparing: it reports confident per-question regressions that are really
+   one deliberate fixture change. Baselines written before this field existed
+   carry no referenceDate and are compared as before. */
+if (base.referenceDate && base.referenceDate !== snapshot.referenceDate) {
+  console.error(`Baseline was taken at reference date ${base.referenceDate}, this run is ${snapshot.referenceDate}. Review the whole bank and re-accept deliberately; a cross-date diff is meaningless.`);
+  process.exit(2);
+}
+
 const ids = [...new Set([...Object.keys(base.cases), ...Object.keys(snapshot.cases)])].sort();
 const regressed = [], fixed = [], moved = [];
 for (const id of ids) {
