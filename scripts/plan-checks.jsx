@@ -196,4 +196,48 @@ export function planChecks(check){
   check('P a genuinely different literal term is still rejected by the audit',
     auditPlanRequest(validatePlan((()=>{const p=clone(encList);p.steps[1].query.descriptionTerms=['Other shop'];return p;})(),encCtx).plan,encCtx).ok,false);
 
+
+  /* M69 regression, end to end. A recognised share question answered with a
+     COMPLETE breakdown must produce real figures whose groups recombine to the
+     grand total; a narrowed breakdown and a one-sided total must still
+     clarify with no figure. New fictional rows, independent of every other
+     fixture, with cents specified here rather than read back from the engine. */
+  const splitCats=[{id:'kopi',label:'Kopi Runs'},{id:'print',label:'Printing'},{id:'shuttle',label:'Shuttle'}];
+  const splitRows=[
+    {id:'s1',date:'2026-11-02',category:'kopi',description:'Kopi C siew dai',amount:1.6,notes:''},
+    {id:'s2',date:'2026-11-04',category:'print',description:'Thesis printing',amount:12.4,notes:''},
+    {id:'s3',date:'2026-11-07',category:'kopi',description:'Teh peng',amount:2,notes:''},
+    {id:'s4',date:'2026-11-09',category:'shuttle',description:'Campus shuttle card',amount:6,notes:''},
+    {id:'s5',date:'2026-10-30',category:'kopi',description:'Last month kopi',amount:3,notes:''}];
+  const splitCtx={cats:splitCats,today:'2026-11-10',expenses:splitRows};
+  const splitMessage='What share of my spending this month went to each category?';
+  const splitQuery=(patch={})=>({operation:'breakdown',period:'month',start:null,end:null,dayCount:null,category:null,
+    description:null,amountOperator:null,amount:null,day:'all',groupBy:'category',aggregate:'total',comparison:null,
+    categories:[],descriptionTerms:[],spendingScope:null,category_terms:[],...patch});
+  const splitIntent=query=>({type:'analyze',query,say:null,plan:null,expense:null,filter:null,scope:null,question:null,options:null});
+  const splitChecked=validateIntent(splitIntent(splitQuery()),{...splitCtx,message:splitMessage});
+  check('P share-by-category answers with a breakdown, not a clarification',
+    [splitChecked.ok,splitChecked.intent?.type,splitChecked.intent?.query?.operation],[true,'analyze','breakdown']);
+  const splitAnswer=executeQuery(splitChecked.intent.query,{...splitCtx,message:splitMessage});
+  check('P independent grand total and row count for the breakdown',
+    [splitAnswer.kind,splitAnswer.breakdown.totalCents,splitAnswer.breakdown.count],['answer',2200,4]);
+  check('P every group disclosed with independent cents and ids',
+    Object.fromEntries(splitAnswer.breakdown.groups.map(g=>[g.key,[g.totalCents,g.count,g.evidence.rows.map(r=>r.id)]])),
+    {kopi:[360,2,['s1','s3']],print:[1240,1,['s2']],shuttle:[600,1,['s4']]});
+  check('P groups recombine exactly to the grand total',
+    splitAnswer.breakdown.groups.reduce((n,g)=>n+g.totalCents,0),2200);
+  for(const [label,patch] of [['one category',{category:'kopi'}],['category list',{categories:['kopi','print']}],
+    ['literal description',{descriptionTerms:['kopi']}],['amount condition',{amountOperator:'gt',amount:'5'}],['weekdays',{day:'weekday'}]]){
+    const narrowed=validateIntent(splitIntent(splitQuery(patch)),{...splitCtx,message:splitMessage});
+    check('P breakdown narrowed by '+label+' still clarifies',[narrowed.ok,narrowed.intent?.type,narrowed.intent?.reason],
+      [true,'clarify','plan_complete_request_required']);
+  }
+  const oneSided=validateIntent(splitIntent(splitQuery({operation:'total',groupBy:null})),{...splitCtx,message:splitMessage});
+  check('P one-sided total for a share question still clarifies with no partial figure',
+    [oneSided.intent?.type,oneSided.intent?.reason,Object.hasOwn(oneSided.intent??{},'query')],
+    ['clarify','plan_complete_request_required',false]);
+  check('P consumer guard agrees: complete breakdown through, one-sided total refused',
+    [guardPlanResponse(splitMessage,splitIntent(splitQuery()),splitCtx).handled,
+     guardPlanResponse(splitMessage,splitIntent(splitQuery({operation:'total',groupBy:null})),splitCtx).handled],[false,true]);
+
 }

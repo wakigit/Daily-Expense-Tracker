@@ -1,5 +1,5 @@
 import { validatePlanIntent } from './planContract.js';
-import { auditPlanRequest, recognizePlanRequest } from './planRequest.js';
+import { auditPlanRequest, recognizePlanRequest, isCompleteBreakdownAnswer } from './planRequest.js';
 import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { descriptionOrRequest, unresolvedCoordination } from './explicitFilterRequest.js';
 import { normaliseScopeText } from './filterMatching.js';
@@ -105,17 +105,24 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
   if (raw.plan != null) return bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
   const multipart = recognizePlanRequest(message,{cats,today}).recognized;
   if(multipart && Object.keys(raw).some(k=>!['type','plan','say','query','expense','filter','scope','question','options','reason'].includes(k)))return bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
+  /* The anti-partial guard refuses a NARROWER answer, not every ordinary one.
+     A complete breakdown discloses every group and recombines to the grand
+     total, so it answers the whole question rather than one side of it, and
+     it keeps working for the questions that merely mention a share. See
+     isCompleteBreakdownAnswer for why "complete" excludes filtered ones. */
+  const analysed = multipart && type === 'analyze' ? validateQuery(raw.query,cats) : null;
+  const completeBreakdown = Boolean(analysed?.ok && isCompleteBreakdownAnswer(analysed.query));
   // Check structure first: malformed output must remain an error, not a semantic success.
-  if (multipart && ['answer','analyze','propose_scope'].includes(type)) {
+  if (multipart && !completeBreakdown && ['answer','analyze','propose_scope'].includes(type)) {
     const structural = type === 'answer' ? METRICS.includes(raw.query?.metric)
       && PERIODS.includes(raw.query?.period ?? 'month')
       && (raw.query?.category == null || cats.some(c=>c.id===raw.query.category))
       && Object.keys(raw.query).every(k=>['metric','period','category','category_terms','categoryTerms'].includes(k))
-      : validateQuery(raw.query,cats).ok;
+      : (analysed ?? validateQuery(raw.query,cats)).ok;
     if (!structural) return bad(INTENT_ERR.BAD_FIELD,{field:'query'});
     return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
   }
-  if (multipart && type !== 'clarify') return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
+  if (multipart && !completeBreakdown && type !== 'clarify') return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
 
   if(type==='help') {
     const reason=requiresTwoSidedAnswer(message,cats)?(asksCategoryComparison(message,cats)?INTENT_LIMITATION.CATEGORY_COMPARISON:INTENT_LIMITATION.COMPARISON_SHAPE):requestLimitation(message,cats);

@@ -3,7 +3,7 @@ import { normaliseScopeText } from './filterMatching.js';
 import { comparisonPeriodHints } from './comparisonRequest.js';
 import { MONTH_NAMES } from './periodMention.js';
 import { resolveQueryRange } from './queryDates.js';
-import { validDate } from './queryContract.js';
+import { validDate, validateQuery } from './queryContract.js';
 import { canonicalPlanQuery, planQuery, planRef, planScopeKey, planScopeContains, planFailure, validatePlan, validPlanCategories, jsonBytes, PLAN_LIMITS } from './planContract.js';
 
 const escape=text=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -174,11 +174,40 @@ export function auditPlanRequest(plan,context={}){
   return {ok:true,family:request.family};
 }
 
+/**
+ * The one ordinary answer a recognised multipart question may still receive.
+ *
+ * The anti-partial guard exists because a one-sided TOTAL answers less than
+ * was asked. A complete breakdown answers less than nothing of the sort: it
+ * discloses every group and the groups recombine exactly to the grand total,
+ * so the whole figure AND each part's share are both on screen. Refusing it
+ * cost a capability that already worked — a plain "what share went to each
+ * category?" stopped producing the breakdown it had produced since Stage 3.
+ *
+ * "Complete" is deliberately strict, and takes an ALREADY-VALIDATED query so
+ * the fields below are canonical rather than whatever the model wrote. A
+ * breakdown narrowed by a category, description, amount, day or reviewed
+ * scope recombines to that narrower total, not to the total the question
+ * asked about, so letting one through would be precisely the silent narrowing
+ * this guard exists to stop. Only an unnarrowed category or month breakdown
+ * of the requested period qualifies; everything else still clarifies.
+ */
+export const isCompleteBreakdownAnswer = q => Boolean(q)
+  && q.operation==='breakdown' && ['category','month'].includes(q.groupBy) && q.aggregate==='total'
+  && q.category===null && q.categories.length===0
+  && q.description===null && q.descriptionTerms.length===0
+  && q.amountOperator===null && q.day==='all'
+  && q.spendingScope===null && q.comparison===null;
+
 /** Independent consumer guard; validateIntent also checks the closed intent structure. */
 export function guardPlanResponse(message,intent,context={}){
   const req=recognizePlanRequest(message,context);
   if(!req.recognized)return {handled:false};
   if(intent?.type==='clarify')return {handled:false};
+  if(intent?.type==='analyze'){
+    const checked=validateQuery(intent.query,context.cats??[]);
+    if(checked.ok&&isCompleteBreakdownAnswer(checked.query))return {handled:false};
+  }
   if(intent?.type!=='plan')return {handled:true,...planFailure('plan_complete_request_required',message)};
   const checked=validatePlan(intent.plan,{...context,message});
   if(!checked.ok)return {handled:true,...checked};

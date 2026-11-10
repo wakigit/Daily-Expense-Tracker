@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validatePlan,validatePlanIntent,buildPlanSchema,buildPlanIntentSchema,planQuery,planRef,planScopeContains} from '../../src/lib/planContract.js';
-import {recognizePlanRequest,auditPlanRequest,guardPlanResponse} from '../../src/lib/planRequest.js';
+import {recognizePlanRequest,auditPlanRequest,guardPlanResponse,isCompleteBreakdownAnswer} from '../../src/lib/planRequest.js';
 import {validateIntent} from '../../src/lib/intent.js';
 import {buildSchema} from './provider.js';
 import {planContext,sharePlan,differencePlan,FOOD_REQUEST,DIFFERENCE_REQUEST,LITERAL_REQUEST} from '../../scripts/plan-fixture.js';
@@ -146,4 +146,62 @@ test('share containment survives a mixed description encoding',()=>{
  assert.equal(planScopeContains(denominator,numerator),true);
  assert.equal(planScopeContains(denominator,planQuery({descriptionTerms:['Other shop']})),false);
  assert.equal(planScopeContains(denominator,planQuery({})),false);
+});
+
+/* Regression for M69: the anti-partial guard refuses a NARROWER answer, not
+   every ordinary one. A complete breakdown discloses every group and
+   recombines to the grand total, so it answers the whole question. Refusing it
+   had silently broken "what share went to each category?", a capability that
+   worked before bounded plans existed. New fictional rows below. */
+const SPLIT_CATS=[{id:'kopi',label:'Kopi Runs'},{id:'print',label:'Printing'},{id:'shuttle',label:'Shuttle'}];
+const SPLIT_CTX={cats:SPLIT_CATS,today:'2026-11-10'};
+const splitQuery=(patch={})=>({operation:'breakdown',period:'month',start:null,end:null,dayCount:null,category:null,
+ description:null,amountOperator:null,amount:null,day:'all',groupBy:'category',aggregate:'total',comparison:null,
+ categories:[],descriptionTerms:[],spendingScope:null,category_terms:[],...patch});
+const analyzeIntent=query=>({type:'analyze',query,say:null,plan:null,expense:null,filter:null,scope:null,question:null,options:null});
+const SPLIT_MESSAGE='What share of my spending this month went to each category?';
+
+test('a complete breakdown answers a recognised share question',()=>{
+ for(const query of [splitQuery(),splitQuery({groupBy:'month',period:'year'})]){
+  const checked=validateIntent(analyzeIntent(query),{...SPLIT_CTX,message:SPLIT_MESSAGE});
+  assert.equal(checked.ok,true);
+  assert.equal(checked.intent.type,'analyze');
+  assert.equal(checked.intent.query.operation,'breakdown');
+ }
+ assert.deepEqual(guardPlanResponse(SPLIT_MESSAGE,analyzeIntent(splitQuery()),SPLIT_CTX),{handled:false});
+});
+
+test('a narrowed breakdown is still a silently narrower answer and still clarifies',()=>{
+ /* Each of these recombines to a NARROWER total than the question asked about. */
+ for(const patch of [{category:'kopi'},{categories:['kopi','print']},{description:'kopi'},
+   {descriptionTerms:['kopi']},{amountOperator:'gt',amount:'5'},{day:'weekday'}]){
+  const query=splitQuery(patch);
+  assert.equal(isCompleteBreakdownAnswer({...query,categoryTerms:[],amountCents:null}),false,JSON.stringify(patch));
+  const checked=validateIntent(analyzeIntent(query),{...SPLIT_CTX,message:SPLIT_MESSAGE});
+  assert.equal(checked.ok,true,JSON.stringify(patch));
+  assert.equal(checked.intent.type,'clarify',JSON.stringify(patch));
+  assert.equal(checked.intent.reason,'plan_complete_request_required');
+  assert.equal(guardPlanResponse(SPLIT_MESSAGE,analyzeIntent(query),SPLIT_CTX).handled,true);
+ }
+});
+
+test('a one-sided total for a recognised share question still clarifies with no figure',()=>{
+ for(const [message,query] of [
+   [SPLIT_MESSAGE,splitQuery({operation:'total',groupBy:null})],
+   ['What did I spend this month, and what percentage was Kopi Runs?',splitQuery({operation:'total',groupBy:null,category:'kopi',category_terms:['Kopi Runs']})],
+   ['What share of last 90 days spending was at "Campus shuttle"?',splitQuery({operation:'total',groupBy:null,period:'last_days',dayCount:90})]]){
+  const checked=validateIntent(analyzeIntent(query),{...SPLIT_CTX,message});
+  assert.equal(checked.ok,true,message);
+  assert.equal(checked.intent.type,'clarify',message);
+  assert.ok(!/\d/.test(checked.intent.question.replace(/\u201c[^\u201d]*\u201d/g,'')),'no figure may appear outside the quoted original request');
+  assert.equal(guardPlanResponse(message,analyzeIntent(query),SPLIT_CTX).handled,true);
+ }
+});
+
+test('an unparseable multipart share question still clarifies rather than answering one side',()=>{
+ const message='What share of my spending this month went to each category, and what was my biggest single purchase?';
+ assert.equal(recognizePlanRequest(message,SPLIT_CTX).recognized,true);
+ assert.equal(recognizePlanRequest(message,SPLIT_CTX).ok,false);
+ const narrowed=validateIntent(analyzeIntent(splitQuery({operation:'largest',groupBy:null})),{...SPLIT_CTX,message});
+ assert.equal(narrowed.intent.type,'clarify');
 });
