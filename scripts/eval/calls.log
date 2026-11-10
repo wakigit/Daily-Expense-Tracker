@@ -40,3 +40,6 @@
 2026-11-10T03:14:30.000Z	step=4-accept	calls=1	set=LIVE_BROWSER_RECHECK	purpose=What did I spend this month, and what percentage was Canteen Meals?	retries=0
 2026-11-10T03:15:00.000Z	step=4-accept	calls=1	set=LIVE_BROWSER_RECHECK	purpose=Show my total spending and my Bus & MRT spending, then the difference.	retries=0
 2026-11-10T03:20:00.000Z	step=4-accept	calls=1	set=DIAGNOSTIC	purpose=raw plan capture for the blocked difference family; no retry	retries=0
+2026-11-10T12:21:22.223Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=what share of my last 90 days spending was at "Popular bookstore"? — CLARIFIED this run; was a live numeric pass at step=4-accept	retries=0
+2026-11-10T12:21:28.666Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=What did I spend this month, and what percentage was Canteen Meals? — live numeric pass, S$40.00/S$5.50/13.75%	retries=0
+2026-11-10T12:21:32.568Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=Show my total spending and my Bus & MRT spending, then the difference. — clarified, unchanged and still correct (period-less)	retries=0
