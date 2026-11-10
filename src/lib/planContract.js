@@ -41,11 +41,27 @@ export function canonicalPlanQuery(raw,cats) {
   const {amountCents:ignored,categoryTerms,...query}=q;
   return {ok:true,query:{...query,category_terms:categoryTerms}};
 }
+/**
+ * One literal-description identity, exactly as the category identity below
+ * already folds `category` and `categories` into a single set.
+ *
+ * A scalar `description` and a one-element `descriptionTerms` reach rows
+ * through the SAME normalised case-insensitive substring match in
+ * filterMatching.js, so they are one scope written two ways, not two scopes.
+ * Comparing the raw fields instead made a live model plan that chose the list
+ * encoding fail the request audit for a fully supported question, and it also
+ * let one plan carry the same step twice under two spellings. Folding them
+ * here narrows nothing: duplicate-step and share-containment checks get
+ * stricter, never looser, and no previously rejected scope becomes valid.
+ */
+export const planDescriptionKey = q =>
+  [...new Set([q.description,...q.descriptionTerms].filter(Boolean).map(normaliseScopeText))].sort();
+
 /** Financial scope only. Metadata is not independent semantic evidence. */
 export function planScopeKey(q) {
   return JSON.stringify({period:q.period,start:q.start,end:q.end,dayCount:q.dayCount,
     categories:[...new Set([q.category,...q.categories].filter(Boolean))].sort(),
-    description:q.description?.toLocaleLowerCase('en-SG')??null,descriptionTerms:q.descriptionTerms,
+    description:planDescriptionKey(q),
     day:q.day,amountOperator:q.amountOperator,amount:q.amount===null?null:Math.round(Number(q.amount)*100)});
 }
 export function planScopeContains(denominator,numerator) {
@@ -53,8 +69,7 @@ export function planScopeContains(denominator,numerator) {
   const d=categorySet(denominator),n=categorySet(numerator);
   if(d.length&&(!n.length||n.some(id=>!d.includes(id))))return false;
   if((denominator.description||denominator.descriptionTerms.length)&&
-    JSON.stringify([denominator.description?.toLocaleLowerCase('en-SG')??null,denominator.descriptionTerms])!==
-    JSON.stringify([numerator.description?.toLocaleLowerCase('en-SG')??null,numerator.descriptionTerms]))return false;
+    JSON.stringify(planDescriptionKey(denominator))!==JSON.stringify(planDescriptionKey(numerator)))return false;
   if(denominator.day!=='all'&&denominator.day!==numerator.day)return false;
   if(denominator.amountOperator&&(denominator.amountOperator!==numerator.amountOperator||
     Math.round(Number(denominator.amount)*100)!==Math.round(Number(numerator.amount)*100)))return false;

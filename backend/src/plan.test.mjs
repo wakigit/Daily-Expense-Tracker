@@ -98,3 +98,52 @@ test('required query fields cannot normalise away undefined or sparse filter mem
  for(const key of ['categories','descriptionTerms','category_terms']){const p=sharePlan();p.steps[0].query[key]=Array(1);assert.equal(validatePlan(p,ctx).ok,false);}
  const malformed=sharePlan();malformed.derived[0].operation=42;assert.equal(validatePlan(malformed,ctx).kind,'invalid');
 });
+/* Regression for a live defect: the model may legitimately encode ONE literal
+   description term as the `descriptionTerms` list while the local recognizer
+   writes the equivalent scalar `description`. Both select rows through the
+   same normalised case-insensitive substring match, so they are one scope.
+   Comparing the raw fields rejected a fully supported question, and it also
+   failed to notice two identical steps written two ways. Fictional data below
+   is new and independent of the evaluation fixture. */
+test('one literal description term has one scope identity in either encoding',()=>{
+ const cats=[{id:'canteen',label:'Canteen Meals'},{id:'busmrt',label:'Bus & MRT'}];
+ const base={cats,today:'2026-11-10',expenses:[
+  {id:'n1',date:'2026-11-03',category:'canteen',description:'Chicken rice at North Spine',amount:5.5,notes:''},
+  {id:'n2',date:'2026-11-06',category:'busmrt',description:'EZ-Link top up',amount:20,notes:''},
+  {id:'n3',date:'2026-11-09',category:'canteen',description:'Popular bookstore snack run',amount:6,notes:''}]};
+ const message='What share of last 90 days spending was at "Popular bookstore"?';
+ const scalar=recognizePlanRequest(message,base);
+ assert.equal(scalar.ok,true);
+ assert.equal(scalar.plan.steps[1].query.description,'Popular bookstore');
+ // The same plan with the list encoding the live model actually returned.
+ const asList=structuredClone(scalar.plan);
+ asList.steps[1].query.description=null;
+ asList.steps[1].query.descriptionTerms=['Popular bookstore'];
+ const checked=validatePlan(asList,{...base,message});
+ assert.equal(checked.ok,true);
+ assert.equal(auditPlanRequest(checked.plan,{...base,message}).ok,true);
+ // Casing and term order are immaterial to the same OR scope.
+ const recased=structuredClone(asList);
+ recased.steps[1].query.descriptionTerms=['  popular   BOOKSTORE '];
+ assert.equal(auditPlanRequest(validatePlan(recased,{...base,message}).plan,{...base,message}).ok,true);
+ // And the whole-request guard stops rejecting the supported question.
+ assert.deepEqual(guardPlanResponse(message,{type:'plan',plan:asList},base),{handled:false});
+});
+test('the same step written two ways is still one redundant step',()=>{
+ const cats=[{id:'canteen',label:'Canteen Meals'}];
+ const base={cats,today:'2026-11-10',expenses:[]};
+ const duplicate={version:1,steps:[
+  {id:'q1',query:planQuery({description:'North Spine'})},
+  {id:'q2',query:planQuery({descriptionTerms:['north spine']})}],
+  derived:[{id:'d1',operation:'difference',left:planRef('q1'),right:planRef('q2')}]};
+ const result=validatePlan(duplicate,base);
+ assert.equal(result.ok,false);
+ assert.equal(result.reason,'plan_redundant_step');
+});
+test('share containment survives a mixed description encoding',()=>{
+ const denominator=planQuery({description:'Popular bookstore'});
+ const numerator=planQuery({descriptionTerms:['Popular Bookstore'],category:'canteen'});
+ assert.equal(planScopeContains(denominator,numerator),true);
+ assert.equal(planScopeContains(denominator,planQuery({descriptionTerms:['Other shop']})),false);
+ assert.equal(planScopeContains(denominator,planQuery({})),false);
+});

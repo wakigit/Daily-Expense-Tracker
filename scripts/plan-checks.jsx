@@ -167,4 +167,33 @@ export function planChecks(check){
   const [,maximum,maximumCtx]=planOutputCases().at(-1),maximumMessage=maximumPlanRequest(maximum,maximumCtx);
   const maxResult=run(maximum,maximumMessage,maximumCtx);
   check('P valid instructions exceeding metadata cap never publish partial figures',[validatePlan(maximum,maximumCtx).ok,recognizePlanRequest(maximumMessage,maximumCtx).ok,maxResult.reason,Object.hasOwn(maxResult,'base')],[true,true,'plan_output_limit',false]);
+
+  /* Live-defect regression. A live model plan encoded ONE literal description
+     term as `descriptionTerms` while the local recognizer writes the
+     equivalent scalar `description`; the request audit treated the two
+     spellings as different scopes and clarified a fully supported question.
+     Both encodings must execute to identical figures, rows and share. New
+     fictional rows, independent of the evaluation fixture. */
+  const encCats=[{id:'canteen',label:'Canteen Meals'},{id:'busmrt',label:'Bus & MRT'}];
+  const encRows=[
+    {id:'n1',date:'2026-11-03',category:'canteen',description:'Chicken rice at North Spine',amount:5.5,notes:''},
+    {id:'n2',date:'2026-11-06',category:'busmrt',description:'EZ-Link top up',amount:20,notes:''},
+    {id:'n3',date:'2026-11-09',category:'canteen',description:'Popular bookstore snack run',amount:6,notes:''},
+    {id:'n4',date:'2026-10-04',category:'busmrt',description:'Popular bookstore pen refill',amount:4.5,notes:''},
+    {id:'n5',date:'2026-07-02',category:'canteen',description:'Old semester supper',amount:9,notes:''}];
+  const encMessage='What share of last 90 days spending was at "Popular bookstore"?';
+  const encCtx={cats:encCats,today:'2026-11-10',expenses:encRows,message:encMessage};
+  const encScalar=recognizePlanRequest(encMessage,encCtx).plan;
+  const encList=clone(encScalar);encList.steps[1].query.description=null;encList.steps[1].query.descriptionTerms=['Popular bookstore'];
+  check('P model list encoding passes the request audit',auditPlanRequest(validatePlan(encList,encCtx).plan,encCtx).ok,true);
+  const encA=executePlan(encScalar,encCtx),encB=executePlan(encList,encCtx);
+  check('P independent expected cents for the scalar encoding',[encA.base.map(b=>b.totalCents),encA.base.map(b=>b.count),encA.derived[0].display],[[3600,1050],[4,2],'29.17%']);
+  check('P list encoding gives identical figures, rows, range and share',
+    [encB.base.map(b=>b.totalCents),encB.base.map(b=>b.evidence.rows.map(r=>r.id)),encB.derived[0].display,encB.base[0].range],
+    [[3600,1050],[['n1','n2','n3','n4'],['n3','n4']],'29.17%',{start:'2026-08-13',end:'2026-11-10'}]);
+  check('P whole-request guard no longer blocks the supported list encoding',
+    guardPlanResponse(encMessage,wrap(encList),encCtx).handled,false);
+  check('P a genuinely different literal term is still rejected by the audit',
+    auditPlanRequest(validatePlan((()=>{const p=clone(encList);p.steps[1].query.descriptionTerms=['Other shop'];return p;})(),encCtx).plan,encCtx).ok,false);
+
 }
