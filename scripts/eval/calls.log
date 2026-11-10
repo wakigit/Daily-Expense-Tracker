@@ -43,3 +43,6 @@
 2026-11-10T12:21:22.223Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=what share of my last 90 days spending was at "Popular bookstore"? — CLARIFIED this run; was a live numeric pass at step=4-accept	retries=0
 2026-11-10T12:21:28.666Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=What did I spend this month, and what percentage was Canteen Meals? — live numeric pass, S$40.00/S$5.50/13.75%	retries=0
 2026-11-10T12:21:32.568Z	step=4-repair	calls=1	set=LIVE_BROWSER_RECHECK	purpose=Show my total spending and my Bus & MRT spending, then the difference. — clarified, unchanged and still correct (period-less)	retries=0
+2026-11-10T12:30:17.410Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 1 of 3; context sent with expenses=[] so no ledger text; plan valid, 2 fields differ from recognizer	retries=0
+2026-11-10T12:30:54.300Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 2 of 3; byte-identical plan, same 2 fields	retries=0
+2026-11-10T12:31:07.724Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 3 of 3; byte-identical plan, same 2 fields; flip rate 0/3	retries=0
