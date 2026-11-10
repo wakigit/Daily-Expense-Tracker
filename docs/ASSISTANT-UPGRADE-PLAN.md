@@ -650,3 +650,27 @@ Required gates: build; smoke **2262/2262** (+89); provider **39/39**; backend No
 **Remaining acceptance blocker:** browser inventory was empty and native bridge startup failed; automatic approval review rejected a stale, unverified Chrome binding. No workaround or real storage access. Prepared isolated origin5246/mock backend8846; neither laptop1440×900 nor phone390×844 rendering/keyboard/overflow was verified. No screenshots exist. Static React rendering, session tests and HTTP mocks are not browser or live-model passes. Complete the requested mock browser matrix once a verified connection is available, then request separate final-code live authorisation. Do not publish or expand capabilities automatically.
 
 Full scope, source labels, independent expected/actual results, enforcement, local artifact paths, limitations and recovery are in [ASSISTANT-STEP4B2-2026-10-20.md](ASSISTANT-STEP4B2-2026-10-20.md). The user's unrelated untracked TallyAI directory and normal backend were preserved. Recovery, if needed, is a focused normal revert of this local integration checkpoint, retaining B1/comparison/OR history. No live requests, publication or next-stage implementation occurred.
+
+## Standing evaluation gates, from 10 November 2026
+
+**Every commit that can change what the assistant answers must run the MAIN replay gate, and the gate is per-question, not a total.**
+
+This is a rule rather than a preference because the project has already paid for its absence once. The Step 4 integration commit `29fc463` silently broke **M69** — a per-category share question the app had answered since before Step 3 — and nobody saw it for three weeks, because that step ran no MAIN replay and the score it was compared against came from an earlier step. A total would not have caught it either: one question breaking while another starts passing leaves the score unchanged.
+
+| Gate | Command | What it establishes |
+| --- | --- | --- |
+| Build | `npm run build` | The tree compiles |
+| Smoke | `npm run smoke` | Deterministic application behaviour |
+| Provider | `cd backend && node src/provider.test.mjs` | Request/schema construction |
+| Backend | `cd backend && npm test` | Server handler, contract and plan tests |
+| Oracle self-check | `npm run eval:self-check` | The expectations agree with the rows they name |
+| Fixture | `npm run eval:fixture-checks` | The fixture still has the ties and gaps the bank relies on |
+| **Harness reader** | `npm run eval:harness-checks` | The harness reads the application's answer correctly — see below |
+| **MAIN replay** | `npm run eval:main:mock` | Zero paid calls; **fails on any pass → fail**, and reports every behaviour change even where the verdict is unchanged |
+| Whitespace | `git diff --check` | No stray whitespace |
+
+`npm run eval:main:mock` replays MAIN against the recorded responses and then diffs question by question against `scripts/eval/MAIN-MOCK-BASELINE.json`. It exits non-zero on any regression, and it also prints FIXED and BEHAVIOUR MOVED rows so a silent swap is visible.
+
+**Moving the baseline is a deliberate, reviewable act.** `node scripts/eval/main-mock-diff.mjs --accept` rewrites the committed baseline; the commit that does so must say which question changed and why. A baseline that still records a question as failing after that question has been fixed makes the gate blind to the next break of it, so re-accept as part of the commit that fixes something.
+
+**A replay score is not proof of figures.** Three MAIN questions — M66, M67 and M76 — hold stale HTTP 502 recordings, so the replay falls back to the offline path and `scoreTurn` returns at its offline branch *before any figure is compared*. A numeric expectation on one of those questions is never evaluated by the replay. `npm run eval:harness-checks` is what evaluates it: it drives the real application path locally, reads the answer through `scripts/eval/actual-figures.mjs`, and compares every figure against the independent oracle, at zero cost and without any recording. Add a check there whenever the harness learns to read a new answer shape.

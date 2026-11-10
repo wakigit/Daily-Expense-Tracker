@@ -1,0 +1,464 @@
+{
+  "questions": 70,
+  "questionTotal": 76,
+  "turns": 76,
+  "turnTotal": 82,
+  "cases": {
+    "M01": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M02": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M03": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M04": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M05": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M06": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M07": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M08": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M09": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M10": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M11": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M12": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M13": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M14": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M15": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M16": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M17": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M18": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M19": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M20": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M21": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M22": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M23": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M24": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M25": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M26": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M27": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M28": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M29": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M30": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M31": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M32": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M33": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M34": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M35": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M36": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M37": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M38": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M39": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M40": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M41": {
+      "pass": true,
+      "outcomes": "answer>answer>answer",
+      "reasons": "->->-",
+      "sources": "model>builtin>builtin"
+    },
+    "M42": {
+      "pass": true,
+      "outcomes": "answer>answer",
+      "reasons": "->-",
+      "sources": "model>builtin"
+    },
+    "M43": {
+      "pass": true,
+      "outcomes": "answer>answer",
+      "reasons": "->-",
+      "sources": "model>builtin"
+    },
+    "M44": {
+      "pass": true,
+      "outcomes": "answer>clarify",
+      "reasons": "->-",
+      "sources": "model>builtin"
+    },
+    "M45": {
+      "pass": true,
+      "outcomes": "propose_scope",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M46": {
+      "pass": false,
+      "outcomes": "clarify",
+      "reasons": "scope_rules_required",
+      "sources": "model"
+    },
+    "M47": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M48": {
+      "pass": false,
+      "outcomes": "propose_scope>clarify",
+      "reasons": "->-",
+      "sources": "model>builtin"
+    },
+    "M49": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M50": {
+      "pass": true,
+      "outcomes": "propose_scope",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M51": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "category_comparison_unsupported",
+      "sources": "model"
+    },
+    "M52": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M53": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M54": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "financial_assessment_needs_scope",
+      "sources": "builtin"
+    },
+    "M55": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M56": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M57": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M58": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M59": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M60": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M61": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M62": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M63": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "builtin"
+    },
+    "M64": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M65": {
+      "pass": false,
+      "outcomes": "clarify",
+      "reasons": "plan_complete_request_required",
+      "sources": "model"
+    },
+    "M66": {
+      "pass": false,
+      "outcomes": "answer",
+      "reasons": "[object Object]",
+      "sources": "offline"
+    },
+    "M67": {
+      "pass": false,
+      "outcomes": "answer",
+      "reasons": "[object Object]",
+      "sources": "offline"
+    },
+    "M68": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M69": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M70": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M71": {
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M72": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M73": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M74": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M75": {
+      "pass": true,
+      "outcomes": "clarify",
+      "reasons": "-",
+      "sources": "model"
+    },
+    "M76": {
+      "pass": false,
+      "outcomes": "answer",
+      "reasons": "[object Object]",
+      "sources": "offline"
+    }
+  }
+}

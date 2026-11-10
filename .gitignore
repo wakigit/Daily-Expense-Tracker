@@ -51,6 +51,14 @@ venv/
 # Fictional browser publication-gate screenshots remain local review artifacts.
 scripts/eval/screens/publish-gate/
 
+# The standing MAIN --mock gate rewrites these two on every run, under one
+# fixed label, so committing them would put churn in every diff. The gate's
+# REFERENCE, scripts/eval/MAIN-MOCK-BASELINE.json, is committed — it is the
+# thing a reviewer reads — as are the per-step scorecards, which each carry
+# their own unique label and are written once.
+scripts/eval/results-main-mock.json
+scripts/eval/SCORECARD-main-mock.md
+
 # Claude Code agents — third-party, reinstallable via npx claude-code-templates
 .claude/
 .vercel
