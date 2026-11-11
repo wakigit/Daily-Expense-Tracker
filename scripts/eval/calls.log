@@ -46,3 +46,5 @@
 2026-11-10T12:30:17.410Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 1 of 3; context sent with expenses=[] so no ledger text; plan valid, 2 fields differ from recognizer	retries=0
 2026-11-10T12:30:54.300Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 2 of 3; byte-identical plan, same 2 fields	retries=0
 2026-11-10T12:31:07.724Z	step=4c-design	calls=1	set=DIAGNOSTIC	purpose=RECHECK-3 sentence, raw plan capture 3 of 3; byte-identical plan, same 2 fields; flip rate 0/3	retries=0
+2026-11-11T01:28:19.568Z	step=4c-open-9.1	calls=1	set=LIVE_SERVER_LEG	purpose=RECHECK-3 sentence through the real handleIntent with the LIVE context shape (expenseCount=6), raw plan captured; model returned the CAP-2 encoding, server accepted 200/plan	retries=0
+2026-11-11T01:28:33.129Z	step=4c-open-9.1	calls=1	set=LIVE_SERVER_LEG	purpose=RECHECK-3 sentence, second sample, same context shape; same encoding, server accepted 200/plan; 2/2 accepts, 0 flips	retries=0

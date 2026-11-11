@@ -82,13 +82,24 @@ share        = 35.34%                            expected 35.34%
 
 **The code is not regressed.** `79ed805`'s fix still holds and `24e6475` did not disturb it. What changed is the model's output: the app's audit requires the model's plan to be **field-identical** to the plan the local grammar recognises, and `gpt-4.1-mini` does not return the same fields every time for the same sentence.
 
+> **Correction and strengthening, 11 November 2026.** The conclusion above is right; the evidence offered for it was not sufficient, and the replay quoted here is the reason. **That replay ran the client chain only** — `auditPlanRequest`, `validateIntent`, `executePlan` — so "`24e6475` did not disturb it" was a statement about code the refusal never reached. The refusal came out of `backend/src/routes.js::handleIntent`, and nothing in this repository exercised that leg with a captured plan.
+>
+> It has now been measured, at zero cost, by a server-leg replay that stubs the provider and runs the real route ([`scripts/eval/server-leg-checks.mjs`](../scripts/eval/server-leg-checks.mjs), under `npm run eval:harness-checks`). Bisected: the captured CAP-2 plan is refused at **`6ebbcac`** by `auditPlanRequest` with `plan_request_coverage`, and **accepted — 200, `intent: "plan"` — at `79ed805`, `24e6475` and HEAD.** The server leg was never regressed after `79ed805`. Two live paid calls on the same sentence with the live context shape returned the captured encoding both times and were accepted 200/plan.
+>
+> Two cautions this episode earns, both of which also apply to §4's own reasoning:
+>
+> - **`clarify` / `plan_complete_request_required` does not identify its cause.** `src/lib/intent.js` collapses six outcomes onto it and discards `auditPlanRequest`'s specific reason. The live adapter's `rawShape` log is what establishes that the model returned `type: "plan"` at 12:21:22Z rather than clarifying itself.
+> - **The diagnostic captures used a different prompt.** `raw-capture.mjs` builds its context with `expenses: []`, so the provider saw `expenseCount: 0`; the live run sent `expenseCount: 6`, and `buildIntentRequest` puts that field in the user content. The later claim of a 0/3 flip rate therefore measured a different request from the one that failed.
+>
+> So the model-variance attribution stands, with its limits stated plainly: the 12:21Z raw plan was never captured, only its shape, and it differed from the capture in at least one field the audit compares. Which field is now unknowable. The bounded candidate set — a model-resolved explicit date range, reversed step order, a truncated term, an off-by-one `dayCount`, a merchant mapped onto a category — is tabulated in [§9.1 of the Step 4C design](ASSISTANT-STEP4C-PLAN-CONFIRMATION-DESIGN.md).
+
 ### Why this matters more than the single case
 
 The acceptance report recorded RECHECK-3 as a "live numeric pass" and treated the measured recognized/not-recognized table as the supported surface. This run shows that table is **optimistic**: a sentence the grammar accepts is a *necessary* condition for a live answer, not a sufficient one, and the sufficient condition is not stable across calls. A single live pass is therefore not reproducible evidence of a supported phrasing.
 
 Not fixed here, deliberately. It is a change to the audit's identity requirement — the barrier whose over-strictness produced the one real defect found at the acceptance review — and it is the central question for Step 4C rather than something to patch at the end of a repair task.
 
-**Still available, not spent:** one paid call on a raw-plan capture would name the exact field that differed. 3 of the 6 authorised calls remain.
+**Still available, not spent:** one paid call on a raw-plan capture would name the exact field that differed. 3 of the 6 authorised calls remain. *Three were later spent on raw-plan captures for the Step 4C design, and two more on 11 November 2026 re-measuring this sentence through the real server leg; none reproduced the refusal.*
 
 ## 5. Gates
 
@@ -112,7 +123,8 @@ Servers: the mock adapter (8847), the live adapter (8848) and two Vite fixtures 
 
 ## 6. Still open
 
-1. **The model/recognizer identity requirement is the real capability limit, and it is unstable.** Section 4. This is Step 4C's subject.
+1. **The model/recognizer identity requirement is the real capability limit, and it is unstable.** Section 4. This is Step 4C's subject. *Confirmed as the real limit on 11 November 2026, and narrowed: the literal-description encoding difference is already tolerated and answers; what still refuses is the wider field-disagreement set tabulated in Step 4C §9.1.*
+1. **The server leg had no gate of its own.** Closed on 11 November 2026 — captured plans are now replayed through `handleIntent` by `npm run eval:harness-checks`, and the cases are proven to fail at `6ebbcac` and at `79ed805` (M69) rather than merely assumed to.
 2. **M66, M67 and M76 hold stale HTTP 502 recordings**, so the replay cannot score their figures. `eval:harness-checks` covers M67 and M76's comparison figures locally. Refreshing the recordings costs paid calls.
 3. **Period-less multipart requests.** Unchanged from the acceptance review §7.2: the recognizer defaults a missing period to this month, the model reads it as all time, and refusing is correct. Still a product decision.
 4. **The mock matrix cannot see model/recognizer disagreement**, because `mockPlanIntent` *is* the recognizer. Section 4 is now direct evidence that this blind spot hides something real.

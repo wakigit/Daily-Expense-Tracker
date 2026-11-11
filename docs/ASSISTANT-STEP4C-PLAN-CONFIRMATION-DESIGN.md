@@ -6,7 +6,7 @@ The bounded multipart plan feature collapses every failure into one typed clarif
 
 ## 1. The evidence this is built on
 
-Three paid calls were spent on the **identical** sentence `what share of my last 90 days spending was at "Popular bookstore"?`, capturing the raw plan each time. No ledger row, description or amount was sent to the provider: the diagnostic builds its context with `expenses: []`.
+Three paid calls were spent on the **identical sentence** `what share of my last 90 days spending was at "Popular bookstore"?`, capturing the raw plan each time. No ledger row, description or amount was sent to the provider: the diagnostic builds its context with `expenses: []`. **That is not the same request the live run made** — it changes `expenseCount` from 6 to 0 in the provider's user content — so the flip rate below measures this prompt, not the live one. See the correction at the end of this section.
 
 | Call | Model intent | Steps / derived | Recognizer | Differing fields vs recognizer | Local verdict on the captured plan |
 | --- | --- | --- | --- | --- | --- |
@@ -21,7 +21,7 @@ step q2.descriptionTerms:  model=["Popular bookstore"]   recognized=[]
 step q2.description:       model=null                    recognized="Popular bookstore"
 ```
 
-**Flip rate: 0 / 3.** The captured plans for CAP-2 and CAP-3 are byte-identical; CAP-1's field diff is identical, so its q1 matched the recognizer exactly as theirs did.
+**Flip rate: 0 / 3 on the `expenseCount: 0` prompt.** The captured plans for CAP-2 and CAP-3 are byte-identical; CAP-1's field diff is identical, so its q1 matched the recognizer exactly as theirs did. Two further paid calls on 11 November 2026, this time with the **live** context shape (`expenseCount: 6`), returned the same encoding and were accepted by the server: **2 / 2, 0 flips.** Five same-encoding samples across two prompts is still not a stability guarantee — the one call that mattered, at 12:21Z, was not captured.
 
 Replaying the captured plans *exactly as the model returned them* through `auditPlanRequest`, `validateIntent` and `executePlan`:
 
@@ -33,13 +33,20 @@ executePlan      = plan_answer | totals [5800,2050] | share 35.34%
 
 `category_terms` in the model's query is not a mismatch: `src/lib/planContract.js:42` deliberately renames `categoryTerms` to `category_terms` on the wire, and the recognizer's own plan carries the same key.
 
-### This corrects the Step 4 repair report
+### Correction, 11 November 2026: this section over-read its own evidence
 
-[`ASSISTANT-STEP4-REPAIR-2026-11-10.md`](ASSISTANT-STEP4-REPAIR-2026-11-10.md) §4 attributed RECHECK-3's live clarification to the model returning different fields across calls. **That attribution is wrong.** The model is stable on this sentence, its plan is valid, the `79ed805` fix correctly tolerates the description-encoding difference, and the whole local chain accepts the plan and computes the right answer. The live run's clarification came from the server leg (`backend/src/routes.js::handleIntent`, which returned `intent: "clarify", reason: "plan_complete_request_required"` before the browser ever saw a plan), not from model variance.
+**The paragraph that stood here was wrong, and it was wrong in the same way as the thing it claimed to correct.** It asserted that `79ed805`'s fix held, that the model was stable, and therefore that the live clarification "came from the server leg" rather than from model variance. The first two are measured. The conclusion does not follow from them, and it was never tested — because the diagnosis that produced it replayed only the client chain.
 
-Per the instruction for this task, **that divergence was not investigated further and no code was changed.** It is recorded as the first open item in §9.
+Measured on 11 November 2026 through a server-leg replay (`scripts/eval/server-leg-checks.mjs`, zero paid calls): the real `handleIntent`, with the provider stubbed to return the CAP-2 plan verbatim, **accepts it — HTTP 200, `intent: "plan"`** — at `79ed805`, `24e6475` and HEAD, and refuses it only at `6ebbcac`, with `plan_request_coverage`. Two live paid calls on the same sentence with the live context shape returned the CAP-2 encoding both times and were accepted 200/plan. **There is no server-leg defect on this plan, and there never was one after `79ed805`.**
 
-What it means for this design is the important part: **a valid, stable, correctly-shaped plan can still be refused somewhere in the chain, and the user is told only that the request "cannot be answered safely".** A confirmation step makes the plan visible instead of collapsing it to one sentence — which is diagnostic value for the user and for us, independent of whether any particular refusal is correct.
+Two mistakes compounded here, and both are worth naming because they are easy to repeat:
+
+- **`clarify` + `plan_complete_request_required` does not identify its own cause.** `src/lib/intent.js` collapses six distinct outcomes onto that one typed reason — a structurally invalid plan, a failed request audit, a structurally sound `answer`/`analyze`/`propose_scope`, any other non-`clarify` type, and the model's own `clarify` — and `auditPlanRequest`'s specific reason is discarded before the response is built. Reading "the server refused a valid plan" out of that response was an inference, not an observation. (The live adapter's `rawShape` log does establish one thing: at 12:21:22Z the model returned `type: "plan"`, 2 steps, `percent_of`. So the model did not itself clarify.)
+- **The three captures did not reproduce the live request.** `raw-capture.mjs` builds its context with `expenses: []`, so the provider received `expenseCount: 0`; the live browser fixture sent `expenseCount: 6`. `buildIntentRequest` puts `expenseCount` in the user content, so **those were different prompts.** A flip rate of 0/3 on one prompt is not evidence of stability on another, and the raw plan behind the 12:21Z refusal was never captured at all — only its shape.
+
+What remains true, and what this design still rests on: the captured plan is valid, the whole chain accepts it, and the refusal the user saw named nothing a user or a maintainer could act on. **The live 12:21Z plan differed from the capture in at least one field the audit compares, and which field is unknown and now unknowable.** The bounded failure surface is measured in §9.1.
+
+So the design's premise holds in a weaker and more honest form: **a plan the app would accept, and a plan it must refuse, are indistinguishable to the person who asked.** A confirmation step makes the plan visible instead of collapsing it to one sentence. That is diagnostic value for the user and for us — independently of whether any particular refusal was correct.
 
 ## 2. What the user sees
 
@@ -146,10 +153,13 @@ Measured surface from the Step 4 acceptance review §3, and what each row would 
 | Phrasing class | Today | With confirmation |
 | --- | --- | --- |
 | Grammar parses, model agrees field-for-field | answer | answer (unchanged) |
-| Grammar parses, encoding differs — the RECHECK-3 class | clarify | **proposal → answer after one click** |
+| Grammar parses, *literal-description* encoding differs — the RECHECK-3 class | **answer already**, since `79ed805` folded the two encodings; measured again on the server leg 11 Nov | answer (unchanged) |
+| Grammar parses, any **other** field differs — period resolved to explicit dates, reversed step order, a truncated term, an unrequested filter (§9.1) | clarify | **proposal → answer after one click** |
 | Grammar cannot parse casual wording, model plan valid — the three not-recognized phrasings in §3 of that report | clarify | **proposal → answer after one click** |
 | Period-less multipart (RECHECK-6) | clarify | **proposal**, with the period it would use shown as literal dates — which is the honest resolution of open item §7.2 |
 | Over-limit, unsupported operation, invalid plan | clarify | clarify (unchanged) |
+
+The RECHECK-3 row is the correction that matters here: the encoding class this design was partly motivated by **is already answered**, and the class that is still refused is the wider set of field disagreements in §9.1. The feature is still worth building, but it should not be sold on the one case that turned out to work.
 
 **The claim this design does and does not make.** It does not widen what the app can compute, and it must not be reported as a higher pass rate on the same metric. It converts a class of silent refusal into a reviewed answer, which is a different and weaker claim than "the question is now answered". Any scorecard reporting this must count a proposal-then-approve as its own outcome, not as `answer` — otherwise the number improves because the bar moved.
 
@@ -180,7 +190,27 @@ The live set proves routing and rendering against a real model. It does not prov
 
 ## 8. Risks
 
-1. **Users approve without reading.** The most likely failure, and it cannot be designed away — only mitigated. Mitigations: counts but no totals, so there is nothing to skim for; the resolved literal dates sit in the first line of each step, where a wrong period is most visible; the proposal is short by construction, since the contract caps it at 4 steps and 2 derived nodes. Not mitigated by a confirmation checkbox or a delay, which train dismissal. **The honest position: a proposal makes a wrong reading visible, it does not make it unlikely.** If this feature is presented as a correctness guarantee it will be oversold.
+1. **Users approve without reading — and nothing in this design stops them. OPEN RISK, not mitigated.**
+
+   The question asked directly: *what stops a user approving a plan with a wrong filter without reading it?* **Nothing does.** The honest, complete answer is the plain-words rendering, and a rendering is not a control — it is an invitation to read that the user is free to decline. Enumerate what the three mechanisms in §4 actually do and the gap is unambiguous:
+
+   | Mechanism | What it guarantees | Does it stop an unread approval? |
+   | --- | --- | --- |
+   | Exhaustive enumeration over the contract (§4.1) | every filter the plan carries, and every one it does not, appears in the text | **No.** It guarantees the text is complete, not that it was read |
+   | Plan fingerprint on approval (§4.2) | the figure comes from the exact plan that was rendered | **No.** It binds the figure to the rendered plan, wrong filter included |
+   | Rendered phrases inside the fingerprint (§4.3) | the plan and its caption cannot drift apart | **No.** Same: it protects consistency, not comprehension |
+
+   All three defend against *the app misdescribing the plan*. None defends against *the user not reading a correct description*. Those are different failures, and only the first is addressed.
+
+   What is genuinely available, and still only mitigation: counts but no totals, so there is nothing to skim for; resolved literal dates in the first line of each step, where a wrong period is most visible; a proposal short by construction, since the contract caps it at 4 steps and 2 derived nodes. Explicitly rejected: a confirmation checkbox or an enforced delay, both of which train dismissal and would convert this risk into a worse one — a user who has clicked through a friction gate has taken on more apparent responsibility while reading no more closely.
+
+   **Consequences this design accepts and must be reported with:**
+
+   - An approved proposal is **weaker evidence than it looks**. It shows the app disclosed its reading; it does not show the reading was checked. Any scorecard, report or user-facing claim that treats "approved" as "verified by a human" overstates it.
+   - The failure mode is a **confidently wrong figure the user authorised**. That is worse than today's refusal in one specific respect: responsibility has moved to the user without their comprehension moving with it. §8.2's "worse than no review because the user has now taken responsibility for it" applies to this risk too, not only to a misleading phrase.
+   - Therefore **a proposal must never be offered for a plan the app could have accepted outright.** Routing (§3) already does this — agreement goes straight to an answer — and it must stay that way, or the feature would be adding unread approvals to cases that needed none.
+
+   **Recorded as an open risk.** It is not closed by this design, it is not closable by rendering, and the only real reductions available are out of scope here: narrowing *when* a proposal is offered (§3), and narrowing *what can differ* before one is needed (§9.1, §10).
 2. **Plain-words rendering hides a wrong filter.** The sharpest technical risk: a phrase that reads correctly while the plan does something else turns review into theatre, and is worse than no review because the user has now taken responsibility for it. §4 is the whole answer — exhaustive enumeration over the contract with a build-time failure for an unphrased field, plus the rendered text inside the fingerprint. The test at §7.2 is the one that must not be allowed to rot.
 3. **A proposal for a question the user did not ask.** If the model's plan is valid but means something else, a proposal invites approval of a misreading. Partly mitigated by rendering the resolved scope rather than the model's intent, so the user checks dates, filters and counts rather than a restatement of their own sentence.
 4. **Two approval mechanisms drifting apart.** Mitigated by reusing `spendingScope.js`'s preview/confirm/fingerprint rather than copying it. If the plan case genuinely cannot reuse it, that is a signal to stop and review, not to fork it.
@@ -189,7 +219,34 @@ The live set proves routing and rendering against a real model. It does not prov
 
 ## 9. Open items this design does not close
 
-1. **The server/client divergence measured in §1.** A valid plan that the local chain accepts was refused by the server leg in the live run. Not investigated, no code changed, per this task's instruction. It must be root-caused before any live claim about this feature, because a proposal the server refuses to route is a proposal the user never sees. **This is the first thing Step 4C implementation should establish, before any UI work.**
+1. ~~**The server/client divergence measured in §1.**~~ **CLOSED, 11 November 2026 — there was no divergence.** Bisected through a new server-leg replay, zero paid calls: the real `handleIntent`, with the provider stubbed to return the CAP-2 plan verbatim and the same message and context shape, **accepts it (200, `intent: "plan"`) at `79ed805`, `24e6475` and HEAD**, and refuses it only at `6ebbcac` — at `src/lib/planRequest.js` `auditPlanRequest`, the coverage comparison now on lines 171–173, with `plan_request_coverage`. `79ed805`'s `planDescriptionKey` fold is what fixed it; `24e6475` did not touch the plan branch of `validateIntent` at all, which returns at line 96–103 before any of the code that commit changed. The hypothesis that the M69 fix re-routed recognised share questions before the plan audit is **false**.
+
+   Two live paid calls on the RECHECK-3 sentence with the live context shape confirmed it end to end: both returned the CAP-2 encoding and both were accepted 200/plan.
+
+   The replay is now permanent: `scripts/eval/server-leg-checks.mjs`, run by `npm run eval:harness-checks`, 16 cases. It is proven to bite — three fail at `6ebbcac`, one at `79ed805` (M69), none from `24e6475`.
+
+   **What is still not explained**, and cannot be: the raw plan behind the 12:21Z refusal was never captured, only its shape (`type: "plan"`, 2 steps, `percent_of`). It differed from the capture in at least one field the audit compares. The candidate space is bounded, and was measured through the same replay:
+
+   | Encoding the model might emit for this sentence | Server verdict |
+   | --- | --- |
+   | `q2.descriptionTerms: ["Popular bookstore"]` (CAP-2) | **accept** |
+   | `q2.description: "Popular bookstore"` (recognizer's own) | **accept** |
+   | the term lower-cased | **accept** |
+   | the 90-day window resolved by the model into `period: "range"` with literal dates | refuse — `plan_request_coverage` |
+   | the two steps in the opposite order | refuse — `plan_request_coverage` |
+   | the merchant mapped onto a category id | refuse — `plan_request_coverage` |
+   | a truncated term (`"Popular"`) | refuse — `plan_request_coverage` |
+   | `dayCount` off by one | refuse — `plan_request_coverage` |
+   | mixed periods across the two steps | refuse — `plan_common_range` |
+   | the denominator narrowed by the same merchant | refuse — `plan_request_coverage` |
+   | both description encodings set at once | **HTTP 502 `invalid_intent`** |
+   | the merchant placed in `category_terms` | **HTTP 502 `invalid_intent`** |
+
+   The two 502 rows are excluded by the observation that the live run returned 200, so the 12:21Z plan was one of the `plan_request_coverage` / `plan_common_range` class. **`PLAN_PROMPT`'s phrase "one common *resolved* period" is the most plausible invitation to the first row of that class** — the ordinary `SYSTEM_PROMPT` says "do not calculate dates yourself" and the plan prompt does not. Unproven, and deliberately not patched here: changing a prompt to fix a single uncaptured call is how a prompt accumulates unmeasured rules.
+
+   **This therefore stops being a prerequisite for Step 4C and becomes its subject.** The real limit is the audit's field-identity requirement across the encodings above — §6 and §10, not a routing defect.
+
+   **One defect does stand, and it is diagnostic rather than behavioural:** `src/lib/intent.js` discards `auditPlanRequest`'s specific reason, collapsing six causes onto `plan_complete_request_required`. That is correct for the user — a refusal must not leak which internal gate fired — but it left the server with no record of its own decision, which is why this took a bisect instead of a log line. A server-side diagnostic log of the audit reason, carrying no ledger text and no model values, would be a real improvement and is not attempted here.
 2. **M66, M67 and M76 hold stale HTTP 502 `invalid_intent` recordings.** The replay falls back to the offline path and `scoreTurn` returns before any figure is compared, so these three questions cannot be scored on figures by `npm run eval:main:mock` at all. `npm run eval:harness-checks` covers M67's and M76's comparison figures locally, but the recordings themselves are stale against the current server schema and **need re-recording in Step 6**, at one paid call each.
 3. **The 4096-token plan ceiling is configured, not measured.** A proposal adds no provider output, so this design does not change it — but it remains unmeasured.
 4. **M46, M48.2 and M65 still fail.** Untouched here.
@@ -208,7 +265,7 @@ Widening may still be worth doing later as an *ergonomic* improvement, so that c
 
 | Piece | Estimate |
 | --- | --- |
-| Root-cause the §9.1 server/client divergence (prerequisite, zero paid calls) | 30–45 min |
+| ~~Root-cause the §9.1 server/client divergence~~ — **done, 11 Nov 2026; no defect found, replay now permanent in `eval:harness-checks`** | — |
 | `plan_proposal` result type, contract and the `intent.js` routing branch | 45–60 min |
 | Exhaustive proposal renderer with the build-time field-table check | 45–60 min |
 | Plan-level fingerprint, approve/confirm/refresh reusing `spendingScope.js` | 45–60 min |
@@ -219,4 +276,4 @@ Widening may still be worth doing later as an *ergonomic* improvement, so that c
 
 **Roughly 5–6.5 focused hours**, split into independently gated commits in that order. The uncertainty is concentrated in the renderer and the fingerprint; the routing branch is small.
 
-**Do not implement from this document alone.** Item §9.1 must be resolved first, because it determines whether a proposal can reach the browser at all, and the answer may change the routing design. No implementation, publication or live call is authorised by this design.
+**Do not implement from this document alone.** Item §9.1 is now resolved: there is no routing defect, a proposal can reach the browser, and the routing design in §3 stands. What that resolution changes is the *motivation* — the RECHECK-3 encoding class already answers (§6), so the feature's case now rests on the wider field-disagreement surface in §9.1 and on the unread-approval risk in §8.1 being accepted as open. No implementation, publication or live call is authorised by this design.
