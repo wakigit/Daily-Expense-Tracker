@@ -16,6 +16,11 @@
  *
  *   the real app path  ->  actual-figures.mjs  ->  the independent oracle
  *
+ * The same gap existed one layer out. Nothing drove `handleIntent` — the
+ * SERVER route — with a captured model plan, so a plan the client chain
+ * accepts could still be refused before the browser saw it and no gate could
+ * see that either. `server-leg-checks.mjs` closes it and runs from here.
+ *
  * Questions are driven through `interpretOffline` + `executeQuery`, the app's
  * own local path and the same two functions `run.mjs` falls back to. One
  * question the offline recognizer deliberately declines states its query
@@ -30,6 +35,7 @@ import { interpretOffline } from '../../src/lib/queryOffline.js';
 import { executeQuery } from '../../src/lib/queryEngine.js';
 
 import { actualFigures, COMPARISON_HEAD_KEYS } from './actual-figures.mjs';
+import { serverLegChecks } from './server-leg-checks.mjs';
 import { MAIN } from './questions.js';
 import { fixtureContext } from './fixture.js';
 
@@ -195,6 +201,10 @@ const comparisonPlan = (sides) => ({
     got.current === undefined && got.weekday === undefined,
     `current ${JSON.stringify(got.current)}, weekday ${JSON.stringify(got.weekday)}`);
 }
+
+/* ── The server leg, replayed from captured plans ────────────────── */
+
+await serverLegChecks(ok);
 
 console.log(failures ? `\n${failures} HARNESS CHECK(S) FAILED` : '\nAll harness checks passed.');
 process.exit(failures ? 1 : 0);
