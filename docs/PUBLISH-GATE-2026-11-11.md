@@ -1,6 +1,6 @@
 # Publish prep for Steps 3–4, 11 November 2026
 
-**Steps 3–4 were published on 11 November 2026.** §7 steps **A–F ran and passed**; the shipped source candidate was **`eaab1a5`**, not `9f00ee3`. Step **G is not approved** and has not run, so there is still **no live interpretation evidence** for this release. **0 paid provider calls, start to finish.** The execution record is [§11](#11-execution-record--7-steps-af-11-november-2026).
+**Steps 3–4 were published on 11 November 2026.** §7 steps **A–F ran and passed**; the shipped source candidate was **`eaab1a5`**, not `9f00ee3`. Step **G ran on the same day under a separate approval**: **4 paid calls** against the live site, recorded in [§11.9](#119-step-g--live-check-list-4-paid-calls). Steps A–F cost **0 paid calls**. The execution record is [§11](#11-execution-record--7-steps-af-11-november-2026).
 
 **§§0–10 below are the pre-publication record and are left exactly as written**, measured against `9f00ee3`. They are still accurate about the shipped code: `git diff 9f00ee3 eaab1a5` touches **only this file**, so `eaab1a5` adds no runtime change to anything §§0–6 measured. Where §§0–10 say "nothing was pushed" or "waiting for go", read §11 for what actually happened.
 
@@ -443,8 +443,44 @@ git checkout wallpaper-redesign && git merge --ff-only main && git push origin w
 
 Publication does not close §9, and nothing above should be read as if it did.
 
-1. **No live interpretation evidence exists for this release.** Steps A–F are a build-and-serve proof: bytes, endpoints, CORS, headers. **Not one question was asked of the live site.** §6's 22/22 is a *mock* path on a local server. Step G is the only thing that would change this, and it is **not approved**.
+1. ~~**No live interpretation evidence exists for this release.**~~ **Closed by [§11.9](#119-step-g--live-check-list-4-paid-calls)**, which asked four real questions of the live site. Steps A–F on their own were only a build-and-serve proof: bytes, endpoints, CORS, headers. §6's 22/22 remains a *mock* path and is still not live evidence.
 2. The **six failing MAIN questions** (M46, M48.2, M65, M66, M67, M76) shipped as they were. So did the **stale 502 recordings** on M66/M67/M76.
 3. The plan feature's **field-identity refusals** shipped as documented in §9.3 — worst case a refusal with no figure, never a wrong number.
 4. The **4096-token plan ceiling** remains configured, not measured.
 5. Existing-user data rests on §4's **source-level equivalence argument**. The 19 October legacy snapshots were **not** re-seeded, here or before publication.
+
+### 11.9 Step G — live check list, 4 paid calls
+
+Approved separately, after A–F. **4 paid provider calls, exactly as budgeted; no call was repeated.** `maxRetries: 0` needed no arranging — it is **hardcoded at both live call sites** in `backend/src/provider.js` (lines 382 and 565), so the deployed build already satisfies it. *(ran)*
+
+**Setup.** The **live Pages site** `https://wakigit.github.io/Daily-Expense-Tracker/`, driven by Playwright's own Chromium in a **fresh ephemeral context per check** — `chromium.launch()` with no `user-data-dir`, `newContext()` with `timezoneId: Asia/Singapore`. **No real browser profile was opened and no real data was touched.** Every external URL other than the Pages origin and the one assistant endpoint is **aborted**; the only thing that ever blocked was the Google Fonts stylesheet. Each check ran in its own process and its own context, so no answer could influence another through chat history.
+
+The fictional ledger — 13 rows, mine, nothing from MAIN — was seeded through `addInitScript` so it exists **before any page script runs**. Seeding after first load races the app's own persistence effect, which writes its empty default back and silently erases the ledger; that bit me once during the dry run and is worth knowing. The browser independently reported its Singapore date as **2026-11-11**.
+
+**Expected figures were computed first,** by an oracle that imports **nothing** from the app — its own integer-cent arithmetic, its own weekday derivation, its own date windows — and written to disk **before the first paid call**.
+
+The ledger was built so the weekday question has a **trap**: Saturday is the largest weekday in *every* plausible scope (all time, this month, last 7/30/90 days), so a silent narrowing to Mon–Fri could not hide — it would have had to answer **Tuesday S$14.40**. September also has **boundary traps** immediately outside it, `2026-08-31` and `2026-10-01`, so a sloppy month window would read **S$62.35** instead of S$54.35.
+
+| | Check | Expected (oracle, pre-computed) | Actual (live) | Outcome |
+| --- | --- | --- | --- | --- |
+| **P1** | Named-month total — *How much did I spend in September?* | **S$54.35**, 5 rows, `2026-09-01 to 2026-09-30` | **S$54.35**, **5** rows, `2026-09-01 to 2026-09-30 (inclusive, Singapore calendar dates)`, "All categories", all 5 evidence rows exact | **PASS** — exact |
+| **P2** | Weekday — *Which weekday do I spend most on?* | **Saturday S$56.45** (all time) / **S$18.00** (this month); 7 non-empty groups | **Clarification, no answer.** "I could not safely represent every requested category or description term… I will not calculate a narrower selection." **No figure of any kind** | **Known limit** — refusal, not a wrong figure |
+| **P3** | Supported plan — *What did I spend this month, and what percentage was Food & Drinks?* | **S$46.00** (6 rows) / **S$26.10** (3 rows) / **S$26.10 ÷ S$46.00 × 100 = 56.74%** | **identical on all three**, as 3 numbered parts, each with its own dated window `2026-11-01 to 2026-11-11`, its own filter disclosure and its own evidence list | **PASS** — exact |
+| **P4** | Unsupported component — P3's sentence + *, then forecast next year?* | clarifies the **whole** request, **no figure** | "I cannot safely answer every part together… **Nothing has been calculated.**" quoting the full original request. **No `S$` figure, no percentage, no plan block** | **PASS** — exact |
+| **ZC1** | Credential-extraction refusal | built-in text, **0** requests | byte-identical `SECURITY_REFUSAL`, `source=builtin`, **0 requests to the endpoint**, no digit in the reply | **PASS** — 0 paid calls |
+| **ZC2** | Empty submit | Send disabled, thread unchanged, **0** requests | Send disabled when empty **and** on whitespace-only; Enter submitted anyway changed nothing; bubbles **0 → 0**; **0 requests** | **PASS** — 0 paid calls |
+
+P1, P3 and P4 each returned `data-answer-source="model"` with `httpStatus 200` from `https://ailodge-expensetracker.vercel.app/api/assistant/intent`, and each made **exactly one** request. No horizontal overflow on any check. No console error beyond the deliberately blocked font request.
+
+**P2, stated precisely, because it is the one result that is not a pass.** It is **not** a rollback trigger under the pre-agreed rule: no figure was wrong, because **no figure was produced**; nothing was silently narrowed — the reply says outright that it will not calculate a narrower selection; and there was no crash and no 500. The trap built for silent narrowing **did not fire**. Two things are worth carrying forward anyway:
+
+1. A weekday question is in a family the app's own capabilities panel advertises ("Weekdays or weekends this month?", "Highest average weekday?"). This phrasing was refused. It was **not** re-asked in another phrasing — that would have been a fifth paid call and a retry for a better result, and both were out of scope.
+2. **The clarification it gave does not fit the question asked.** It asks the user to name categories and literal description terms, for a question that mentioned neither. The refusal is safe, but as written it tells the reader to supply something irrelevant. That is a wording defect to fix, not a correctness one — and it is exactly the class of thing [§9.3](#9-blockers) and the `planDiagnostic` work in §0 exist to make visible.
+
+**Reading the screenshots.** `.answer-evidence ul` is `max-height: 300px; overflow-y: auto` and `.ask-thread` is capped at `46vh`, so a full-page capture shows roughly the first three evidence rows of a part and the rest scroll inside the list. **All rows are present in the DOM** — 6 and 3 for P3's two parts, 5 for P1 — and were extracted and checked there. A screenshot showing fewer rows is the bounded list doing its job, not a dropped row.
+
+Artifacts, all **outside the repo** and uncommitted, consistent with §6: screenshots, driver, oracle, per-check result JSON in `/private/tmp/claude-501/…/scratchpad/pg-G/` (`shots/P1-answer.png`, `P2-answer.png`, `P3-answer.png`, `P4-answer.png`, `ZC1-answer.png`, `ZC2-empty-submit.png`). The four paid calls are logged in `scripts/eval/calls.log` under `step=publish-G`, `retries=0`.
+
+Every test context was discarded at the end of its check and the browser's temporary profiles removed. **Nothing was pushed, redeployed or changed in the application.**
+
+**Verdict: known limit noted — no rollback trigger met.** Three of four paid checks matched the oracle exactly, including the one that must refuse and the one that must show its arithmetic. The fourth refused a question rather than answering it wrongly. Under the pre-agreed rule — roll back only for a wrong figure, a silently dropped filter, or a crash/500 — **none of those occurred**, so no rollback is recommended. The release notes in §8 already say Ask "asks rather than guessing", and P2 is that sentence being true in a case where we would have preferred an answer.
