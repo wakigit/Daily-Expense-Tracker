@@ -6,6 +6,7 @@ import { normaliseScopeText } from './filterMatching.js';
 import { INTENT_LIMITATION, isLimitationReason, limitationClarification, asksMultipartPercentage, mentionedCategories, requestLimitation, needsScopeRules, asksCategoryComparison } from './intentLimitations.js';
 import { dialogueIntent } from './assistantDialogue.js';
 import { validateQuery } from './queryContract.js';
+import { normaliseWholeLedgerCategories } from './categoryCoverage.js';
 /**
  * The contract between the model and this application.
  *
@@ -87,6 +88,15 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
   const type = trimmed(raw.type);
   if (!INTENT_TYPES.includes(type)) return bad(INTENT_ERR.UNKNOWN_TYPE, { type: raw.type ?? null });
 
+  /* ONE normalisation, before any validation reads the query: a list naming
+     every configured category, on a question that named none, is the identity
+     filter and is removed here rather than refused downstream. The coverage
+     guard itself is unchanged — see categoryCoverage.js for why this can only
+     broaden. Plan steps get the same step inside canonicalPlanQuery. */
+  const normalisedQuery = isPlainObject(raw.query)
+    ? normaliseWholeLedgerCategories(raw.query, cats, message)
+    : raw.query;
+
   /* `help` is accepted from the model, but nothing the model wrote is shown.
      The reply is the built-in capability text assembled by planFromIntent, and
      `say` is dropped here rather than forwarded, so a model that returns help
@@ -117,7 +127,7 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
      total, so it answers the whole question rather than one side of it, and
      it keeps working for the questions that merely mention a share. See
      isCompleteBreakdownAnswer for why "complete" excludes filtered ones. */
-  const analysed = multipart && type === 'analyze' ? validateQuery(raw.query,cats) : null;
+  const analysed = multipart && type === 'analyze' ? validateQuery(normalisedQuery,cats) : null;
   const completeBreakdown = Boolean(analysed?.ok && isCompleteBreakdownAnswer(analysed.query));
   // Check structure first: malformed output must remain an error, not a semantic success.
   if (multipart && !completeBreakdown && ['answer','analyze','propose_scope'].includes(type)) {
@@ -125,7 +135,7 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
       && PERIODS.includes(raw.query?.period ?? 'month')
       && (raw.query?.category == null || cats.some(c=>c.id===raw.query.category))
       && Object.keys(raw.query).every(k=>['metric','period','category','category_terms','categoryTerms'].includes(k))
-      : (analysed ?? validateQuery(raw.query,cats)).ok;
+      : (analysed ?? validateQuery(normalisedQuery,cats)).ok;
     if (!structural) return bad(INTENT_ERR.BAD_FIELD,{field:'query'});
     return {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
   }
@@ -141,7 +151,7 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
 
   if (type === 'analyze' || type === 'propose_scope') {
     const mentioned = mentionedCategories(message,cats);
-    const { amountCents: ignored, ...q } = raw.query ?? {};
+    const { amountCents: ignored, ...q } = normalisedQuery ?? {};
     const checked = validateQuery(q, cats);
     if (!checked.ok) {
       if (isLimitationReason(checked.limitation)) {
@@ -174,9 +184,9 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
     else if (asksCategoryComparison(message,cats)) reason = INTENT_LIMITATION.CATEGORY_COMPARISON;
     else if (!checked.query.spendingScope && needsScopeRules(message)) reason = INTENT_LIMITATION.SCOPE_REQUIRED;
     else if (!checked.query.spendingScope && mentioned.length > 1 && !checked.query.categories.length) reason = INTENT_LIMITATION.MULTIPLE_CATEGORIES;
-    else if (!checked.query.spendingScope && mentioned.some(c => ![checked.query.category,...checked.query.categories].includes(c.id))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
-    else if (!checked.query.spendingScope && checked.query.categories.some(id => !mentioned.some(c=>c.id===id))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
-    else if (!checked.query.spendingScope && checked.query.descriptionTerms.some(term => !normaliseScopeText(message).includes(term))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
+    else if (!checked.query.spendingScope && mentioned.some(c => ![checked.query.category,...checked.query.categories].includes(c.id))) reason = INTENT_LIMITATION.CATEGORY_COVERAGE;
+    else if (!checked.query.spendingScope && checked.query.categories.some(id => !mentioned.some(c=>c.id===id))) reason = INTENT_LIMITATION.CATEGORY_COVERAGE;
+    else if (!checked.query.spendingScope && checked.query.descriptionTerms.some(term => !normaliseScopeText(message).includes(term))) reason = INTENT_LIMITATION.DESCRIPTION_COVERAGE;
     else if (!checked.query.spendingScope && unresolvedCoordination(message,cats)) reason = INTENT_LIMITATION.FILTER_COVERAGE;
     else if (!checked.query.spendingScope && descriptionOrRequest(message)?.terms.some(t => ![checked.query.description,...checked.query.descriptionTerms].filter(Boolean).map(normaliseScopeText).includes(t))) reason = INTENT_LIMITATION.FILTER_COVERAGE;
     if (reason) return {ok:true,intent:limitationClarification(reason,message)};

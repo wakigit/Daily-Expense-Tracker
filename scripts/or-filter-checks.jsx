@@ -88,7 +88,8 @@ export function orFilterChecks(check){
   check('OR invented category metadata on a single subject remains invalid',validateIntent({type:'analyze',query:{operation:'total',categories:['studio-x'],category_terms:['Studio kits','Unknown label']}},{cats,message:'Studio kits total this month?'}).ok,false);
   check('OR max lengths accepted',validateQuery({...orQuery,descriptionTerms:['a'.repeat(80)]},cats).ok,true);
   for(const [label,msg,q,reason]of [
-    ['omitted category',message,{...orQuery,categories:['studio-x'],category_terms:[]},'explicit_filter_coverage_incomplete'],
+    // Per-branch wording, 2026-11-11: a category-coverage miss now says so.
+    ['omitted category',message,{...orQuery,categories:['studio-x'],category_terms:[]},'category_filter_coverage_incomplete'],
     ['omitted term',message,{...orQuery,descriptionTerms:['BlueCab']},'explicit_filter_coverage_incomplete'],
     ['unknown mixed','Total Studio kits and bubble tea this month.',{operation:'total',category:'studio-x',description:'bubble tea'},'explicit_filter_coverage_incomplete'],
     ['comparison','Did I spend more on Studio kits or Bicycle upkeep this month?',orQuery,'category_comparison_unsupported'],

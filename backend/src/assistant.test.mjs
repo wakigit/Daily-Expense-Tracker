@@ -303,7 +303,8 @@ for(const [label,patch,field]of [
  assert.equal(JSON.stringify(reply).includes('CANARY_ID'),false);
 });
 for(const [label,message,patch,reason]of [
- ['missing category','Art tools and Wheel repairs total this month.',{categories:['art-k'],category_terms:[]},'explicit_filter_coverage_incomplete'],
+ // Per-branch wording, 2026-11-11: a category-coverage miss now says so.
+ ['missing category','Art tools and Wheel repairs total this month.',{categories:['art-k'],category_terms:[]},'category_filter_coverage_incomplete'],
  ['missing literal term','Show purchases mentioning Teal Cab or Quick Van this month.',{categories:[],category_terms:[],descriptionTerms:['teal cab']},'explicit_filter_coverage_incomplete'],
  ['unknown coordinated subject','Art tools and bubble tea total this month.',{categories:['art-k'],category_terms:['Art tools'],descriptionTerms:['bubble tea']},'explicit_filter_coverage_incomplete'],
  ['category comparison','Did I spend more on Art tools or Wheel repairs this month?',{},'category_comparison_unsupported'],

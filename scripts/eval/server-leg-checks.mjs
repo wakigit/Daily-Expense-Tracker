@@ -111,7 +111,41 @@ async function serverLeg({ message, today, cats, expenseCount = 0, raw }) {
   };
 }
 
+/* Captured live from gpt-4.1-mini on 2026-11-11 (publish-G2 call a), the raw
+   intent that refused "Which weekday do I spend most on?" in production. The
+   model expresses "across all categories" by enumerating every configured id,
+   which the coverage guard read as a narrowing. Replayed here so this exact
+   model output stays under the standing gate at zero cost — MAIN --mock cannot
+   cover it, because it replays a recorded intent that predates `categories`. */
+const G2A_CATS = [
+  { id: 'food', label: 'Food & Drinks' }, { id: 'entertainment', label: 'Entertainment' },
+  { id: 'needs', label: 'Daily Needs' }, { id: 'shop', label: 'Shopping' },
+  { id: 'pub', label: 'Public Transport' }, { id: 'hire', label: 'Private Hire' },
+  { id: 'misc', label: 'Others' },
+];
+const G2A = {
+  message: 'Which weekday do I spend most on?', today: '2026-11-11', cats: G2A_CATS, expenseCount: 13,
+  raw: { type: 'analyze', say: null, expense: null, filter: null, scope: null, question: null, options: null,
+    query: { operation: 'highest', comparison: null, period: 'all', dayCount: null, start: null, end: null,
+      category: null, categories: ['food','entertainment','needs','shop','pub','hire','misc'],
+      descriptionTerms: [], description: null, amountOperator: null, amount: null, day: 'all',
+      groupBy: 'weekday', aggregate: 'total', spendingScope: null,
+      category_terms: ['Food & Drinks','Entertainment','Daily Needs','Shopping','Public Transport','Private Hire','Others'] } },
+};
+
 export async function serverLegChecks(ok) {
+  /* The P2 regression, through the real server route. */
+  const g2a = await serverLeg(G2A);
+  ok('server leg: the captured G2a weekday intent is ANSWERED, not clarified',
+    g2a.status === 200 && g2a.type === 'analyze',
+    `${g2a.status} ${g2a.type} ${g2a.reason ?? ''}`);
+  ok('server leg: one stubbed provider call', g2a.calls === 1, `stub consulted ${g2a.calls} time(s)`);
+  const g2aNamed = await serverLeg({ ...G2A, message: 'Which weekday do I spend most on Food & Drinks?' });
+  ok('server leg: the same intent still refuses once a category IS named',
+    g2aNamed.status === 200 && g2aNamed.type === 'clarify'
+      && g2aNamed.reason === 'category_filter_coverage_incomplete',
+    `${g2aNamed.status} ${g2aNamed.type} ${g2aNamed.reason ?? ''}`);
+
   /* The captured plan, through the server route. This is the case that was
      refused live, and the one the bisect pinned to 79ed805. */
   const captured = await serverLeg({ ...CAPTURED, raw: planIntent(CAPTURED.plan) });

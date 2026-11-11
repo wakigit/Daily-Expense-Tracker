@@ -1,4 +1,5 @@
 import { generalQuerySchema, providerQuerySchemas, validateQuery, validDate } from './queryContract.js';
+import { normaliseWholeLedgerCategories } from './categoryCoverage.js';
 import { resolveQueryRange } from './queryDates.js';
 import { categoryNames } from './categoryVocabulary.js';
 import { normaliseScopeText } from './filterMatching.js';
@@ -58,9 +59,14 @@ export const planQuery = patch => ({operation:'total',period:'month',start:null,
 export const planRef = step => ({step,field:'totalCents'});
 
 /** Full existing provider query fields, with derived cents deliberately absent. */
-export function canonicalPlanQuery(raw,cats) {
+export function canonicalPlanQuery(raw,cats,message='') {
   const required=generalQuerySchema({type:['string','null'],enum:[...cats.map(c=>c.id),null]}).required;
   if(!keys(raw,required)||required.some(k=>raw[k]===undefined)||['categories','descriptionTerms','category_terms'].some(k=>Array.isArray(raw[k])&&Object.keys(raw[k]).length!==raw[k].length))return planFailure('plan_query_fields','','invalid','query');
+  /* The identical normalisation the ordinary path applies, so a plan step
+     saying "every configured category" on a question that named none is the
+     absence of a filter here too — and the request audit downstream then
+     compares like with like. See categoryCoverage.js. */
+  raw=normaliseWholeLedgerCategories(raw,cats,message);
   const checked=validateQuery(raw,cats);
   if(!checked.ok)return planFailure('plan_query_invalid','',checked.limitation?'clarify':'invalid',checked.field);
   const q=checked.query;
@@ -118,7 +124,7 @@ export function validatePlan(raw,{cats=[],today,expenses=[],message=''}={}) {
   const steps=[],ranges=[],seen=new Set();
   for(const [i,step]of raw.steps.entries()){
     if(!keys(step,['id','query'])||step.id!==`q${i+1}`)return fail('plan_step_id');
-    const c=canonicalPlanQuery(step.query,cats);
+    const c=canonicalPlanQuery(step.query,cats,message);
     if(!c.ok)return {...c,question:planFailure(c.reason,message,c.kind).question};
     const key=planScopeKey(c.query);
     if(seen.has(key))return fail('plan_redundant_step','clarify');

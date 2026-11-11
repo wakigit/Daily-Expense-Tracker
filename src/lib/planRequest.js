@@ -38,7 +38,7 @@ function protect(message,cats){
       return prefix+ctoken(ids[0]);
     })).join('');
   }
-  return {ambiguous,text:text.replace(/[?.!]\s*$/,'').replace(/,\s*/g,', ').replace(/^please\s+/,''),terms,cats};
+  return {ambiguous,text:text.replace(/[?.!]\s*$/,'').replace(/,\s*/g,', ').replace(/^please\s+/,''),terms,cats,message};
 }
 
 /** Parse period WORDS only. All calendar arithmetic remains in queryDates. */
@@ -95,7 +95,9 @@ function scope(text,common,env){
     }
   }
   if(bad)return null;
-  const c=canonicalPlanQuery(q,env.cats);return c.ok?c.query:null;
+  /* The message matters here: this query is built FROM the request, so a user
+     who named every configured category must keep that filter. */
+  const c=canonicalPlanQuery(q,env.cats,env.message??'');return c.ok?c.query:null;
 }
 
 const makePlan=(queries,derived)=>({version:1,steps:queries.map((query,i)=>({id:`q${i+1}`,query})),derived:derived.map((d,i)=>({id:`d${i+1}`,...d}))});

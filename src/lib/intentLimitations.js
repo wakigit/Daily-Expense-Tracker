@@ -5,6 +5,12 @@ export const INTENT_LIMITATION = Object.freeze({
   PLAN: 'plan_complete_request_required',
   COMPARISON_SHAPE: 'comparison_shape_unsupported',
   FILTER_COVERAGE: 'explicit_filter_coverage_incomplete',
+  /* Split out of FILTER_COVERAGE on 2026-11-11. One string served five
+     branches, so a question naming neither a category nor a description term
+     was told to supply both. The OR-coverage text below is kept for the case
+     it was written for; these two say what actually went wrong. */
+  CATEGORY_COVERAGE: 'category_filter_coverage_incomplete',
+  DESCRIPTION_COVERAGE: 'description_term_not_in_request',
   OR_OPERATION: 'or_operation_unsupported',
   MULTIPLE_CATEGORIES: 'multiple_categories',
   CATEGORY_COMPARISON: 'category_comparison_unsupported',
@@ -21,6 +27,8 @@ export function limitationClarification(reason, message = '') {
     [INTENT_LIMITATION.PLAN]: 'I cannot safely answer every part together. Please give the requested totals, one common period, and the exact share or ordered subtraction. Only total queries with difference or percentage share are supported together. Nothing has been calculated.',
     [INTENT_LIMITATION.COMPARISON_SHAPE]: 'I can compare exactly two periods with the same spending filters, or two configured categories over one shared period. Which two sides should I use? Different filters and periods on each side, or reviewed related concepts, need separate totals. I will not discard a third side.',
     [INTENT_LIMITATION.FILTER_COVERAGE]: 'I could not safely represent every requested category or description term. Please identify the configured categories and the literal description terms to include. Categories combine with OR, description terms combine with OR, and the two lists intersect. I will not calculate a narrower selection.',
+    [INTENT_LIMITATION.CATEGORY_COVERAGE]: 'The categories I would filter by do not match the categories your question names. Please resubmit naming every configured category you want included, or ask again without naming a category to include them all. I will not calculate a narrower selection.',
+    [INTENT_LIMITATION.DESCRIPTION_COVERAGE]: 'I read a purchase-description filter that does not appear in your question. Please resubmit with the exact words you want matched, in quotes, keeping your dates and other filters. I will not calculate a narrower selection.',
     [INTENT_LIMITATION.OR_OPERATION]: 'A combined filter does not define a single category budget or a category/period comparison. I can calculate its recorded total, count, average, transaction list or complete breakdown. Which supported result would you like?',
     [INTENT_LIMITATION.MULTIPLE_CATEGORIES]: 'Please specify all configured categories for a combined total, or ask for explicit literal description terms. If a term could mean either a category or a description, which do you intend? I will not calculate a narrower selection.',
     [INTENT_LIMITATION.CATEGORY_COMPARISON]: 'A category comparison needs exactly two configured categories over one shared period. Which two categories and period should I use? Keep any description, day and amount filters in the complete question.',
