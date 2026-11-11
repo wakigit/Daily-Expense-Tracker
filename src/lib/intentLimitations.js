@@ -41,7 +41,9 @@ export function limitationClarification(reason, message = '') {
   };
   if (!isLimitationReason(reason)) return null;
   // This is the user's text, rendered as text by React, never a model value or an instruction.
-  const request = String(message).trim();
+  /* `?? ''` and not the default parameter: the default only catches
+     `undefined`, so a null message used to reach the user as the word “null”. */
+  const request = String(message ?? '').trim();
   return { type: 'clarify', reason, question: `${explanations[reason]}${request ? ` Your original request: “${request}”` : ''}`, options: [], say: '' };
 }
 /** A bounded multipart family, not all requests for a category breakdown/share. */

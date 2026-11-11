@@ -70,6 +70,33 @@ export function categoryCoverageChecks(check){
     [coversEveryConfiguredCategory({categories:ALL_IDS},CATS),coversEveryConfiguredCategory({categories:ALL_IDS.slice(1)},CATS),
      coversEveryConfiguredCategory({categories:[]},CATS)],[true,false,false]);
 
+  /* 2b. EVERY encoding of "all configured categories" is the same identity. */
+  const spacey=ALL_LABELS.map(l=>`  ${l.toUpperCase()}  `);
+  const aliases=['Food','Entertainment','Daily Needs','Shopping','Public Transport','Private Hire','Others'];
+  for(const [label,q] of [
+    ['ids only',rank({categories:[...ALL_IDS]})],
+    ['labels only (the 2026-11-11 502 shape)',rank({category_terms:[...ALL_LABELS]})],
+    ['ids and labels together',rank({categories:[...ALL_IDS],category_terms:[...ALL_LABELS]})],
+    ['labels upper-case and padded',rank({category_terms:spacey})],
+    ['labels via the small aliases',rank({category_terms:aliases})],
+    ['camelCase categoryTerms spelling',rank({categoryTerms:[...ALL_LABELS]})],
+  ]){
+    const r=intent(q,P2);
+    check(`encoding "${label}": answers`,r.ok&&r.intent.type,'analyze');
+    check(`encoding "${label}": category filter removed`,r.intent.query.categories,[]);
+    check(`encoding "${label}": labels removed`,r.intent.query.categoryTerms,[]);
+  }
+  // Real narrowings in every encoding must NOT be normalised.
+  check('encoding: a partial id list beside full labels is still a narrowing',
+    normaliseWholeLedgerCategories({categories:['food'],category_terms:[...ALL_LABELS]},CATS,P2).categories,['food']);
+  check('encoding: partial labels alone are not "all of them"',
+    normaliseWholeLedgerCategories({categories:[],category_terms:['Food & Drinks']},CATS,P2).category_terms,['Food & Drinks']);
+  check('encoding: an unknown id beside every configured one is not normalised',
+    normaliseWholeLedgerCategories({categories:[...ALL_IDS,'ghost'],category_terms:[]},CATS,P2).categories,[...ALL_IDS,'ghost']);
+  check('encoding: every encoding still does nothing once a category is named',
+    [normaliseWholeLedgerCategories({categories:[...ALL_IDS],category_terms:[]},CATS,NAMED).categories.length,
+     normaliseWholeLedgerCategories({categories:[],category_terms:[...ALL_LABELS]},CATS,NAMED).category_terms.length],[7,7]);
+
   /* 3. Scalar vs list. NOT an equivalence: a scalar `category` the user never
         named has NO coverage guard at all, and silently narrows. That gap
         predates the `categories` field and this change does not close it.
@@ -156,8 +183,12 @@ export function categoryCoverageChecks(check){
   check('wording: unresolved coordination still gets the OR-coverage text',
     intent(rank({operation:'total',groupBy:null,category:'food'}),'How much did I spend on Food & Drinks and supper?').intent.reason,
     INTENT_LIMITATION.FILTER_COVERAGE);
-  check('pinned defect: a null message renders as the word “null” (pre-existing, every limitation)',
-    limitationClarification(INTENT_LIMITATION.CATEGORY_COVERAGE,null).question.endsWith('Your original request: “null”'),true);
+  // Fixed 2026-11-11: the default parameter only caught `undefined`, so a null
+  // message used to reach the user as the literal word “null”.
+  for(const empty of [null,undefined,'','   ']){
+    check(`null fix: ${JSON.stringify(empty)} quotes no request back`,
+      limitationClarification(INTENT_LIMITATION.CATEGORY_COVERAGE,empty).question.includes('Your original request'),false);
+  }
   /* No-leak table. Echoing the user's OWN request is the design; what must
      hold is that nothing else is ever interpolated, whatever arrives. */
   const hostile=['__proto__',' ','Chicken rice','Food & Drinks','6.50',['array'],null,undefined,{},0];
@@ -167,10 +198,8 @@ export function categoryCoverageChecks(check){
     for(const value of hostile){
       const q=limitationClarification(reason,value);
       /* Mirrors limitationClarification exactly. NOTE the pinned defect: its
-         default parameter only catches `undefined`, so a null message reaches
-         the user as the literal word “null”. Pre-existing, shared by every
-         limitation string, and pinned below rather than fixed here. */
-      const request=value===undefined?'':String(value).trim();
+         `?? ''` now covers null as well as undefined. */
+      const request=String(value ?? '').trim();
       check(`no-leak ${reason} ${JSON.stringify(value)}: exactly explanation plus the quoted request`,
         q.question,`${explanation}${request?` Your original request: “${request}”`:''}`);
       check(`no-leak ${reason} ${JSON.stringify(value)}: reason is the fixed code`,q.reason,reason);

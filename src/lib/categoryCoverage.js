@@ -38,14 +38,39 @@ import { mentionedCategories } from './intentLimitations.js';
  * narrowing and must keep refusing.
  */
 
-/** Configured-category labels, including the small vocabulary aliases. */
-const termMapsToSomeCategory = (term, cats) =>
-  cats.some(c => categoryNames(c).some(name => normaliseScopeText(name) === normaliseScopeText(term)));
+/** One configured category, named by any of its accepted labels or aliases. */
+const matchesCategory = (cat, term) =>
+  categoryNames(cat).some(name => normaliseScopeText(name) === normaliseScopeText(term));
 
-/** Every configured category selected, with at least one configured category to select. */
+/** The declared category words on a query, under either spelling of the field. */
+const declaredTerms = query => {
+  const terms = query?.category_terms ?? query?.categoryTerms ?? [];
+  return Array.isArray(terms) ? terms : null;
+};
+
+/**
+ * Does this query declare EVERY configured category, however it spells it?
+ *
+ * Three encodings reach us from the model and all three mean "all of them":
+ * ids alone, labels alone, and both together. Case and spacing are handled by
+ * `normaliseScopeText`, and `categoryNames` accepts the small aliases, so
+ * "food", "FOOD", " Food  &  Drinks " and "Food and Drinks" all name `food`.
+ *
+ * A NON-empty id list that does not cover everything is a real narrowing, and
+ * then the labels beside it cannot rescue it — the ids are what filters rows.
+ */
 export function coversEveryConfiguredCategory(query, cats = []) {
-  const list = Array.isArray(query?.categories) ? query.categories : [];
-  return cats.length > 0 && list.length > 0 && cats.every(c => list.includes(c.id));
+  if (!Array.isArray(cats) || cats.length === 0) return false;
+  const ids = Array.isArray(query?.categories) ? query.categories : [];
+  const terms = declaredTerms(query);
+  if (terms === null) return false;
+  // An unmappable category word is not a faithful description of "all of them".
+  if (terms.some(t => typeof t !== 'string' || !cats.some(c => matchesCategory(c, t)))) return false;
+  if (ids.length) {
+    // Every configured id present, and nothing unknown smuggled in beside them.
+    return cats.every(c => ids.includes(c.id)) && ids.every(id => cats.some(c => c.id === id));
+  }
+  return terms.length > 0 && cats.every(c => terms.some(t => matchesCategory(c, t)));
 }
 
 /**
@@ -56,10 +81,8 @@ export function coversEveryConfiguredCategory(query, cats = []) {
 export function normaliseWholeLedgerCategories(query, cats = [], message = '') {
   if (!query || typeof query !== 'object' || Array.isArray(query)) return query;
   if (!coversEveryConfiguredCategory(query, cats)) return query;
-  // A category the user named makes the list a claim about their request.
+  // A category the user named makes the selection a claim about their request.
   if (mentionedCategories(message, cats).length > 0) return query;
-  const terms = query.category_terms ?? query.categoryTerms ?? [];
-  if (!Array.isArray(terms) || terms.some(t => typeof t !== 'string' || !termMapsToSomeCategory(t, cats))) return query;
 
   const next = { ...query, categories: [] };
   // The labels described the filter that is now gone; keeping them would leave

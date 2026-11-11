@@ -140,6 +140,21 @@ export async function serverLegChecks(ok) {
     g2a.status === 200 && g2a.type === 'analyze',
     `${g2a.status} ${g2a.type} ${g2a.reason ?? ''}`);
   ok('server leg: one stubbed provider call', g2a.calls === 1, `stub consulted ${g2a.calls} time(s)`);
+  /* The OTHER encoding the same sentence produced live on 2026-11-11, during
+     the recheck: every label, no ids. It returned 502 invalid_intent before
+     the encodings were unified. */
+  const g2labels = await serverLeg({ ...G2A, raw: { ...G2A.raw,
+    query: { ...G2A.raw.query, categories: [],
+      category_terms: ['Food & Drinks','Entertainment','Daily Needs','Shopping','Public Transport','Private Hire','Others'] } } });
+  ok('server leg: the label-only "all categories" encoding is ANSWERED, not a 502',
+    g2labels.status === 200 && g2labels.type === 'analyze',
+    `${g2labels.status} ${g2labels.type} ${g2labels.reason ?? ''}`);
+  const g2both = await serverLeg({ ...G2A, raw: { ...G2A.raw,
+    query: { ...G2A.raw.query, category_terms: ['food','ENTERTAINMENT','  Daily Needs ','Shopping','Public Transport','Private Hire','Others'] } } });
+  ok('server leg: ids plus mixed-case padded labels is ANSWERED',
+    g2both.status === 200 && g2both.type === 'analyze',
+    `${g2both.status} ${g2both.type} ${g2both.reason ?? ''}`);
+
   const g2aNamed = await serverLeg({ ...G2A, message: 'Which weekday do I spend most on Food & Drinks?' });
   ok('server leg: the same intent still refuses once a category IS named',
     g2aNamed.status === 200 && g2aNamed.type === 'clarify'
