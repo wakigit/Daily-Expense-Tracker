@@ -1,6 +1,8 @@
 # Publish prep for Steps 3–4, 11 November 2026
 
-**Nothing was pushed, merged or deployed.** This is the 19 October gate re-run end to end up to — and deliberately stopping before — the first command that changes anything remote. Branch `checkpoint/2026-10-19-wip`, source candidate `9f00ee3`. Production `main` = `wallpaper-redesign` = `6cf9345`. **0 paid provider calls.**
+**Steps 3–4 were published on 11 November 2026.** §7 steps **A–F ran and passed**; the shipped source candidate was **`eaab1a5`**, not `9f00ee3`. Step **G is not approved** and has not run, so there is still **no live interpretation evidence** for this release. **0 paid provider calls, start to finish.** The execution record is [§11](#11-execution-record--7-steps-af-11-november-2026).
+
+**§§0–10 below are the pre-publication record and are left exactly as written**, measured against `9f00ee3`. They are still accurate about the shipped code: `git diff 9f00ee3 eaab1a5` touches **only this file**, so `eaab1a5` adds no runtime change to anything §§0–6 measured. Where §§0–10 say "nothing was pushed" or "waiting for go", read §11 for what actually happened.
 
 Every claim below is labelled **ran** (I executed it and read the output), **inferred** (follows from something ran) or **unverified** (not measured here).
 
@@ -152,6 +154,10 @@ git merge-base --is-ancestor main HEAD && echo FAST-FORWARD-OK
 
 Then record, read-only, **the current Vercel Production deployment id and alias** — the rollback target. The local `vercel` CLI is **not installed** (`npx` refused rather than installing it, and installing a dependency is out of scope), so take this from the Vercel dashboard: *Project `ailodge-expensetracker` → Deployments → the one marked Production → copy its deployment URL/id*. **Do not skip this: without it, step H has no documented target.** *(unverified — I could not read it)*
 
+**Recorded 11 November 2026, supplied by you from the dashboard:** the Production deployment at `6cf9345` was
+`ailodge-expensetracker-irrj2lx0i-wei-kai.vercel.app`. **This is the Vercel rollback target.** What was and was not
+confirmed about it from outside is in [§11.1](#111-step-a--state-recorded-changed-nothing).
+
 ### Step B — publish the source (changes GitHub `main` + `wallpaper-redesign`, and triggers Vercel Production)
 
 ```bash
@@ -227,6 +233,11 @@ Based on the **current remote tip**, not an assumed old one. Normal commit, norm
 
 ### Step H — rollback, revert-based, no force-push
 
+> **Superseded for this release.** 23 commits shipped, not 22, so the enumerated list below is incomplete. The agreed
+> form is `git revert --no-commit 6cf9345..HEAD` followed by a single commit, and the Vercel path is promoting the
+> deployment id recorded in step A. Both are written out in [§11.7](#117-rollback-as-agreed-not-executed), together with
+> the pre-agreed rule for *when* to roll back. **Never force-push.**
+
 Source, if the new build is bad:
 
 ```bash
@@ -297,4 +308,143 @@ Two things I would want before "go", both cheap and both yours to decide:
 - **The Vercel Production deployment id from step A.** Without it the fastest rollback path is undocumented.
 - Optionally, **re-seeding the 19 October legacy snapshots** in the browser (~15 min, 0 paid calls) if a source-level equivalence argument is not enough for you on existing-user data.
 
-Step 4C and Step 5 were not started. No push, merge or deploy has occurred.
+Step 4C and Step 5 were not started. **The push, merge and deploy described in §7 A–F have now occurred — see §11.** Step G has not.
+
+## 11. Execution record — §7 steps A–F, 11 November 2026
+
+Executed on an explicit "go" for **steps A–F only**. **Step G is not approved and did not run.** Every figure below is **ran** unless labelled otherwise. **0 paid provider calls.**
+
+**Candidate swap, and its precondition.** The shipped candidate is `eaab1a5`, not `9f00ee3`, and the swap was gated on a check that ran first: `git diff --name-only 9f00ee3 eaab1a5` returns **exactly one path**, `docs/PUBLISH-GATE-2026-11-11.md` (+300 lines), and `git diff 9f00ee3 eaab1a5 -- src/ backend/ api/ scripts/ vercel.json package.json package-lock.json` is **empty**. So `eaab1a5` ships the `9f00ee3` runtime plus this document, and every gate in §0 still describes the shipped code.
+
+### 11.1 Step A — state recorded (changed nothing)
+
+| Ref | SHA before publication |
+| --- | --- |
+| `HEAD` (`checkpoint/2026-10-19-wip`) | `eaab1a5` |
+| `main` / `origin/main` | `6cf9345` |
+| `wallpaper-redesign` / `origin/wallpaper-redesign` | `6cf9345` |
+| `gh-pages` / `origin/gh-pages` | `5e0e67b` |
+
+`git status --porcelain` empty; `main` and `wallpaper-redesign` both ancestors of `eaab1a5` → **FAST-FORWARD-OK**; **23 commits** would ship — §2's 22 plus `eaab1a5` itself.
+
+**The rollback target, and exactly how far it was verified.** `ailodge-expensetracker-irrj2lx0i-wei-kai.vercel.app`.
+
+- The deployment-scoped URL is **not anonymously readable**: it 302s to `vercel.com/login` with the body `Protected by Vercel Authentication`. The suggested alternatives — `vercel curl` and an authorised Vercel MCP connection — were both unavailable, consistent with §7 step A's note that the CLI is not installed.
+- So the **public Production alias** was compared against a local build of `6cf9345` instead, built with `VITE_BASE=/ VITE_ASSISTANT_URL=/api` in a detached worktree. Reusing the repo's `node_modules` is legitimate here: `package-lock.json` is **byte-identical** at `6cf9345` and `eaab1a5`, and `package.json` differs only by the two added `eval:main:mock` / `eval:harness-checks` scripts.
+- `index.html`, `assets/index-CQDIeiOl.css` and `assets/index-Bw3GjMO1.js` were all **SHA-256 identical** live-vs-local, and `/api/health` returned 200. **Live Production was serving the `6cf9345` build byte-for-byte.** That also incidentally proves this project's Vite build is reproducible between Vercel's builder and this machine.
+- **Unverified, and it matters:** that the id `irrj2lx0i` *names* that Production deployment. No alias response header exposes a deployment id, so the binding rests on your dashboard reading alone. The consolation is that a wrong id most likely **fails to promote** rather than promoting wrong content, and the source-revert path in §11.7 needs no id at all.
+
+### 11.2 Step B — source published
+
+```
+git checkout wallpaper-redesign && git merge --ff-only eaab1a5 && git push origin wallpaper-redesign
+git checkout main              && git merge --ff-only eaab1a5 && git push origin main
+git checkout checkpoint/2026-10-19-wip
+```
+
+Both merges reported `Updating 6cf9345..eaab1a5  Fast-forward`, **115 files changed, 54816 insertions, 272 deletions**; both pushes reported `6cf9345..eaab1a5`. **No force, no rebase, no squash; all 23 commits preserved.**
+
+**Verified** — `git ls-remote --heads origin`: `main` = `eaab1a5`, `wallpaper-redesign` = `eaab1a5`, `gh-pages` = `5e0e67b` (untouched at this point). Local tree still clean, still on `checkpoint/2026-10-19-wip`.
+
+### 11.3 Step C — Vercel Production
+
+A local **Vercel-shape** build of `eaab1a5` (`VITE_BASE=/ VITE_ASSISTANT_URL=/api`) produces `assets/index-CaBZ-uKt.css` and `assets/index-CFbXn2jk.js`. The live Production alias serves **those filenames**, and `index.html` plus both assets are **SHA-256 identical** to that local build.
+
+That is strong external evidence Production is built from `eaab1a5` — but it is **not** a read of the dashboard's commit association, which cannot be done from here. **You confirmed in the dashboard that the new Production deployment shows commit `eaab1a5` and status Ready** before steps E and F were allowed to run. *(the dashboard half is **unverified** by me, confirmed by you)*
+
+### 11.4 Step D — Vercel live, free
+
+| Check | Result |
+| --- | --- |
+| `/api/health` | 200, `{"status":"ok","service":"daily-expense-tracker-backend","providerConfigured":true}` |
+| `/` | HTTP 200 |
+| Asset prefix | `/assets/` only |
+| CORS, `Origin: https://wakigit.github.io` | **204**, `access-control-allow-origin: https://wakigit.github.io`, `access-control-allow-methods: POST, OPTIONS`, `vary: Origin` |
+| CORS, `Origin: https://evil.example` | **405**, and **no** `access-control-allow-origin` header |
+| `localhost` / `127.0.0.1` in served JS | none |
+
+The allowlist behaves as §5 describes: the exact origin is echoed, never a wildcard, and an unknown origin gets no allow-origin header at all. `/api/health` is free and is **not** an interpretation check.
+
+### 11.5 Step E — Pages artifact built from the published source
+
+Built from the **clean checkpoint branch at `eaab1a5`** — `git checkout 9f00ee3 -- .` was deliberately **not** run, on your instruction — with both variables explicit:
+
+```
+VITE_BASE=/Daily-Expense-Tracker/ \
+VITE_ASSISTANT_URL=https://ailodge-expensetracker.vercel.app/api \
+npm run build
+```
+
+| Check | Result |
+| --- | --- |
+| Asset refs in `dist/index.html` | `/Daily-Expense-Tracker/assets/index-CqIS4O3C.js`, `…/index-CaBZ-uKt.css` |
+| Any asset ref **not** under `/Daily-Expense-Tracker/` | none |
+| `ailodge-expensetracker.vercel.app/api` baked in | **2 occurrences** in the bundle |
+| `localhost` / `127.0.0.1` anywhere in `dist/` | none |
+| Working tree after the build | still clean (`dist/` is gitignored) |
+
+**Secret scan over the artifact**, with the configured key read from `backend/.env` and **never printed** (length 164 only): exact key value **absent**; last 12 characters **absent**; `VITE_` variable *names* surviving into the bundle **none**. The credential-pattern sweep returned four `sk-…` hits — `sk-capabilities`, `sk-composite`, `sk-intro-text`, `sk-suggestions` — and all four are **false positives**, proven rather than asserted: the count of `sk-` in `dist/` is **44** and the count of `ask-` is **44**, so every single `sk-` occurrence is the tail of an `ask-` CSS class name.
+
+### 11.6 Step F — Pages published
+
+Built on the **current** remote tip `5e0e67b`, committed and pushed normally: `5e0e67b..31754c8`, **no force**.
+
+**One documented deviation from the written plan, and the reason for it.** The plan's `rsync -a --delete --exclude .git` would have **deleted `.nojekyll`**, which exists on `gh-pages` but is not Vite output. That file is Pages infrastructure, and removing it would have handed the live site to Jekyll — a change to production nobody asked for. The rsync was run with `--exclude .nojekyll` added, which under `--delete` also protects it on the receiving side. Stale assets were still removed as intended. **This is the only departure from §7 as written, and it was caught by the plan's own "review before committing" step.**
+
+Pre-commit review, read before anything was committed:
+
+```
+ D assets/index-CQDIeiOl.css      ?? assets/index-CaBZ-uKt.css
+ D assets/index-FRl_6PKm.js       ?? assets/index-CqIS4O3C.js
+ M index.html
+```
+
+The `index.html` diff is **exactly two lines** — the script `src` and stylesheet `href` swapped to the new hashes. Nothing else in the page changed. Resulting tree: `.nojekyll`, `assets/index-CaBZ-uKt.css`, `assets/index-CqIS4O3C.js`, `index.html`.
+
+**Live Pages verification:**
+
+| Check | Result |
+| --- | --- |
+| GitHub Pages build (API) | `status: built`, `commit: 31754c8`, `error: null`, 20.4 s |
+| `https://wakigit.github.io/Daily-Expense-Tracker/` | HTTP 200, serving `index-CqIS4O3C.js` / `index-CaBZ-uKt.css` |
+| `index.html`, both assets, served vs local `dist/` | **SHA-256 identical, all three** |
+| `.nojekyll` | HTTP 200 — preserved and live |
+| Ask endpoint in the **live** bundle | **3 occurrences** of `https://ailodge-expensetracker.vercel.app/api` |
+| `localhost` / `127.0.0.1` in the live bundle | none |
+| Stale `index-FRl_6PKm.js`, `index-CQDIeiOl.css` | **HTTP 404** — gone |
+
+Final remote state: `main` = `wallpaper-redesign` = **`eaab1a5`**, `gh-pages` = **`31754c8`**.
+
+**Worth recording for next time:** the first read of the Pages URL returned the *old* assets even though the build had succeeded — `cache-control: max-age=600` on the CDN. A cache-busted request showed the new build immediately, and the plain URL followed. **A stale first read is not a failed deploy**; check the Pages build API before concluding anything.
+
+*(Minor, unexplained, harmless: Vercel's `/api/health` self-reported timestamps around `05:2x` UTC while GitHub's Pages build API reported `07:11` UTC for the same session. Gaps between my own successive calls matched on both sides, so this reads as clock skew in one service's reporting, not as a cached or stale response — `age: 0` and `uptimeSeconds: 0` on each health call. Noted rather than chased.)*
+
+### 11.7 Rollback, as agreed (not executed)
+
+**When to roll back** — pre-agreed, and deliberately narrow: **a wrong figure, a silently dropped filter, or a crash/500.** A **clarification on a supported plan question is the known limit** documented in §9.3, **not** a rollback trigger.
+
+**Vercel** — promote the deployment id recorded in §11.1 back to Production. A platform action, not a history rewrite, and the fastest path.
+
+**Source** — one revert commit covering all 23, replacing §7 step H's stale enumeration:
+
+```
+git checkout main
+git revert --no-commit 6cf9345..HEAD
+git commit -m "Revert Steps 3-4 publication: back to the 6cf9345 behaviour"
+git push origin main
+git checkout wallpaper-redesign && git merge --ff-only main && git push origin wallpaper-redesign
+```
+
+**Pages** — as §7 step H: worktree on the current remote tip, `git revert --no-edit HEAD`, normal push.
+
+**Never force-push. Never reset a branch to an assumed old tip.** *(unverified — no revert was rehearsed; if one conflicts, stop and resolve deliberately)*
+
+### 11.8 What this release still has no evidence for
+
+Publication does not close §9, and nothing above should be read as if it did.
+
+1. **No live interpretation evidence exists for this release.** Steps A–F are a build-and-serve proof: bytes, endpoints, CORS, headers. **Not one question was asked of the live site.** §6's 22/22 is a *mock* path on a local server. Step G is the only thing that would change this, and it is **not approved**.
+2. The **six failing MAIN questions** (M46, M48.2, M65, M66, M67, M76) shipped as they were. So did the **stale 502 recordings** on M66/M67/M76.
+3. The plan feature's **field-identity refusals** shipped as documented in §9.3 — worst case a refusal with no figure, never a wrong number.
+4. The **4096-token plan ceiling** remains configured, not measured.
+5. Existing-user data rests on §4's **source-level equivalence argument**. The 19 October legacy snapshots were **not** re-seeded, here or before publication.
