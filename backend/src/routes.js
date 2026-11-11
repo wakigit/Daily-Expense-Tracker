@@ -75,7 +75,13 @@ export async function handleIntent(rawBody, { request = requestIntent } = {}) {
     if (!checked.ok) {
       return { status: 502, body: { error: 'invalid_intent', detail: intentDiagnostic(checked.error) } };
     }
-    return { status: 200, body: { intent: checked.intent } };
+    /* A refused bounded plan says one thing to the user and keeps its reason to
+       itself. That is right for the reply and was wrong for the server, which
+       kept no record of its own decision. The code is a fixed identifier from
+       `PLAN_REASONS` — no question text, category label, description, amount or
+       ledger row — and it rides beside the intent, which is unchanged. */
+    if (checked.diagnostic) console.info('[plan diagnostic]', JSON.stringify(checked.diagnostic));
+    return { status: 200, body: { intent: checked.intent, ...(checked.diagnostic?{diagnostic:checked.diagnostic}:{}) } };
   } catch (err) {
     return providerFailure(err);
   }

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validatePlan,validatePlanIntent,buildPlanSchema,buildPlanIntentSchema,planQuery,planRef,planScopeContains} from '../../src/lib/planContract.js';
+import {validatePlan,validatePlanIntent,buildPlanSchema,buildPlanIntentSchema,planQuery,planRef,planScopeContains,PLAN_REASONS,planDiagnostic} from '../../src/lib/planContract.js';
+import {INTENT_LIMITATION,limitationClarification} from '../../src/lib/intentLimitations.js';
 import {recognizePlanRequest,auditPlanRequest,guardPlanResponse,isCompleteBreakdownAnswer} from '../../src/lib/planRequest.js';
 import {validateIntent} from '../../src/lib/intent.js';
 import {buildSchema} from './provider.js';
@@ -204,4 +205,58 @@ test('an unparseable multipart share question still clarifies rather than answer
  assert.equal(recognizePlanRequest(message,SPLIT_CTX).ok,false);
  const narrowed=validateIntent(analyzeIntent(splitQuery({operation:'largest',groupBy:null})),{...SPLIT_CTX,message});
  assert.equal(narrowed.intent.type,'clarify');
+});
+
+/* A refused plan keeps its reason to itself in the REPLY and records it beside
+   it, so the server has evidence of its own decision. The value is a fixed
+   identifier from a closed list; nothing a caller or a model supplies can
+   become one. New fictional vocabulary below. */
+const DIAG_CATS=[{id:'ink',label:'Ink & Paper'},{id:'tram',label:'Tram Pass'}];
+const DIAG_CTX={cats:DIAG_CATS,today:'2027-06-09'};
+const DIAG_MESSAGE='what share of my last 30 days spending was at "Quill corner"?';
+const diagStep=(patch={})=>planQuery({period:'last_days',dayCount:30,...patch});
+const diagIntent=plan=>({type:'plan',plan,say:null,query:null,expense:null,filter:null,scope:null,question:null,options:null});
+const diagPlan=(q1,q2,derived)=>({version:1,steps:[{id:'q1',query:q1},{id:'q2',query:q2}],
+ derived:derived??[{id:'d1',operation:'percent_of',numerator:planRef('q2'),denominator:planRef('q1')}]});
+
+test('planDiagnostic only ever returns a code from the closed list',()=>{
+ for(const reason of PLAN_REASONS) assert.equal(planDiagnostic(reason),reason);
+ /* Anything else is information lost, never information leaked. */
+ for(const hostile of ['Quill corner','plan_','1234','plan_request_coverage ',
+   'Ink & Paper',null,undefined,42,{},['plan_request_coverage'],'__proto__'])
+  assert.equal(planDiagnostic(hostile),null,JSON.stringify(hostile));
+ assert.equal(new Set(PLAN_REASONS).size,PLAN_REASONS.length);
+ assert.ok(PLAN_REASONS.every(r=>/^plan_[a-z_]+$/.test(r)));
+ assert.equal(PLAN_REASONS.includes('plan_complete_request_required'),false,
+  'the user-facing limitation reason is not an internal diagnostic code');
+});
+
+test('a refused plan reports its specific reason beside an unchanged clarification',()=>{
+ const expected=limitationClarification(INTENT_LIMITATION.PLAN,DIAG_MESSAGE);
+ for(const [code,plan] of [
+   ['plan_request_coverage',diagPlan(diagStep(),diagStep({descriptionTerms:['Quill']}))],
+   ['plan_common_range',diagPlan(diagStep(),planQuery({period:'range',start:'2027-05-01',end:'2027-05-31',descriptionTerms:['Quill corner']}))],
+   ['plan_redundant_step',diagPlan(diagStep({descriptionTerms:['Quill corner']}),diagStep({description:'Quill corner'}))],
+   ['plan_derived_operation',diagPlan(diagStep(),diagStep({descriptionTerms:['Quill corner']}),
+     [{id:'d1',operation:'sum',left:planRef('q1'),right:planRef('q2')}])],
+   ['plan_share_scope',diagPlan(diagStep({descriptionTerms:['Quill corner']}),diagStep({category:'ink',category_terms:['Ink & Paper']}))],
+ ]) {
+  const checked=validateIntent(diagIntent(plan),{...DIAG_CTX,message:DIAG_MESSAGE});
+  assert.equal(checked.ok,true,code);
+  assert.deepEqual(checked.intent,expected,`${code} must not change one character of the clarification`);
+  assert.deepEqual(checked.diagnostic,{plan:code},code);
+ }
+ /* A plan the contract rejects as INVALID rather than clarifying is still a
+    502 with no semantic clarification and so no plan diagnostic. */
+ const structural=validateIntent(diagIntent({version:1,steps:[{id:'q1',query:diagStep()}],derived:[]}),{...DIAG_CTX,message:DIAG_MESSAGE});
+ assert.equal(structural.ok,false);
+ assert.equal(structural.error.code,'intent_bad_field');
+ assert.equal(structural.diagnostic,undefined);
+ /* An accepted plan carries none, and neither does a non-plan refusal. */
+ const accepted=validateIntent(diagIntent(diagPlan(diagStep(),diagStep({descriptionTerms:['Quill corner']}))),{...DIAG_CTX,message:DIAG_MESSAGE});
+ assert.equal(accepted.intent.type,'plan');
+ assert.equal(accepted.diagnostic,undefined);
+ const oneSided=validateIntent({type:'analyze',query:planQuery({period:'last_days',dayCount:30}),say:null,plan:null,expense:null,filter:null,scope:null,question:null,options:null},{...DIAG_CTX,message:DIAG_MESSAGE});
+ assert.equal(oneSided.intent.type,'clarify');
+ assert.equal(oneSided.diagnostic,undefined);
 });

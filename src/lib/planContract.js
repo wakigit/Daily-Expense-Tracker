@@ -16,6 +16,37 @@ export function jsonBytes(value) {
   try { const s=JSON.stringify(value); return typeof s==='string'?new TextEncoder().encode(s).length:Infinity; }
   catch { return Infinity; }
 }
+/**
+ * Every reason `planFailure` is called with, as a CLOSED list.
+ *
+ * A refused plan tells the user one thing — the request cannot be answered
+ * safely — and that is deliberate: a refusal must not leak which internal gate
+ * fired. But the SERVER kept no record of its own decision either, and that
+ * cost a full bisect to recover one bit of information the route already had
+ * (see docs/ASSISTANT-STEP4C-PLAN-CONFIRMATION-DESIGN.md §9.1). The reason
+ * code travels beside the response instead, never inside the intent.
+ *
+ * An allowlist rather than a pass-through, for the same reason
+ * `intentDiagnostic` uses one: the value is only ever a fixed identifier
+ * chosen in this file. No model output, question text, description, amount or
+ * ledger row can reach it, whatever a caller passes.
+ *
+ * Adding a reason to `planFailure` without adding it here makes the diagnostic
+ * `null` — information is lost, nothing leaks, and `plan.test.mjs` fails.
+ */
+export const PLAN_REASONS = Object.freeze([
+  'plan_request_unsupported', 'plan_request_coverage',
+  'plan_intent_structure', 'plan_structure', 'plan_context', 'plan_result_limit',
+  'plan_instruction_limit', 'plan_reference_date', 'plan_step_id',
+  'plan_redundant_step', 'plan_range', 'plan_common_range',
+  'plan_query_fields', 'plan_query_invalid', 'plan_operation_unsupported',
+  'plan_category_metadata', 'plan_derived_id', 'plan_derived_operation',
+  'plan_reference', 'plan_redundant_derived', 'plan_share_scope',
+]);
+
+/** A fixed code from the list above, or null. Never a caller-supplied string. */
+export const planDiagnostic = reason => PLAN_REASONS.includes(reason) ? reason : null;
+
 export function planFailure(reason, message='', kind='clarify', field=null) {
   return {ok:false,kind,reason,...(field?{field}:{}),question:
     `I cannot safely answer this complete multi-part request. Please give the requested totals, one common period, and the exact share or subtraction to calculate. Nothing has been calculated.${message?` Your original request: “${message}”`:''}`};

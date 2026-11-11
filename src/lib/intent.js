@@ -1,4 +1,4 @@
-import { validatePlanIntent } from './planContract.js';
+import { validatePlanIntent, planDiagnostic } from './planContract.js';
 import { auditPlanRequest, recognizePlanRequest, isCompleteBreakdownAnswer } from './planRequest.js';
 import { requiresTwoSidedAnswer } from './comparisonRequest.js';
 import { descriptionOrRequest, unresolvedCoordination } from './explicitFilterRequest.js';
@@ -94,12 +94,19 @@ export function validateIntent(raw, { cats = [], message = '', today = '' } = {}
      sent five honest replies down the offline fallback instead. */
 
   if (type === 'plan') {
+    /* `diagnostic` is a SIBLING of the intent, never a field inside it. The
+       intent is revalidated on arrival and a recognised plan request rejects
+       any surplus key (see the closed-key check below), so widening the intent
+       would turn a clarification into a client-side validation failure. The
+       user-facing clarification is byte-identical with or without it. */
+    const refused = reason => ({ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message),
+      ...(planDiagnostic(reason)?{diagnostic:{plan:planDiagnostic(reason)}}:{})});
     const checked = validatePlanIntent(raw, {cats,message,today});
     if (!checked.ok) return checked.kind === 'clarify'
-      ? {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)}
+      ? refused(checked.reason)
       : bad(INTENT_ERR.BAD_FIELD,{field:'plan'});
     const audit = auditPlanRequest(checked.intent.plan,{cats,message,today});
-    return audit.ok ? checked : {ok:true,intent:limitationClarification(INTENT_LIMITATION.PLAN,message)};
+    return audit.ok ? checked : refused(audit.reason);
   }
   // A null sibling is compatible with old captures; never discard an active plan.
   if (raw.plan != null) return bad(INTENT_ERR.BAD_FIELD,{field:'plan'});

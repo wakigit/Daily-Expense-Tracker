@@ -105,6 +105,9 @@ async function serverLeg({ message, today, cats, expenseCount = 0, raw }) {
     field: result.body.detail?.field ?? null,
     hasPlan: Boolean(result.body.intent?.plan),
     hasQuery: Object.hasOwn(result.body.intent ?? {}, 'query'),
+    diagnostic: result.body.diagnostic?.plan ?? null,
+    question: result.body.intent?.question ?? null,
+    intentKeys: Object.keys(result.body.intent ?? {}).sort().join(','),
   };
 }
 
@@ -138,25 +141,48 @@ export async function serverLegChecks(ok) {
       got.status === 200 && got.type === 'plan', `${got.status} ${got.type} ${got.reason ?? ''}`);
   }
 
-  /* Refusals that must stay refusals. Each is a plan the audit cannot match
-     to the recognised request, and each must clarify the WHOLE request with
-     the one typed reason and no query. */
-  for (const [label, plan] of [
-    ['a model-resolved explicit range instead of the requested relative window',
+  /* Refusals that must stay refusals. Each is a plan the audit or the contract
+     cannot match to the recognised request, and each must clarify the WHOLE
+     request with the one typed reason and no query — while the response
+     carries the SPECIFIC code beside the intent, so the server has a record of
+     its own decision. The expected codes differ, which is the point: a single
+     collapsed reason is what made the 12:21Z refusal undiagnosable. */
+  const refusals = [
+    ['a model-resolved explicit range instead of the requested relative window', 'plan_request_coverage',
       twoStep(planStep({ period: 'range', start: '2027-02-18', end: '2027-04-18' }),
         planStep({ period: 'range', start: '2027-02-18', end: '2027-04-18', descriptionTerms: [DEPOT] }))],
-    ['the steps in the opposite order',
+    ['the steps in the opposite order', 'plan_request_coverage',
       twoStep(sixty({ descriptionTerms: [DEPOT] }), sixty(), percentOf('q1', 'q2'))],
-    ['a truncated literal term', twoStep(sixty(), sixty({ descriptionTerms: ['Inkwell'] }))],
-    ['the merchant mapped onto a category', twoStep(sixty(), sixty({ category: 'stationery', category_terms: ['Stationery'] }))],
-    ['a day filter the question never asked for', twoStep(sixty(), sixty({ descriptionTerms: [DEPOT], day: 'weekday' }))],
-    ['the denominator narrowed by the same merchant', twoStep(sixty({ descriptionTerms: [DEPOT] }), sixty({ descriptionTerms: [DEPOT] }))],
-  ]) {
+    ['a truncated literal term', 'plan_request_coverage', twoStep(sixty(), sixty({ descriptionTerms: ['Inkwell'] }))],
+    ['the merchant mapped onto a category', 'plan_request_coverage', twoStep(sixty(), sixty({ category: 'stationery', category_terms: ['Stationery'] }))],
+    ['a day filter the question never asked for', 'plan_request_coverage', twoStep(sixty(), sixty({ descriptionTerms: [DEPOT], day: 'weekday' }))],
+    ['the same step twice under two encodings', 'plan_redundant_step',
+      twoStep(sixty({ descriptionTerms: [DEPOT] }), sixty({ description: DEPOT }))],
+    ['two steps over genuinely different windows', 'plan_common_range',
+      twoStep(sixty(), planStep({ period: 'range', start: '2027-03-01', end: '2027-03-31', descriptionTerms: [DEPOT] }))],
+    ['an unsupported derived operation', 'plan_derived_operation',
+      twoStep(sixty(), sixty({ descriptionTerms: [DEPOT] }),
+        [{ id: 'd1', operation: 'sum', left: { step: 'q1', field: 'totalCents' }, right: { step: 'q2', field: 'totalCents' } }])],
+  ];
+  /** The exact clarification a refused plan has always produced. Pinned so a
+      diagnostic change cannot alter one character of what the user reads. */
+  const USER_TEXT = 'I cannot safely answer every part together. Please give the requested totals, one common period, and the exact share or ordered subtraction. Only total queries with difference or percentage share are supported together. Nothing has been calculated. Your original request: \u201c' + SHARE + '\u201d';
+  for (const [label, code, plan] of refusals) {
     const got = await serverLeg({ message: SHARE, today: TODAY, cats: CATS, expenseCount: 4, raw: planIntent(plan) });
     ok(`server leg: refuses ${label}`,
       got.status === 200 && got.type === 'clarify' && got.reason === 'plan_complete_request_required' && !got.hasPlan && !got.hasQuery,
       `${got.status} ${got.type} ${got.reason ?? ''}`);
+    ok(`server leg: ${label} is reported as ${code}`, got.diagnostic === code, `got ${got.diagnostic}`);
+    ok(`server leg: ${label} leaves the user-facing clarification byte-identical`,
+      got.question === USER_TEXT && got.intentKeys === 'options,question,reason,say,type',
+      `keys [${got.intentKeys}]`);
+    ok(`server leg: ${label} discloses nothing but the code`,
+      !/[0-9]/.test(got.diagnostic ?? '') && (got.diagnostic ?? '').startsWith('plan_')
+      && !(got.diagnostic ?? '').includes(DEPOT) && !(got.diagnostic ?? '').toLowerCase().includes('inkwell'),
+      `diagnostic ${JSON.stringify(got.diagnostic)}`);
   }
+  /* An accepted plan carries no diagnostic at all. */
+  ok('server leg: an accepted plan carries no diagnostic', captured.diagnostic === null, `got ${captured.diagnostic}`);
 
   /* The anti-partial guard, through the server leg, both ways. */
   const oneSided = await serverLeg({ message: SHARE, today: TODAY, cats: CATS, expenseCount: 4,
@@ -165,6 +191,11 @@ export async function serverLegChecks(ok) {
     oneSided.status === 200 && oneSided.type === 'clarify'
     && oneSided.reason === 'plan_complete_request_required' && !oneSided.hasQuery,
     `${oneSided.status} ${oneSided.type} ${oneSided.reason ?? ''}`);
+  /* Deliberate and recorded: the anti-partial guard is not the plan branch, so
+     it emits no plan diagnostic. The model returning a non-plan type for a
+     recognised plan request stays one of the collapsed causes. */
+  ok('server leg: the anti-partial guard emits no plan diagnostic, as documented',
+    oneSided.diagnostic === null, `got ${oneSided.diagnostic}`);
 
   const unparseable = await serverLeg({ message: UNPARSEABLE, today: TODAY, cats: CATS, expenseCount: 4,
     raw: analyzeIntent(analyzeQuery({ operation: 'largest', groupBy: null })) });
