@@ -1,7 +1,7 @@
 import {
-  buildBackup, backupJson, deliveryMethod,
-  exportableExpenses, backupFilename,
-  SCHEMA_VERSION, BACKUP_FORMAT,
+  buildBackup, backupJson, buildExpensesCsv, csvCell, deliveryMethod,
+  exportableExpenses, backupFilename, csvFilename,
+  BOM, CSV_COLUMNS, SCHEMA_VERSION, BACKUP_FORMAT,
 } from '../src/lib/dataExport';
 import { SAMPLE_PREFIX } from '../src/lib/sampleData';
 
@@ -41,6 +41,7 @@ const STATE = {
 };
 
 const NOW = new Date(2026, 10, 18, 7, 35);
+const header = CSV_COLUMNS.join(',');
 
 export function dataExportChecks(logic) {
   /* ── Envelope ──────────────────────────────────────────────── */
@@ -65,6 +66,7 @@ export function dataExportChecks(logic) {
     expenses: [...ROWS, { id: `${SAMPLE_PREFIX}x1`, date: '2026-11-09', category: 'food', description: 'Sample lunch', amount: 9.9, notes: '' }],
   };
   logic('export: sample rows are excluded from the backup', buildBackup(withSample, { now: NOW }).data.expenses.length, 3);
+  logic('export: sample rows are excluded from the CSV', buildExpensesCsv(withSample.expenses, CATS).includes('Sample lunch'), false);
   logic('export: real rows survive alongside a sample row', exportableExpenses(withSample.expenses).map((e) => e.id), ['e-1', 17, 'e-3']);
 
   /* ── Fidelity ──────────────────────────────────────────────── */
@@ -80,7 +82,59 @@ export function dataExportChecks(logic) {
 
   /* ── Filenames ─────────────────────────────────────────────── */
   logic('export: backup filename uses local date and time', backupFilename(NOW), 'tallyai-backup-2026-11-18-0735.json');
+  logic('export: csv filename uses local date and time', csvFilename(NOW), 'tallyai-expenses-2026-11-18-0735.csv');
   logic('export: filename pads single-digit parts', backupFilename(new Date(2026, 0, 5, 9, 4)), 'tallyai-backup-2026-01-05-0904.json');
+
+  /* ── CSV bytes ─────────────────────────────────────────────── */
+  logic('csv: header columns', header, 'id,date,category_id,category_label,description,amount,notes');
+  const csv = buildExpensesCsv(ROWS, CATS);
+  logic('csv: starts with the UTF-8 BOM', csv.startsWith(BOM), true);
+  logic('csv: the BOM is U+FEFF', csv.charCodeAt(0), 0xfeff);
+  logic('csv: exact bytes for the fictional ledger', csv,
+    `${BOM}${header}\r\n`
+    + 'e-1,2026-11-02,food,Food & Drinks,Kopi and toast,4.80,\r\n'
+    + '17,2026-11-04,pub,Public Transport,MRT top up,12.00,legacy numeric id\r\n'
+    + 'e-3,2026-11-07,misc,Others,Stationery,5.25,\r\n');
+  logic('csv: lines end CRLF, never bare LF', /[^\r]\n/.test(csv), false);
+  logic('csv: ends with a trailing CRLF', csv.endsWith('\r\n'), true);
+  logic('csv: an empty ledger is header only', buildExpensesCsv([], CATS), `${BOM}${header}\r\n`);
+  logic('csv: a category with no local label exports an empty label',
+    buildExpensesCsv([{ ...ROWS[0], category: 'gone' }], CATS),
+    `${BOM}${header}\r\ne-1,2026-11-02,gone,,Kopi and toast,4.80,\r\n`);
+  logic('csv: amount always carries two decimals', buildExpensesCsv([{ ...ROWS[0], amount: 12 }], CATS).includes(',12.00,'), true);
+
+  /* ── Escaping ──────────────────────────────────────────────── */
+  for (const [name, text, want] of [
+    ['comma', 'Kopi, teh and toast', '"Kopi, teh and toast"'],
+    ['double quote', 'He said "kopi"', '"He said ""kopi"""'],
+    ['newline', 'line one\nline two', '"line one\nline two"'],
+    ['CRLF', 'line one\r\nline two', '"line one\r\nline two"'],
+    ['CR in the middle is structure, not injection', 'one\rtwo', '"one\rtwo"'],
+    ['emoji', 'Kopi 🧋 run', 'Kopi 🧋 run'],
+    ['Chinese', '鸡饭', '鸡饭'],
+    ['leading space', ' kopi', ' kopi'],
+    ['plain', 'Kopi', 'Kopi'],
+    ['empty', '', ''],
+  ]) logic(`csv escaping: ${name}`, csvCell(text), want);
+
+  logic('csv escaping: null and undefined become empty', [csvCell(null), csvCell(undefined)], ['', '']);
+
+  /* ── Formula injection ─────────────────────────────────────── */
+  for (const [name, text, want] of [
+    ['equals', '=1+1', "'=1+1"],
+    ['plus', '+1', "'+1"],
+    ['minus', '-1', "'-1"],
+    ['at', '@SUM(A1)', "'@SUM(A1)"],
+    ['tab prefixed', '\tcmd', "'\tcmd"],
+    ['CR prefixed', '\r=1+1', "\"'\r=1+1\""],
+    ['equals with a comma, quoted AND prefixed', '=1+1,2', "\"'=1+1,2\""],
+    ['DDE style', '=cmd|\' /C calc\'!A0', "'=cmd|' /C calc'!A0"],
+    ['an inner equals is left alone', 'kopi =1+1', 'kopi =1+1'],
+  ]) logic(`csv injection: ${name}`, csvCell(text), want);
+
+  logic('csv injection: a formula in a real row lands quoted and prefixed',
+    buildExpensesCsv([{ id: 'x', date: '2026-11-02', category: 'food', description: '=1+1,2', amount: 1, notes: '' }], CATS),
+    `${BOM}${header}\r\nx,2026-11-02,food,Food & Drinks,"'=1+1,2",1.00,\r\n`);
 
   /* ── Delivery ──────────────────────────────────────────────── */
   logic('delivery: normal browser downloads', deliveryMethod({ standalone: false, canShareFiles: false }), 'download');

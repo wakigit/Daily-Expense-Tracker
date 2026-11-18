@@ -184,8 +184,9 @@ run('SettingsView data card', <SettingsView
   cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
   delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
   newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />,
-  'Your data', 'Export backup (JSON)', 'set--data',
+  'Your data', 'Export backup (JSON)', 'Export expenses (CSV)', 'set--data',
   'aria-label="Export a full backup as a JSON file"',
+  'aria-label="Export your expenses as a CSV file for a spreadsheet"',
   'Sample data is never included');
 run('SettingsView export note is neutral', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}

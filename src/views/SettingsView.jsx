@@ -269,6 +269,7 @@ export default function SettingsView({
         <p className="set-note">
           <strong>Backup (JSON)</strong> is everything — transactions, categories, budgets and
           settings — in one file you can keep or move to another phone.{' '}
+          <strong>Expenses (CSV)</strong> is your transactions only, for Excel or Google Sheets.
           Sample data is never included.
         </p>
         <div className="set-data-actions">
@@ -276,6 +277,11 @@ export default function SettingsView({
             aria-label="Export a full backup as a JSON file"
             onClick={() => dataState.onBackup()}>
             Export backup (JSON)
+          </button>
+          <button type="button" className="btn-ghost"
+            aria-label="Export your expenses as a CSV file for a spreadsheet"
+            onClick={() => dataState.onCsv()}>
+            Export expenses (CSV)
           </button>
         </div>
         {dataState.note && <p className="set-note" role="status">{dataState.note}</p>}

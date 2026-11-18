@@ -11,11 +11,17 @@
  * docs/EXPORT-IMPORT-PLAN.md §R1 for why importing needs a different seam.
  */
 
+import { toCents } from './money.js';
 import { isSampleRow } from './sampleData.js';
 
 /** Bumped only when the envelope's shape changes. An importer refuses a higher one. */
 export const SCHEMA_VERSION = 1;
 export const BACKUP_FORMAT = 'tallyai-backup';
+
+/** Excel on Windows reads a CSV as a legacy codepage without this. */
+export const BOM = '﻿';
+
+export const CSV_COLUMNS = ['id', 'date', 'category_id', 'category_label', 'description', 'amount', 'notes'];
 
 /* ── Filenames ─────────────────────────────────────────────────── */
 
@@ -30,6 +36,7 @@ function stamp(now = new Date()) {
 }
 
 export const backupFilename = (now = new Date()) => `tallyai-backup-${stamp(now)}.json`;
+export const csvFilename = (now = new Date()) => `tallyai-expenses-${stamp(now)}.csv`;
 
 /* ── What never leaves ─────────────────────────────────────────── */
 
@@ -73,6 +80,54 @@ export function buildBackup(state = {}, { now = new Date() } = {}) {
 }
 
 export const backupJson = (state, opts) => JSON.stringify(buildBackup(state, opts), null, 2);
+
+/* ── CSV ───────────────────────────────────────────────────────── */
+
+/**
+ * A cell a spreadsheet will treat as text, whatever is in it.
+ *
+ * Two separate problems, in this order:
+ *
+ * 1. Formula injection. A description is typed on a phone and opened in Excel
+ *    on someone's laptop; `=1+1` or `@SUM(A1)` would be evaluated there, and
+ *    the same trick reaches external data and shell functions. A leading
+ *    apostrophe makes the cell literal. Tab and CR are included because Excel
+ *    strips leading whitespace and can re-expose the character behind it.
+ * 2. CSV structure. Commas, quotes and newlines have to be quoted or the row
+ *    splits in the wrong places. Descriptions are free text, so they will.
+ *
+ * The apostrophe goes on BEFORE quoting, so it is inside the quoted field.
+ */
+export function csvCell(value) {
+  let text = value === null || value === undefined ? '' : String(value);
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  if (/[",\r\n]/.test(text)) text = `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+/**
+ * Expenses only, for a spreadsheet.
+ *
+ * The amount is written from the stored number at two decimals, never
+ * reformatted from display text and never re-rounded: the stored value is
+ * already snapped to a whole cent on entry, and going through cents here and
+ * back would be a second rounding of an already-rounded number.
+ *
+ * CRLF line endings because that is what Excel expects.
+ */
+export function buildExpensesCsv(expenses = [], cats = []) {
+  const labelOf = new Map(cats.map((c) => [c.id, c.label]));
+  const rows = exportableExpenses(expenses).map((e) => [
+    e.id,
+    e.date,
+    e.category,
+    labelOf.get(e.category) ?? '',
+    e.description,
+    (toCents(e.amount) / 100).toFixed(2),
+    e.notes ?? '',
+  ]);
+  return BOM + [CSV_COLUMNS, ...rows].map((cells) => cells.map(csvCell).join(',')).join('\r\n') + '\r\n';
+}
 
 /* ── How the file reaches the user ─────────────────────────────── */
 

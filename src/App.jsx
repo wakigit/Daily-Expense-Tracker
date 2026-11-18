@@ -19,7 +19,7 @@ import { markOutdatedAnswers, planIsStale } from './lib/answerEvidence';
 import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
 import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
-import { backupJson, backupFilename } from './lib/dataExport';
+import { backupJson, buildExpensesCsv, backupFilename, csvFilename } from './lib/dataExport';
 import { deliverFile } from './lib/deliverFile';
 import { ymLabel as sampleYmLabel } from './lib/format';
 
@@ -541,10 +541,13 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
 
   // Export builds the file from current state and hands it to the device. No
   // success claim, and a device that refuses falls back to copyable text.
-  const runExport = async () => {
-    const text = backupJson({ expenses, cats, budgets, appName, theme: themeId, motion, roastPrefs });
-    const name = backupFilename();
-    const mime = 'application/json';
+  const runExport = async (kind) => {
+    const isCsv = kind === 'csv';
+    const text = isCsv
+      ? buildExpensesCsv(expenses, cats)
+      : backupJson({ expenses, cats, budgets, appName, theme: themeId, motion, roastPrefs });
+    const name = isCsv ? csvFilename() : backupFilename();
+    const mime = isCsv ? 'text/csv;charset=utf-8' : 'application/json';
     setExportFallback(null);
     const out = await deliverFile({ name, text, mime });
     if (out.method === 'text') { setExportFallback({ text: out.text }); setExportNote(''); return; }
@@ -726,7 +729,8 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
             data={{
               note: exportNote,
               fallback: exportFallback,
-              onBackup: () => runExport(),
+              onBackup: () => runExport('json'),
+              onCsv: () => runExport('csv'),
               onDismiss: () => { setExportFallback(null); setExportNote(''); },
             }}
             sample={{
