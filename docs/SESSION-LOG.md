@@ -11,3 +11,4 @@ One line per Claude Code session, newest last: date | task | result | commits.
 2026-11-18 | Docs-only publish of the Step 6 work to main | main = wallpaper-redesign = 0644ebe, fast-forward; Production bundle identical on 20/20 polls; gh-pages untouched | 0644ebe + this docs: status commit
 2026-11-18 | Export/import plan (plan only, no code) | docs/EXPORT-IMPORT-PLAN.md written; A1-A6 all kept; one import-validator correction; 8 open decisions | this docs commit
 2026-11-18 | Export built (JSON backup + expenses CSV), no import | smoke 2408 -> 2473; full gate green; untested on a real phone | b1ec907, 0877efb, d643d0e + this docs: status commit
+2026-11-18 | Import logic (parser, planner, commit with rollback), no UI | smoke 2473 -> 2602; full gate green; import not reachable yet | be98a18, d79a83e + this docs: status commit
