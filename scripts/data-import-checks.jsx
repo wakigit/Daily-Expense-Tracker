@@ -93,6 +93,41 @@ export function dataImportChecks(logic) {
   logic('re-import: mode is merge once the device has rows', again.mode, 'merge');
   logic('re-import: the ledger is unchanged', again.next.expenses, device2.expenses);
 
+  /* ── A pre-5-October ledger survives a round trip untouched ── */
+
+  /* Shaped like data the app stored before the action layer (b6d72d6):
+     numeric Date.now() ids, an unbounded untrimmed description, an amount
+     parseFloat left at three decimals, a zero amount the min="0" input
+     allowed, and notes with a newline. None of it would pass today's Add-form
+     rules, and all of it is in real ledgers. */
+  const LEGACY = [
+    { id: 1759636800000, date: '2026-10-05', category: 'food', description: 'x'.repeat(120), amount: 4.567, notes: '' },
+    { id: 1759636800001, date: '2026-10-06', category: 'food', description: '  Kopi   and    toast  ', amount: 2.5, notes: 'line one\nline two' },
+    { id: 1759636800002, date: '2026-10-07', category: 'pub', description: 'Free ride', amount: 0, notes: '' },
+    { id: 1759636800003, date: '2026-10-08', category: 'food', description: 'Kopi', amount: 1.4, notes: '' },
+  ];
+  const legacyBackup = buildBackup({ expenses: LEGACY, cats: CATS, budgets: { food: 150 }, appName: 'TallyAI', theme: 'forest', motion: 'auto', roastPrefs: {} });
+  const legacyIn = planImport(DEVICE(), legacyBackup);
+  logic('legacy: nothing is rejected', [legacyIn.invalid.length, legacyIn.new], [0, 4]);
+  logic('legacy: every row is stored byte-identical to the export', legacyIn.next.expenses, LEGACY);
+  logic('legacy: the 120-character description is not truncated',
+    legacyIn.next.expenses[0].description.length, 120);
+  logic('legacy: the untrimmed description keeps its spacing',
+    legacyIn.next.expenses[1].description, '  Kopi   and    toast  ');
+  logic('legacy: 4.567 is not snapped to a cent', legacyIn.next.expenses[0].amount, 4.567);
+  logic('legacy: amount 0 survives', legacyIn.next.expenses[2].amount, 0);
+  logic('legacy: the newline in notes survives', legacyIn.next.expenses[1].notes, 'line one\nline two');
+  logic('legacy: numeric ids stay numeric', legacyIn.next.expenses.map((e) => typeof e.id), ['number', 'number', 'number', 'number']);
+  logic('legacy: two rows are flagged as kept as-is', legacyIn.keptAsIs, 2);
+
+  /* The failure this fix exists for: re-importing a backup onto the device it
+     came from must report duplicates, never conflicts. */
+  const legacyAgain = planImport(DEVICE({ expenses: legacyIn.next.expenses }), legacyBackup);
+  logic('legacy: re-import on the same device adds nothing',
+    [legacyAgain.new, legacyAgain.duplicates, legacyAgain.conflicts], [0, 4, 0]);
+  logic('legacy: re-import leaves the ledger identical', legacyAgain.next.expenses, LEGACY);
+  logic('legacy: re-import rejects nothing', legacyAgain.invalid.length, 0);
+
   /* ── Duplicates, conflicts, real repeats ───────────────────── */
   const twoKopis = planImport(DEVICE(), envelope({ expenses: [
     row({ id: 'k1', amount: 1.4, description: 'Kopi' }),
@@ -140,40 +175,78 @@ export function dataImportChecks(logic) {
   logic('categories: a row naming a category in neither place is rejected',
     planImport(DEVICE(), envelope({ expenses: [row({ id: 'x', category: 'ghost' })] })).invalid.map((i) => i.reason),
     ['category_unknown']);
-  logic('categories: a row with no category is rejected, never defaulted',
+  logic('categories: a row with no category is rejected, never defaulted to cats[0]',
     planImport(DEVICE(), envelope({ expenses: [row({ id: 'x', category: undefined })] })).invalid.map((i) => i.reason),
-    ['category_required']);
+    ['category_wrong_type']);
 
   logic('mergeCategories: ignores junk entries',
     mergeCategories(CATS, [null, 'nope', { label: 'no id' }]).categories.length, 2);
 
-  /* ── Invalid rows ──────────────────────────────────────────── */
+  /* ── Rows the app could already be storing: kept, never rewritten ── */
+  for (const [name, over] of [
+    ['a 120-character description', { description: 'x'.repeat(120) }],
+    ['leading, trailing and doubled spaces', { description: '  Kopi   and    toast  ' }],
+    ['three decimal places', { amount: 4.567 }],
+    ['amount 0', { amount: 0 }],
+    ['a negative amount', { amount: -5 }],
+    ['an amount above the form cap', { amount: 1e9 }],
+    ['notes with a newline', { notes: 'line one\nline two' }],
+    ['an empty description', { description: '' }],
+  ]) {
+    const p = planImport(DEVICE(), envelope({ expenses: [row({ id: 'legacy', ...over })] }));
+    logic(`stored row: ${name} is accepted`, [p.new, p.invalid.length], [1, 0]);
+    logic(`stored row: ${name} is kept byte-identical`,
+      p.next.expenses[0], { id: 'legacy', ...row({ id: 'legacy', ...over }), ...over });
+  }
+
+  logic('stored row: a missing notes field becomes an empty string',
+    planImport(DEVICE(), envelope({ expenses: [{ id: 'n', date: '2026-11-02', category: 'food', description: 'Kopi', amount: 1 }] })).next.expenses[0].notes, '');
+
+  /* ── "Kept as-is" count ───────────────────────────────────── */
+  logic('keptAsIs: a normal row is not counted', planImport(DEVICE(), envelope({ expenses: [row()] })).keptAsIs, 0);
+  logic('keptAsIs: amount 0 is counted', planImport(DEVICE(), envelope({ expenses: [row({ amount: 0 })] })).keptAsIs, 1);
+  logic('keptAsIs: a negative amount is counted', planImport(DEVICE(), envelope({ expenses: [row({ amount: -1 })] })).keptAsIs, 1);
+  logic('keptAsIs: a description over 80 characters is counted',
+    planImport(DEVICE(), envelope({ expenses: [row({ description: 'x'.repeat(81) })] })).keptAsIs, 1);
+  logic('keptAsIs: exactly 80 characters is not counted',
+    planImport(DEVICE(), envelope({ expenses: [row({ description: 'x'.repeat(80) })] })).keptAsIs, 0);
+  logic('keptAsIs: three decimals alone is not counted', planImport(DEVICE(), envelope({ expenses: [row({ amount: 4.567 })] })).keptAsIs, 0);
+  logic('keptAsIs: counts rows, not reasons',
+    planImport(DEVICE(), envelope({ expenses: [row({ id: 'a', amount: 0, description: 'y'.repeat(100) })] })).keptAsIs, 1);
+  logic('keptAsIs: a kept-as-is row is still a new row',
+    planImport(DEVICE(), envelope({ expenses: [row({ amount: 0 })] })).new, 1);
+
+  /* ── Rows that genuinely cannot be stored ─────────────────── */
   for (const [name, bad2, reason] of [
     ['a missing date', { date: undefined }, 'date_required'],
+    ['an empty date', { date: '   ' }, 'date_required'],
     ['2026-02-31', { date: '2026-02-31' }, 'date_invalid'],
     ['a non-date string', { date: 'yesterday' }, 'date_invalid'],
-    ['an empty date', { date: '   ' }, 'date_required'],
-    ['a description over 80 characters', { description: 'x'.repeat(81) }, 'description_too_long'],
-    ['amount 0', { amount: 0 }, 'amount_not_positive'],
-    ['a negative amount', { amount: -5 }, 'amount_not_positive'],
-    ['amount 1e9', { amount: 1e9 }, 'amount_too_large'],
+    ['a date with surrounding spaces', { date: ' 2026-11-02 ' }, 'date_invalid'],
+    ['a numeric date', { date: 20261102 }, 'date_required'],
     ['amount NaN', { amount: NaN }, 'amount_invalid'],
-    ['a missing description', { description: '' }, 'description_required'],
+    ['amount Infinity', { amount: Infinity }, 'amount_invalid'],
+    ['a string amount', { amount: '12.30' }, 'amount_invalid'],
+    ['a null amount', { amount: null }, 'amount_invalid'],
+    ['a missing description', { description: undefined }, 'description_wrong_type'],
+    ['a numeric description', { description: 5 }, 'description_wrong_type'],
+    ['numeric notes', { notes: 5 }, 'notes_wrong_type'],
+    ['an object id', { id: { a: 1 } }, 'id_wrong_type'],
+    ['an unmatchable category', { category: 'ghost' }, 'category_unknown'],
+    ['a missing category', { category: undefined }, 'category_wrong_type'],
   ]) {
     const p = planImport(DEVICE(), envelope({ expenses: [row({ id: 'bad', ...bad2 })] }));
-    logic(`invalid: ${name} is rejected`, p.invalid.map((i) => i.reason), [reason]);
-    logic(`invalid: ${name} writes nothing`, p.next.expenses.length, 0);
+    logic(`unusable: ${name} is rejected`, p.invalid.map((i) => i.reason), [reason]);
+    logic(`unusable: ${name} writes nothing`, p.next.expenses.length, 0);
   }
-  logic('invalid: a string amount "12.30" is accepted and stored as a number',
-    (() => { const p = planImport(DEVICE(), envelope({ expenses: [row({ id: 's', amount: '12.30' })] })); return [p.new, toCents(p.next.expenses[0]?.amount)]; })(),
-    [1, 1230]);
-  logic('invalid: a non-object row is rejected',
+  logic('unusable: a non-object row is rejected',
     planImport(DEVICE(), envelope({ expenses: [null, 'x', 5] })).invalid.map((i) => i.reason),
     ['not_an_object', 'not_an_object', 'not_an_object']);
-  logic('invalid: good rows import alongside bad ones',
-    (() => { const p = planImport(DEVICE(), envelope({ expenses: [row({ id: 'ok' }), row({ id: 'no', amount: 0 })] })); return [p.new, p.invalid.length]; })(),
+  logic('unusable: good rows import alongside bad ones',
+    (() => { const p = planImport(DEVICE(), envelope({ expenses: [row({ id: 'ok' }), row({ id: 'no', amount: NaN })] })); return [p.new, p.invalid.length]; })(),
     [1, 1]);
-  logic('invalid: a rejected row reports its index', planImport(DEVICE(), envelope({ expenses: [row({ id: 'ok' }), row({ id: 'no', amount: 0 })] })).invalid[0].index, 1);
+  logic('unusable: a rejected row reports its index',
+    planImport(DEVICE(), envelope({ expenses: [row({ id: 'ok' }), row({ id: 'no', amount: NaN })] })).invalid[0].index, 1);
 
   /* ── Prototype pollution and unknown keys ──────────────────── */
   const dirty = JSON.parse('{"id":"p1","date":"2026-11-02","category":"food","description":"Kopi","amount":1.4,"notes":"","__proto__":{"polluted":true},"constructor":"x","extra":"y"}');

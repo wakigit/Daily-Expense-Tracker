@@ -14,7 +14,7 @@
  * Writing is in importCommit.js. Nothing in this file touches storage.
  */
 
-import { validateExpense, newExpenseId } from './actions.js';
+import { parseDate, newExpenseId, MAX_DESCRIPTION } from './actions.js';
 import { toCents } from './money.js';
 import { ownRows, hasSampleRows, planRemove } from './sampleState.js';
 import { isKnownTheme, DEFAULT_THEME } from '../themes/themes.js';
@@ -158,6 +158,74 @@ export function normaliseSettings(data = {}) {
   };
 }
 
+/* ── What a stored row may look like ──────────────────────────── */
+
+/**
+ * A backup row is accepted if the app could already be storing it, and it is
+ * kept EXACTLY as exported.
+ *
+ * This is deliberately not `validateExpense`. That function enforces today's
+ * Add-form rules — an 80-character description cap, trimming, whitespace
+ * collapsing and snapping to a whole cent — and the app does not apply any of
+ * them to rows it loads: `useAppData` sets the saved array as-is
+ * (src/hooks/useAppData.js:31). Rows saved before the action layer arrived
+ * (b6d72d6, 2026-10-05) went through `{ ...form, amount: parseFloat(...) }`
+ * with a numeric `Date.now()` id (App.jsx:201,207 at c67119e), an unbounded
+ * `type="text"` description stored untrimmed, and an amount input with
+ * `min="0" step="0.01"` whose step a JS submit handler never enforced. So real
+ * ledgers can hold 120-character descriptions, untrimmed text, 4.567 and 0.
+ *
+ * Validating those with the Add-form rules would reject or silently rewrite
+ * them, and a backup re-imported onto the device it came from would report
+ * conflicts for rows nobody had touched. So the rule here is representability,
+ * not tidiness: reject only what cannot be stored or displayed at all.
+ */
+export function acceptStoredRow(raw, categoryIds) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ok: false, reason: 'not_an_object' };
+
+  const id = raw.id;
+  if (id !== undefined && id !== null && id !== '' && typeof id !== 'string' && typeof id !== 'number') {
+    return { ok: false, reason: 'id_wrong_type', field: 'id' };
+  }
+
+  // A missing date is the one thing import will not fill in: `parseDate`
+  // defaults it to today (actions.js:121), which would invent spending.
+  if (typeof raw.date !== 'string' || raw.date.trim() === '') return { ok: false, reason: 'date_required', field: 'date' };
+  const date = parseDate(raw.date, '');
+  if (!date.ok || date.value !== raw.date) return { ok: false, reason: 'date_invalid', field: 'date' };
+
+  // Numbers only: every writer the app has ever had ran parseFloat, so a
+  // string here means a hand-edited file, and coercing it would change a value.
+  if (typeof raw.amount !== 'number' || !Number.isFinite(raw.amount)) {
+    return { ok: false, reason: 'amount_invalid', field: 'amount' };
+  }
+
+  if (typeof raw.description !== 'string') return { ok: false, reason: 'description_wrong_type', field: 'description' };
+  if (raw.notes !== undefined && raw.notes !== null && typeof raw.notes !== 'string') {
+    return { ok: false, reason: 'notes_wrong_type', field: 'notes' };
+  }
+
+  const category = raw.category;
+  if (typeof category !== 'string' && typeof category !== 'number') return { ok: false, reason: 'category_wrong_type', field: 'category' };
+  if (!categoryIds.has(String(category))) return { ok: false, reason: 'category_unknown', field: 'category' };
+
+  // Rebuilt from the six known fields, never spread, so __proto__ and any
+  // unknown key are dropped. Values are copied, not normalised.
+  return {
+    ok: true,
+    value: {
+      date: raw.date,
+      category,
+      description: raw.description,
+      amount: raw.amount,
+      notes: raw.notes === undefined || raw.notes === null ? '' : raw.notes,
+    },
+    /* Unusual but storable, and reported so the preview can say the import
+       kept them rather than quietly tidying them. */
+    keptAsIs: raw.amount <= 0 || raw.description.length > MAX_DESCRIPTION,
+  };
+}
+
 /* ── The plan ─────────────────────────────────────────────────── */
 
 const SIX_FIELDS = ['id', 'date', 'category', 'description', 'amount', 'notes'];
@@ -191,7 +259,7 @@ export function planImport(current = {}, backup = {}) {
 
   const empty = {
     ok: true, message: '', mode,
-    new: 0, duplicates: 0, conflicts: 0, invalid: [],
+    new: 0, duplicates: 0, conflicts: 0, keptAsIs: 0, invalid: [],
     introducedCategories: [], sampleRemoved: 0, settingsChanged: false,
     estimatedBytes: 0, next: null,
   };
@@ -210,43 +278,23 @@ export function planImport(current = {}, backup = {}) {
   // Categories first: rows cannot be validated against a category that does
   // not exist yet, and validateExpense must be able to refuse an unknown one.
   const merged = mergeCategories(base.cats, Array.isArray(data.categories) ? data.categories : []);
-  const today = typeof current.today === 'string' ? current.today : '';
 
   const byId = new Map(base.expenses.map((row) => [String(row.id), row]));
   const kept = [...base.expenses];
   const invalid = [];
-  let added = 0, duplicates = 0, conflicts = 0;
+  let added = 0, duplicates = 0, conflicts = 0, keptAsIs = 0;
+
+  const categoryIds = new Set(merged.categories.map((c) => String(c.id)));
 
   for (const [index, raw] of (data.expenses ?? []).entries()) {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      invalid.push({ index, id: null, reason: 'not_an_object' });
-      continue;
-    }
-    // Rebuilt from the six known fields only. Never spread the file's object:
-    // that is how a __proto__ or an unknown key would ride along.
-    const incomingId = raw.id === undefined || raw.id === null || raw.id === '' ? null : raw.id;
-    const candidate = {
-      date: raw.date, category: raw.category,
-      description: raw.description, amount: raw.amount, notes: raw.notes,
-    };
+    const incomingId = !raw || typeof raw !== 'object' || raw.id === undefined || raw.id === null || raw.id === '' ? null : raw.id;
 
-    // `parseDate` defaults an empty date to today (actions.js:121). That is
-    // right for the Add form, where the user is standing there, and wrong here:
-    // a backup row with no date would silently become today's spending. Import
-    // repairs nothing, so it is rejected instead.
-    if (typeof raw.date !== 'string' || raw.date.trim() === '') {
-      invalid.push({ index, id: incomingId, reason: 'date_required', field: 'date' });
-      continue;
-    }
-
-    const checked = validateExpense(
-      { ...candidate, category: merged.mapping[String(raw.category)] ?? raw.category },
-      { cats: merged.categories, today, requireCategory: true },
-    );
+    const checked = acceptStoredRow(raw, categoryIds);
     if (!checked.ok) {
-      invalid.push({ index, id: incomingId, reason: checked.error.code, field: checked.error.field ?? null });
+      invalid.push({ index, id: incomingId, reason: checked.reason, field: checked.field ?? null });
       continue;
     }
+    if (checked.keptAsIs) keptAsIs += 1;
 
     const row = { id: incomingId ?? newExpenseId(), ...checked.value };
 
@@ -277,7 +325,7 @@ export function planImport(current = {}, backup = {}) {
   if (estimatedBytes > MAX_STATE_BYTES) {
     return {
       ...empty, mode, invalid, introducedCategories: merged.introducedCategories, sampleRemoved,
-      new: added, duplicates, conflicts, estimatedBytes,
+      new: added, duplicates, conflicts, keptAsIs, estimatedBytes,
       ok: false,
       message: `Importing this would need about ${mb(estimatedBytes)} of storage on this device, over the ${mb(MAX_STATE_BYTES)} limit. Nothing has been changed.`,
     };
@@ -285,7 +333,7 @@ export function planImport(current = {}, backup = {}) {
 
   return {
     ok: true, message: '', mode,
-    new: added, duplicates, conflicts, invalid,
+    new: added, duplicates, conflicts, keptAsIs, invalid,
     introducedCategories: merged.introducedCategories,
     sampleRemoved,
     settingsChanged: mode === 'full',
