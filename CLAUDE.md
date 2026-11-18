@@ -58,6 +58,6 @@ Additions (17 Nov 2026):
 2. Append one line to docs/SESSION-LOG.md: date | task | result | commits.
 3. If the task has its own doc (gate, design, evaluation), update it too.
 4. Commit as a separate "docs: status" commit on the current branch. Do not push unless the prompt says so.
-5. Never write keys, .env contents or personal details into these files. This repo is public.
+5. Never write keys, .env contents or personal details beyond what README.md already shows into these files. This repo is public.
 
 @docs/STATUS.md
