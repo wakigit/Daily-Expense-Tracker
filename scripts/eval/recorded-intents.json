@@ -18,10 +18,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here's your spending total for this month."
+        "say": ""
       }
     }
   },
@@ -44,10 +47,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here's your total spending from last month."
+        "say": ""
       }
     }
   },
@@ -70,10 +76,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your total spending for this year."
       }
     }
   },
@@ -96,10 +105,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here is your total spending across all time."
+        "say": "Here is your all-time total spending."
       }
     }
   },
@@ -122,10 +134,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your spending today."
       }
     }
   },
@@ -148,10 +163,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your total spending for yesterday."
       }
     }
   },
@@ -174,10 +192,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here's your total spending in the last 30 days."
+        "say": "Here's your total spending for the last 30 days."
       }
     }
   },
@@ -200,10 +221,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your spending over the last 90 days."
       }
     }
   },
@@ -226,12 +250,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "food"
+            "Food & Drinks"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here's the total spending on Food & Drinks this month."
+        "say": "Here's your spending on Food & Drinks for this month."
       }
     }
   },
@@ -247,17 +274,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "Grab",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "grab"
+          ],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your total spending on all descriptions mentioning Grab for this year."
       }
     }
   },
@@ -273,17 +305,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "GrabFood",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "grabfood"
+          ],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your total spending this year for all purchases mentioning GrabFood."
       }
     }
   },
@@ -299,17 +336,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "Starbucks",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "starbucks"
+          ],
           "spendingScope": null
         },
-        "say": "Here's the total spending for all purchases mentioning Starbucks for all time."
+        "say": "Showing total spending for all descriptions mentioning Starbucks over all time."
       }
     }
   },
@@ -325,17 +367,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "2 chicken rice",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "2 chicken rice"
+          ],
           "spendingScope": null
         },
-        "say": "Calculating total spending on all descriptions mentioning \"2 chicken rice\" for all time."
+        "say": ""
       }
     }
   },
@@ -351,17 +398,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "Gojek",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "gojek"
+          ],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is the total spending on all descriptions mentioning Gojek for all time."
       }
     }
   },
@@ -384,12 +436,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "bbt"
+            "Bubble Tea"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your yearly spending on Bubble Tea."
       }
     }
   },
@@ -412,12 +467,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "transport"
+            "Travel (old)"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your total spending on Travel (old) for all time."
       }
     }
   },
@@ -440,10 +498,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your largest single expense to date."
       }
     }
   },
@@ -466,7 +527,10 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": ""
@@ -492,7 +556,10 @@
           "day": "all",
           "groupBy": "day",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": ""
@@ -518,7 +585,10 @@
           "day": "all",
           "groupBy": "category",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": ""
@@ -544,10 +614,13 @@
           "day": "all",
           "groupBy": "month",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Identifying the month with the highest total spending this year."
       }
     }
   },
@@ -570,7 +643,10 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": ""
@@ -596,10 +672,13 @@
           "day": "all",
           "groupBy": "weekday",
           "aggregate": "daily_average",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your highest average spending by weekday."
       }
     }
   },
@@ -622,10 +701,13 @@
           "day": "all",
           "groupBy": "category",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your spending breakdown by category for this month."
       }
     }
   },
@@ -648,10 +730,13 @@
           "day": "all",
           "groupBy": "month",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your spending breakdown by month for this year."
       }
     }
   },
@@ -667,17 +752,22 @@
           "end": null,
           "dayCount": 90,
           "category": null,
-          "description": "Grab",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": "category",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "grab"
+          ],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's the spending breakdown by category for all Grab-related descriptions over the last 90 days."
       }
     }
   },
@@ -700,10 +790,13 @@
           "day": "all",
           "groupBy": "category",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is the spending breakdown by category for last month."
       }
     }
   },
@@ -726,12 +819,15 @@
           "day": "all",
           "groupBy": "month",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "bbt"
+            "Bubble Tea"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here is the breakdown of your Bubble Tea spending by month for all time."
+        "say": ""
       }
     }
   },
@@ -749,15 +845,18 @@
           "category": null,
           "description": null,
           "amountOperator": "gt",
-          "amount": "20",
+          "amount": "20.00",
           "amountCents": 2000,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Listing all transactions over S$20 for the current month."
+        "say": ""
       }
     }
   },
@@ -780,10 +879,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Listing transactions of at least S$20 for this month."
       }
     }
   },
@@ -806,10 +908,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here are transactions under S$5 this month."
+        "say": "Listing transactions under S$5 this month."
       }
     }
   },
@@ -832,10 +937,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Listing all transactions of at most S$0.01 over all time."
+        "say": "Listing transactions costing at most S$0.01 for all time."
       }
     }
   },
@@ -858,10 +966,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Comparing spending on weekdays versus weekends this year."
+        "say": "Here's your spending on weekdays versus weekends this year."
       }
     }
   },
@@ -884,10 +995,13 @@
           "day": "weekend",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your spending for weekends this month."
       }
     }
   },
@@ -897,7 +1011,7 @@
       "intent": {
         "type": "analyze",
         "query": {
-          "operation": "total",
+          "operation": "highest",
           "period": "month",
           "start": null,
           "end": null,
@@ -908,12 +1022,15 @@
           "amount": null,
           "amountCents": null,
           "day": "Monday",
-          "groupBy": null,
+          "groupBy": "day",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your spending on Mondays for this month."
       }
     }
   },
@@ -936,12 +1053,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
             "Food & Drinks"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Projecting when your Food & Drinks budget will exhaust this month."
       }
     }
   },
@@ -964,12 +1084,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "bbt"
+            "Bubble Tea"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Estimating when your Bubble Tea budget will be exhausted this month."
+        "say": "Estimating your Bubble Tea budget exhaustion for this month."
       }
     }
   },
@@ -992,12 +1115,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
             "Public Transport"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Checking the budget exhaustion estimate for Public Transport this month."
+        "say": "Estimating when your Public Transport budget will be exhausted this month."
       }
     }
   },
@@ -1020,12 +1146,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "hire"
+            "Private Hire"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Estimating when your Private Hire budget will be exhausted this month."
+        "say": "Checking your Private Hire budget exhaustion projection for this month."
       }
     }
   },
@@ -1048,12 +1177,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "entertainment"
+            "Entertainment"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Estimating the exhaustion date for your Entertainment budget this month."
+        "say": "Estimating when your Entertainment budget will run out this month."
       }
     }
   },
@@ -1076,9 +1208,12 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "food"
+            "Food & Drinks"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": "Here's your spending on Food & Drinks this month."
@@ -1097,17 +1232,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "Grab",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "grab"
+          ],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here's your spending on all descriptions mentioning Grab for this year."
       }
     }
   },
@@ -1130,7 +1270,10 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": ""
@@ -1156,10 +1299,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": ""
+        "say": "Here is your largest single expense this month."
       }
     }
   },
@@ -1182,25 +1328,27 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "late-night",
+            "prata",
+            "supper"
+          ],
           "spendingScope": {
-            "label": "Supper and late-night food",
+            "label": "Supper and Late-night Food",
             "includeCategories": [],
             "includeTerms": [
-              "kaya toast",
               "late-night",
-              "lor mee",
-              "maggi",
-              "mee goreng",
               "prata",
-              "satay",
               "supper"
             ],
             "excludeCategories": [],
             "excludeTerms": []
           }
         },
-        "say": "Proposing a spending scope for supper and late-night food this month."
+        "say": "I can help track your spending on supper and late-night food this month with a custom category."
       }
     }
   },
@@ -1235,25 +1383,25 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "late-night",
+            "supper"
+          ],
           "spendingScope": {
-            "label": "Supper and late-night food",
+            "label": "Supper & Late-night Food",
             "includeCategories": [],
             "includeTerms": [
-              "late night",
               "late-night",
-              "midnight",
-              "midnight snack",
-              "night food",
-              "night snack",
-              "prata",
               "supper"
             ],
             "excludeCategories": [],
             "excludeTerms": []
           }
         },
-        "say": "Let me first define a spending scope to include supper and late-night food purchases this month."
+        "say": "I can help define a spending scope for supper and late-night food this month."
       }
     }
   },
@@ -1261,7 +1409,7 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "propose_scope",
+        "type": "analyze",
         "query": {
           "operation": "total",
           "period": "month",
@@ -1276,20 +1424,17 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "food",
-            "entertainment"
+            "Food & Drinks",
+            "Entertainment"
           ],
-          "spendingScope": {
-            "label": "Food & Drinks and Entertainment combined",
-            "includeCategories": [
-              "entertainment",
-              "food"
-            ],
-            "includeTerms": [],
-            "excludeCategories": [],
-            "excludeTerms": []
-          }
+          "categories": [
+            "entertainment",
+            "food"
+          ],
+          "descriptionTerms": [],
+          "spendingScope": null
         },
         "say": ""
       }
@@ -1300,13 +1445,10 @@
     "body": {
       "intent": {
         "type": "clarify",
-        "question": "What comparison type do you want between Food & Drinks this month and Entertainment last month?",
-        "options": [
-          "total spending",
-          "average daily spending",
-          "number of transactions"
-        ],
-        "say": "You want to compare Food & Drinks spending this month with Entertainment spending last month. Should the comparison be total spending, average spending per day, or another measure?"
+        "reason": "category_comparison_unsupported",
+        "question": "A category comparison needs exactly two configured categories over one shared period. Which two categories and period should I use? Keep any description, day and amount filters in the complete question. Your original request: “Compare my Food & Drinks spending this month with my Entertainment spending last month.”",
+        "options": [],
+        "say": ""
       }
     }
   },
@@ -1314,39 +1456,20 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "analyze",
-        "query": {
-          "operation": "total",
-          "period": "month",
-          "start": null,
-          "end": null,
-          "dayCount": null,
-          "category": null,
-          "description": "Groceries",
-          "amountOperator": null,
-          "amount": null,
-          "amountCents": null,
-          "day": "all",
-          "groupBy": null,
-          "aggregate": "total",
-          "categoryTerms": [],
-          "spendingScope": null
-        },
+        "type": "clarify",
+        "question": "I don't have a 'Groceries' category. Did you mean the 'Daily Needs' category or something else?",
+        "options": [],
         "say": ""
       }
     }
   },
   "M53": {
-    "status": 200,
+    "status": 502,
     "body": {
-      "intent": {
-        "type": "clarify",
-        "question": "What kind of spending projection for next month do you want? Total or by category?",
-        "options": [
-          "Total spending projection for next month",
-          "Spending projection by category for next month"
-        ],
-        "say": "Do you want a projection of your total spending next month or spending for a specific category?"
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.projection_filters"
       }
     }
   },
@@ -1397,12 +1520,15 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "misc"
+            "Others"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Here's the spending on Others category for this month."
+        "say": "Here's your spending on Others category for this month."
       }
     }
   },
@@ -1418,17 +1544,22 @@
           "end": null,
           "dayCount": null,
           "category": null,
-          "description": "ignore",
+          "description": null,
           "amountOperator": null,
           "amount": null,
           "amountCents": null,
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [
+            "ignore"
+          ],
           "spendingScope": null
         },
-        "say": "Showing total spending for all descriptions containing 'ignore' over all time."
+        "say": "Here's the total spending for all descriptions mentioning 'ignore' over all time."
       }
     }
   },
@@ -1451,9 +1582,12 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "food"
+            "Food & Drinks"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": "Here's your spending on Food & Drinks this month."
@@ -1479,10 +1613,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Calculating your total spending for this month."
+        "say": "Here's your total spending for this month."
       }
     }
   },
@@ -1505,10 +1642,13 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
-        "say": "Calculating your total spending for this month."
+        "say": "Here's your total spending for this month."
       }
     }
   },
@@ -1538,31 +1678,164 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "clarify",
-        "reason": "multipart_percentage_unsupported",
-        "question": "I cannot combine a spending total with a separate category-percentage answer. Would you like the recorded total or a complete category breakdown? Keep the original subject, dates and other filters in your next question. Your original request: “What did I spend this month, and what percentage of it was Food & Drinks?”",
-        "options": [],
-        "say": ""
+        "type": "plan",
+        "plan": {
+          "version": 1,
+          "steps": [
+            {
+              "id": "q1",
+              "query": {
+                "operation": "total",
+                "period": "month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "category": null,
+                "description": null,
+                "amountOperator": null,
+                "amount": null,
+                "day": "all",
+                "groupBy": null,
+                "aggregate": "total",
+                "comparison": null,
+                "categories": [],
+                "descriptionTerms": [],
+                "spendingScope": null,
+                "category_terms": []
+              }
+            },
+            {
+              "id": "q2",
+              "query": {
+                "operation": "total",
+                "period": "month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "category": "food",
+                "description": null,
+                "amountOperator": null,
+                "amount": null,
+                "day": "all",
+                "groupBy": null,
+                "aggregate": "total",
+                "comparison": null,
+                "categories": [],
+                "descriptionTerms": [],
+                "spendingScope": null,
+                "category_terms": []
+              }
+            }
+          ],
+          "derived": [
+            {
+              "id": "d1",
+              "operation": "percent_of",
+              "numerator": {
+                "step": "q2",
+                "field": "totalCents"
+              },
+              "denominator": {
+                "step": "q1",
+                "field": "totalCents"
+              }
+            }
+          ]
+        },
+        "say": null,
+        "query": null,
+        "expense": null,
+        "filter": null,
+        "scope": null,
+        "question": null,
+        "options": null
       }
     }
   },
   "M66": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.comparison"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": {
+            "kind": "categories",
+            "periods": [],
+            "categories": [
+              "food",
+              "bbt"
+            ]
+          },
+          "categoryTerms": [
+            "Food & Drinks",
+            "Bubble Tea"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
       }
     }
   },
   "M67": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.comparison"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": {
+            "kind": "periods",
+            "periods": [
+              {
+                "period": "named_month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "month": "2026-09"
+              },
+              {
+                "period": "named_month",
+                "start": null,
+                "end": null,
+                "dayCount": null,
+                "month": "2026-07"
+              }
+            ],
+            "categories": []
+          },
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
       }
     }
   },
@@ -1585,6 +1858,7 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
             "Food & Drinks",
             "Bubble Tea",
@@ -1606,25 +1880,14 @@
     "status": 200,
     "body": {
       "intent": {
-        "type": "analyze",
-        "query": {
-          "operation": "breakdown",
-          "period": "month",
-          "start": null,
-          "end": null,
-          "dayCount": null,
-          "category": null,
-          "description": null,
-          "amountOperator": null,
-          "amount": null,
-          "amountCents": null,
-          "day": "all",
-          "groupBy": "category",
-          "aggregate": "total",
-          "categoryTerms": [],
-          "spendingScope": null
-        },
+        "type": "clarify",
+        "reason": "plan_complete_request_required",
+        "question": "I cannot safely answer every part together. Please give the requested totals, one common period, and the exact share or ordered subtraction. Only total queries with difference or percentage share are supported together. Nothing has been calculated. Your original request: “What share of my spending this month went to each category?”",
+        "options": [],
         "say": ""
+      },
+      "diagnostic": {
+        "plan": "plan_request_unsupported"
       }
     }
   },
@@ -1647,9 +1910,12 @@
           "day": "all",
           "groupBy": "month",
           "aggregate": "total",
+          "comparison": null,
           "categoryTerms": [
-            "bbt"
+            "Bubble Tea"
           ],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": "Here's your month-by-month Bubble Tea spending for this year."
@@ -1675,7 +1941,10 @@
           "day": "all",
           "groupBy": null,
           "aggregate": "calendar_week",
+          "comparison": null,
           "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
           "spendingScope": null
         },
         "say": "Here is your average weekly spending for this year."
@@ -1687,11 +1956,12 @@
     "body": {
       "intent": {
         "type": "clarify",
-        "question": "What exactly do you want: the single largest expense this month or something else?",
+        "question": "Do you want the largest individual expenses or a category breakdown?",
         "options": [
-          "Single largest expense this month"
+          "Largest single transactions",
+          "Highest spending categories"
         ],
-        "say": "I cannot provide a list of top 3 expenses, only the single largest one. Do you want the single largest expense this month?"
+        "say": "Did you mean the top 3 single highest transactions or top 3 spending categories this month?"
       }
     }
   },
@@ -1700,9 +1970,9 @@
     "body": {
       "intent": {
         "type": "clarify",
-        "question": "You asked about savings if Bubble Tea spending is halved, which is not supported. Please ask for actual spending totals or averages.",
+        "question": "How much do I currently spend on Bubble Tea each month?",
         "options": [],
-        "say": "I can't perform hypothetical savings calculations. Could you please ask for total or average Bubble Tea spending for a period instead?"
+        "say": "I can't calculate hypothetical savings from cutting spending in half. Please ask for your current Bubble Tea spending or a spending breakdown instead."
       }
     }
   },
@@ -1711,9 +1981,9 @@
     "body": {
       "intent": {
         "type": "clarify",
-        "question": "Please provide your average monthly spending or budget details to assess saving S$500 in 4 months.",
+        "question": "To assist with your savings goal, please provide your monthly income, current monthly expenses, and any fixed savings you have planned.",
         "options": [],
-        "say": "How much do you currently spend on average each month?"
+        "say": "I can help with savings plans, but need more details on your budget and income first."
       }
     }
   },
@@ -1722,19 +1992,40 @@
     "body": {
       "intent": {
         "type": "clarify",
-        "question": "Should the comparison be total spending from September to October? For top purchases, should I list the two largest single transactions in October within the identified category?",
+        "question": "Do you want to compare total spending by category between September and October 2026 and then see the top 2 purchases within the category that grew the most?",
         "options": [],
-        "say": "Do you want the category with the highest spending increase comparing September to October, and then the two largest single purchases in October within that category?"
+        "say": "I need to clarify your request before proceeding."
       }
     }
   },
   "M76": {
-    "status": 502,
+    "status": 200,
     "body": {
-      "error": "invalid_intent",
-      "detail": {
-        "code": "intent_bad_field",
-        "field": "query.comparison"
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "compare",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Food & Drinks"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
       }
     }
   }

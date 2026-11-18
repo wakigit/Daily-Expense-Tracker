@@ -2,7 +2,7 @@
   "set": "MAIN",
   "mode": "mock",
   "referenceDate": "2026-10-19",
-  "acceptedAt": "2026-11-10T08:33:08.554Z",
+  "acceptedAt": "2026-11-18T07:11:38.051Z",
   "questions": 70,
   "questionTotal": 76,
   "turns": 76,
@@ -213,7 +213,7 @@
       "sources": "model"
     },
     "M35": {
-      "pass": true,
+      "pass": false,
       "outcomes": "answer",
       "reasons": "-",
       "sources": "model"
@@ -303,8 +303,8 @@
       "sources": "builtin"
     },
     "M50": {
-      "pass": true,
-      "outcomes": "propose_scope",
+      "pass": false,
+      "outcomes": "answer",
       "reasons": "-",
       "sources": "model"
     },
@@ -321,10 +321,10 @@
       "sources": "model"
     },
     "M53": {
-      "pass": true,
+      "pass": false,
       "outcomes": "clarify",
-      "reasons": "-",
-      "sources": "model"
+      "reasons": "[object Object]",
+      "sources": "offline"
     },
     "M54": {
       "pass": true,
@@ -393,22 +393,22 @@
       "sources": "model"
     },
     "M65": {
-      "pass": false,
-      "outcomes": "clarify",
-      "reasons": "plan_complete_request_required",
+      "pass": true,
+      "outcomes": "answer",
+      "reasons": "-",
       "sources": "model"
     },
     "M66": {
-      "pass": false,
+      "pass": true,
       "outcomes": "answer",
-      "reasons": "[object Object]",
-      "sources": "offline"
+      "reasons": "-",
+      "sources": "model"
     },
     "M67": {
-      "pass": false,
+      "pass": true,
       "outcomes": "answer",
-      "reasons": "[object Object]",
-      "sources": "offline"
+      "reasons": "-",
+      "sources": "model"
     },
     "M68": {
       "pass": true,
@@ -417,9 +417,9 @@
       "sources": "model"
     },
     "M69": {
-      "pass": true,
-      "outcomes": "answer",
-      "reasons": "-",
+      "pass": false,
+      "outcomes": "clarify",
+      "reasons": "plan_complete_request_required",
       "sources": "model"
     },
     "M70": {
@@ -459,10 +459,10 @@
       "sources": "model"
     },
     "M76": {
-      "pass": false,
+      "pass": true,
       "outcomes": "answer",
-      "reasons": "[object Object]",
-      "sources": "offline"
+      "reasons": "-",
+      "sources": "model"
     }
   }
 }

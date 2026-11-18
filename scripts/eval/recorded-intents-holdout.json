@@ -1,0 +1,435 @@
+{
+  "H01": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here is your total spending so far in October."
+      }
+    }
+  },
+  "H02": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "last_days",
+          "start": null,
+          "end": null,
+          "dayCount": 14,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here is your spending data for the past 14 days."
+      }
+    }
+  },
+  "H03": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      }
+    }
+  },
+  "H04": {
+    "status": 502,
+    "body": {
+      "error": "invalid_intent",
+      "detail": {
+        "code": "intent_bad_field",
+        "field": "query.category_terms"
+      }
+    }
+  },
+  "H05": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "bbt",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Bubble Tea"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's the total spending on Bubble Tea for this year."
+      }
+    }
+  },
+  "H06": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "largest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's the single most expensive purchase you have ever logged."
+      }
+    }
+  },
+  "H07": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "latest",
+          "period": "all",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "H08": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "reason": "plan_complete_request_required",
+        "question": "I cannot safely answer every part together. Please give the requested totals, one common period, and the exact share or ordered subtraction. Only total queries with difference or percentage share are supported together. Nothing has been calculated. Your original request: “Which category took the biggest share of October?”",
+        "options": [],
+        "say": ""
+      }
+    }
+  },
+  "H10": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "breakdown",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "food",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": "month",
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Food & Drinks"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here is your monthly spending breakdown for Food & Drinks this year."
+      }
+    }
+  },
+  "H11": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "list",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": "gt",
+          "amount": "20.00",
+          "amountCents": 2000,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Listing this month's purchases over twenty dollars."
+      }
+    }
+  },
+  "H12": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "day_types",
+          "period": "year",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": null,
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": ""
+      }
+    }
+  },
+  "H13": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "hire",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Private Hire"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Checking Private Hire spending for this month."
+      }
+    }
+  },
+  "H14": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "projection",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "entertainment",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Entertainment"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's your current Entertainment budget projection for the month."
+      }
+    }
+  },
+  "H15.1": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "pub",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Public Transport"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's the total spending for Public Transport in October 2026."
+      }
+    }
+  },
+  "H16": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "analyze",
+        "query": {
+          "operation": "total",
+          "period": "month",
+          "start": null,
+          "end": null,
+          "dayCount": null,
+          "category": "transport",
+          "description": null,
+          "amountOperator": null,
+          "amount": null,
+          "amountCents": null,
+          "day": "all",
+          "groupBy": null,
+          "aggregate": "total",
+          "comparison": null,
+          "categoryTerms": [
+            "Travel (old)"
+          ],
+          "categories": [],
+          "descriptionTerms": [],
+          "spendingScope": null
+        },
+        "say": "Here's your spending on Travel (old) category for this month."
+      }
+    }
+  },
+  "H17": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "What do you mean by Utilities?",
+        "options": [],
+        "say": "I don't recognize the category 'Utilities.' Could you clarify or specify another category?"
+      }
+    }
+  },
+  "H18": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "clarify",
+        "question": "List your five biggest buys is unsupported, should I show only the single largest transaction?",
+        "options": [
+          "Show the single largest transaction",
+          "Show a list of the top five biggest buys"
+        ],
+        "say": "Do you want the single largest transaction or a list of multiple top transactions?"
+      }
+    }
+  },
+  "H19": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "help"
+      }
+    }
+  },
+  "H20": {
+    "status": 200,
+    "body": {
+      "intent": {
+        "type": "help"
+      }
+    }
+  }
+}
