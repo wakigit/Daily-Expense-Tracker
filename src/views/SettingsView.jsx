@@ -16,6 +16,8 @@ export default function SettingsView({
      forgotten takes the whole screen down, and this one is far from the
      code that supplies it. */
   sample = {},
+  /* Same defaulting reason as `sample`. */
+  data = {},
 }) {
   const sampleState = {
     loaded: false, rowCount: 0, ownRows: 0, hasBudgets: false,
@@ -26,6 +28,7 @@ export default function SettingsView({
      removing data are both one tap from being regretted, so each asks once —
      and the asking names what will happen to what is already there. */
   const [ask, setAsk] = useState('idle');
+  const dataState = { note: '', fallback: null, onBackup: () => {}, onCsv: () => {}, onDismiss: () => {}, ...data };
   const draftTotal = cats.reduce((s, c) => s + (Number(budDraft[c.id]) || 0), 0);
 
   return (
@@ -260,6 +263,44 @@ export default function SettingsView({
       </section>
 
       {/* ── Categories ── */}
+      {/* ── Your data ── */}
+      <section className="card set--data" style={{ '--i': 6 }}>
+        <h2 className="display card-title">Your data</h2>
+        <p className="set-note">
+          <strong>Backup (JSON)</strong> is everything — transactions, categories, budgets and
+          settings — in one file you can keep or move to another phone.{' '}
+          Sample data is never included.
+        </p>
+        <div className="set-data-actions">
+          <button type="button" className="btn-primary"
+            aria-label="Export a full backup as a JSON file"
+            onClick={() => dataState.onBackup()}>
+            Export backup (JSON)
+          </button>
+        </div>
+        {dataState.note && <p className="set-note" role="status">{dataState.note}</p>}
+        {dataState.fallback && (
+          <div className="set-data-fallback">
+            <p className="set-note">
+              This device would not hand the file over, so here it is as text. Select all and copy
+              it into a note or an email to yourself.
+            </p>
+            <textarea className="set-data-text" readOnly rows={6}
+              aria-label="Exported file contents, read only"
+              value={dataState.fallback.text} onFocus={(e) => e.target.select()} />
+            <div className="set-data-actions">
+              <button type="button" className="btn-ghost"
+                onClick={() => { navigator.clipboard?.writeText(dataState.fallback.text); }}>
+                Copy
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => dataState.onDismiss()}>
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="card set--cats" style={{ '--i': 4 }}>
         <h2 className="display card-title">Categories</h2>
 

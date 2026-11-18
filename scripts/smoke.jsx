@@ -4,6 +4,7 @@ import { comparisonInterpretationChecks } from './comparison-interpretation-chec
 import { comparisonV2Checks } from './comparison-v2-checks';
 import { orFilterChecks } from './or-filter-checks';
 import { categoryCoverageChecks } from './category-coverage-checks';
+import { dataExportChecks } from './data-export-checks';
 import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
@@ -177,6 +178,31 @@ run('SettingsView', <SettingsView
   'Sample data', 'Load sample data');
 
 /* Both states of the sample card, and the labelling that keeps it honest. */
+run('SettingsView data card', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />,
+  'Your data', 'Export backup (JSON)', 'set--data',
+  'aria-label="Export a full backup as a JSON file"',
+  'Sample data is never included');
+run('SettingsView export note is neutral', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ note: 'tallyai-backup-2026-11-18-0735.json — check your Downloads or Files.' }} />,
+  'check your Downloads or Files', 'role="status"');
+run('SettingsView export fallback offers copyable text', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ fallback: { text: '{"format":"tallyai-backup"}' } }} />,
+  'readOnly', 'aria-label="Exported file contents, read only"', 'Copy', 'would not hand the file over');
 run('SettingsView sample not loaded', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
   appName="TallyAI" onAppName={() => {}}
@@ -2105,6 +2131,23 @@ await step2Checks(logic);
 await step3aChecks(logic);
 orFilterChecks(logic);
 categoryCoverageChecks(logic);
+dataExportChecks(logic);
+/* Export ships without import: no file input, no "Import" control and no
+   disabled placeholder promising one. Asserted as absence, which `run` cannot
+   express. */
+{
+  const settingsHtml = renderToString(<SettingsView
+    themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+    appName="TallyAI" onAppName={() => {}}
+    cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+    delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+    newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />);
+  logic('settings: the data card exists', settingsHtml.includes('set--data'), true);
+  logic('settings: no Import control', /import/i.test(settingsHtml.replace(/Export/g, '')), false);
+  logic('settings: no file input', settingsHtml.includes('type="file"'), false);
+  logic('settings: no disabled placeholder button', settingsHtml.includes('disabled'), false);
+}
+
 await comparisonV2Checks(logic);
 comparisonInterpretationChecks(logic);
 planChecks(logic);

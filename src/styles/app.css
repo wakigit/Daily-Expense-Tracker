@@ -1895,6 +1895,27 @@ button:active { transform: scale(0.96); }
 .set-note strong { color: var(--tx); }
 .set-note--quiet { color: var(--tx-muted); font-size: 12.5px; }
 
+/* Your data: export buttons sit side by side and wrap on a narrow phone
+   rather than squeezing, and the fallback text box is a plain readable
+   monospace block the user can select. No animation of its own, so the
+   reduced-motion rules have nothing to switch off here. */
+.set-data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.set-data-fallback { margin-top: 12px; }
+.set-data-text {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tx);
+  background: var(--fd-bg, rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--fd-line, rgba(255, 255, 255, 0.14));
+  border-radius: 10px;
+  resize: vertical;
+}
+
 /* A quiet button for the reversible half of a pair. */
 .btn-ghost {
   padding: 11px 18px;

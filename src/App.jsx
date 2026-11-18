@@ -19,6 +19,8 @@ import { markOutdatedAnswers, planIsStale } from './lib/answerEvidence';
 import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
 import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
+import { backupJson, backupFilename } from './lib/dataExport';
+import { deliverFile } from './lib/deliverFile';
 import { ymLabel as sampleYmLabel } from './lib/format';
 
 import Header from './components/Header';
@@ -84,6 +86,11 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
   const [savedFlash, setSavedFlash] = useState(false);
   const [delCatId, setDelCatId] = useState(null);
   const [newCat, setNewCat] = useState({ label: '', color: '#D85A30' });
+  /* Export only ever reports where to look, never that a file was saved:
+     only the OS knows that. `fallback` holds the file's text when the device
+     refused to hand it over, so the user can still copy it out. */
+  const [exportNote, setExportNote] = useState('');
+  const [exportFallback, setExportFallback] = useState(null);
   const [toast, setToast] = useState(null);
   // Conversation lives here rather than in the view so switching tabs and
   // coming back doesn't wipe the thread.
@@ -532,6 +539,18 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     setToast({ message: 'Category deleted' });
   };
 
+  // Export builds the file from current state and hands it to the device. No
+  // success claim, and a device that refuses falls back to copyable text.
+  const runExport = async () => {
+    const text = backupJson({ expenses, cats, budgets, appName, theme: themeId, motion, roastPrefs });
+    const name = backupFilename();
+    const mime = 'application/json';
+    setExportFallback(null);
+    const out = await deliverFile({ name, text, mime });
+    if (out.method === 'text') { setExportFallback({ text: out.text }); setExportNote(''); return; }
+    setExportNote(out.dismissed ? '' : `${name} — check your Downloads or Files.`);
+  };
+
   const saveBudgets = () => {
     // An empty field means "no budget", which is zero — but only on save, never
     // while typing.
@@ -704,6 +723,12 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
             newCat={newCat}
             onNewCat={setNewCat}
             onAddCat={addCat}
+            data={{
+              note: exportNote,
+              fallback: exportFallback,
+              onBackup: () => runExport(),
+              onDismiss: () => { setExportFallback(null); setExportNote(''); },
+            }}
             sample={{
               loaded: hasSampleRows(expenses, sampleMark),
               rowCount: expenses.length - ownRows(expenses).length,
