@@ -1,3 +1,5 @@
+> Historical (written before the Vercel backend existed). Current state: docs/STATUS.md.
+
 # Where I left off — 2026-10-17 (after Stage 0)
 
 Open this first. It is the state of the repository, what is finished, what is

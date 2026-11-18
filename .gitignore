@@ -67,3 +67,6 @@ scripts/eval/SCORECARD-main-mock.md
 # and rebuildable from requirements.txt and build_index.py.
 tools/chroma-demo/.venv/
 tools/chroma-demo/.chroma/
+
+# Personal Claude notes, never commit.
+CLAUDE.local.md

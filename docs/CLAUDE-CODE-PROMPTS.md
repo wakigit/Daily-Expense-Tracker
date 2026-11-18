@@ -1,3 +1,5 @@
+> Historical (written before the Vercel backend existed). Current state: docs/STATUS.md.
+
 # Claude Code prompt index — TallyAI
 
 **Rewritten:** 2026-10-17. **Stage numbers match `docs/ROADMAP.md`.**

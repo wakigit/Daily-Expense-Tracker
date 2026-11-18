@@ -1,3 +1,5 @@
+> Historical (written before the Vercel backend existed). Current state: docs/STATUS.md.
+
 # TallyAI — hackathon roadmap
 
 **Rewritten:** 2026-10-17, against the code and the git state, not against the
