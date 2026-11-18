@@ -200,13 +200,21 @@ All of these are pure-function tests against the planner and the serialisers, wh
 
 Each is one logical change and each runs the full gate. **Estimate: 4-6 hours of focused work across two or three sessions**, with the CSV escaping and the import planner taking most of it, plus one session on a real phone. **(inferred.)**
 
-## 13. Decisions I need from you
+## 13. Decisions — made 18 November 2026
 
-1. **Filename pattern** — `tallyai-backup-2026-11-18.json`, or include the time for multiple exports in one day?
-2. **Does export include sample rows?** My plan says yes, because they are real rows in `ww_exp`, but it excludes `sampleMark`, so on the receiving device they are permanent rows the sample card can no longer remove. The alternative is to exclude `sample-` prefixed rows entirely.
-3. **Conflict direction.** Local wins, always, in my plan. The alternative is to ask per conflict, which gets unusable past a handful.
-4. **Size and row limits** — 5 MB and 20,000 rows, or different numbers?
-5. **The empty-device test** — `ownRows(expenses).length === 0` as proposed, so sample data does not block a full restore; or strict `expenses.length === 0`?
-6. **Is the standalone-PWA download failure acceptable in v1** with a copy-to-clipboard fallback, or must it be solved before shipping?
-7. **CSV import** — confirm it stays out of v1 on §10's evidence.
-8. **Where the buttons live** — a new `set--data` card as proposed, or inside the existing `set--sample` card since both move bulk data?
+1. **Filenames** carry local date and time: `tallyai-backup-YYYY-MM-DD-HHMM.json` and `tallyai-expenses-YYYY-MM-DD-HHMM.csv`. Local, not UTC, so the name matches the day the user thinks it is; minutes so two exports on one day do not collide.
+2. **Sample rows are excluded from both exports**, identified by `isSampleRow`, and so are `sampleMark` and `roastCache`. A backup must not weld demo rows into a real ledger on another device with no way to remove them.
+3. **Local always wins on conflict** (same id, different content). No per-row prompt.
+4. **Parse guards: 5 MB and 20,000 rows**, plus a **size estimate of the merged result before any write**, since a merge can exceed quota even when the file itself is small.
+5. **The empty-device test ignores sample rows** — `ownRows(expenses).length === 0` — so a user who tried the sample data still gets a full restore.
+6. **Delivery**: in standalone/home-screen mode use `navigator.share` with a file when `navigator.canShare({ files })` is true, otherwise a read-only text box with a Copy button. In a browser tab, an object-URL download. **Never show "Saved"** — only the OS knows whether a file was written.
+7. **No CSV import in v1**, on §10's evidence.
+8. **A new `set--data` card** in Settings, not an addition to `set--sample`.
+
+## 14. Requirements carried into the import work
+
+These are written down now because both were found while building export, and both are invisible until an import exists.
+
+**R1 — Persistence is not atomic and cannot currently report failure.** Saves run in `useAppData` effects (`src/hooks/useAppData.js:47-55`), one effect per key, each discarding the boolean that `save()` returns; and `save()` itself swallows a quota or private-mode failure and returns `false` (`src/lib/storage.js:38-44`). So today a bulk write can half-succeed with nothing noticing. **Import must commit through one function that writes categories, then budgets, then expenses, checks each save result, and only then updates React state. On any failure it restores the previous values and tells the user.** Expenses go last deliberately: categories and budgets they refer to must already be on disk.
+
+**R2 — A full restore onto a sample-data device must clear the sample.** If the only rows present are sample rows, the import runs `planRemove` in the same operation, and the preview says so in plain words ("the 40 sample entries will be removed"). Otherwise the device ends up with demo rows mixed into restored real data, and decision 5 has already said that device counts as empty.
