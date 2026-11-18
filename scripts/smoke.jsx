@@ -5,6 +5,7 @@ import { comparisonV2Checks } from './comparison-v2-checks';
 import { orFilterChecks } from './or-filter-checks';
 import { categoryCoverageChecks } from './category-coverage-checks';
 import { dataExportChecks } from './data-export-checks';
+import { dataImportChecks } from './data-import-checks';
 import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
@@ -2133,6 +2134,7 @@ await step3aChecks(logic);
 orFilterChecks(logic);
 categoryCoverageChecks(logic);
 dataExportChecks(logic);
+dataImportChecks(logic);
 /* Export ships without import: no file input, no "Import" control and no
    disabled placeholder promising one. Asserted as absence, which `run` cannot
    express. */
