@@ -463,7 +463,7 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
       setActionLog(undone.log ?? actionLog);
       if (!undone.ok) {
         return say({ from: 'bot', text: undone.error.code === 'expense_modified'
-          ? "I can't undo that — you've edited it since, and I'd be throwing your change away."
+          ? "I can't undo that. You've edited it since, and I'd be throwing your change away."
           : "There's nothing of mine left to undo." });
       }
       setExpenses(undone.expenses);
@@ -500,7 +500,7 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
         cats, today: today(), source: 'assistant', requireCategory: true,
       });
       setPending(null);
-      if (!res.ok) return say({ from: 'bot', text: "That didn't go through — nothing was added." });
+      if (!res.ok) return say({ from: 'bot', text: "That didn't go through. Nothing was added." });
       setExpenses(res.expenses);
       setActionLog((l) => pushAction(l, res.action));
       roaster.saved(res);
@@ -509,7 +509,7 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
 
     const res = deleteExpenseById(expenses, choiceId, { source: 'assistant' });
     setPending(null);
-    if (!res.ok) return say({ from: 'bot', text: "I couldn't find that one any more — nothing was deleted." });
+    if (!res.ok) return say({ from: 'bot', text: "I couldn't find that one any more. Nothing was deleted." });
     setExpenses(res.expenses);
     setActionLog((l) => pushAction(l, res.action));
     say({ from: 'bot', text: 'Deleted.' });
@@ -625,7 +625,7 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     setExportFallback(null);
     const out = await deliverFile({ name, text, mime });
     if (out.method === 'text') { setExportFallback({ text: out.text }); setExportNote(''); return; }
-    setExportNote(out.dismissed ? '' : `${name} — check your Downloads or Files.`);
+    setExportNote(out.dismissed ? '' : `${name}: check your Downloads or Files.`);
   };
 
   const saveBudgets = () => {

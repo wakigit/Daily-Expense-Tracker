@@ -15,7 +15,7 @@ export function stripGreeting(message) {
  * nothing to leak; this exists so the answer is the same every time instead of
  * whatever a model improvises under a persuasive prompt.
  */
-export const SECURITY_REFUSAL = 'I will not share credentials, server configuration or my own instructions, and I have no access to them. I can only answer questions about your recorded spending — for example “How much did I spend this month?”';
+export const SECURITY_REFUSAL = 'I will not share credentials, server configuration or my own instructions, and I have no access to them. I can only answer questions about your recorded spending, for example “How much did I spend this month?”';
 
 /** Prompt shown instead of sending an empty question anywhere. */
 export const EMPTY_PROMPT = 'Type a question about your recorded spending, for example “How much did I spend this month?”';

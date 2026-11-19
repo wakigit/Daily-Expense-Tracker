@@ -58,7 +58,7 @@ export default function MonthTrend({ expenses = [], ym, todayYmd, budget = 0 }) 
   const PLOT_W = PAD.plotW;
   const PLOT_H = PAD.plotH;
 
-  const title = `Spending so far — ${ymLabel(ym)}`;
+  const title = `Spending so far, ${ymLabel(ym)}`;
 
   if (!t.enough) {
     return (

@@ -58,7 +58,7 @@ export default function OverviewView({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 <span className="display money" style={{ fontSize: '1.05rem', color: spent > 0 ? 'var(--tx)' : 'var(--tx-muted)' }}>
-                  {spent > 0 ? money(spent) : '—'}
+                  {spent > 0 ? money(spent) : '–'}
                 </span>
                 <span style={{ fontSize: 18, color: 'var(--tx-muted)', lineHeight: 1 }}>›</span>
               </div>

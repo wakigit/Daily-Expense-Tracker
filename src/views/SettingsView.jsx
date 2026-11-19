@@ -226,7 +226,7 @@ export default function SettingsView({
         ) : (
           <>
             <p className="set-note">
-              Fills the app with an invented Singapore student's spending — this
+              Fills the app with an invented Singapore student's spending: this
               month so far and the whole of last month, across seven spending categories.
               Sample budgets are calculated for about 76% usage this month in an empty app.
               Budgets are shared between months; last month's status depends on its actual total.
@@ -280,8 +280,8 @@ export default function SettingsView({
       <section className="card set--data" style={{ '--i': 6 }}>
         <h2 className="display card-title">Your data</h2>
         <p className="set-note">
-          <strong>Backup (JSON)</strong> is everything — transactions, categories, budgets and
-          settings — in one file you can keep or move to another phone.{' '}
+          <strong>Backup (JSON)</strong> is everything (transactions, categories, budgets and
+          settings) in one file you can keep or move to another phone.{' '}
           <strong>Expenses (CSV)</strong> is your transactions only, for Excel or Google Sheets.
           Sample data is never included.
         </p>

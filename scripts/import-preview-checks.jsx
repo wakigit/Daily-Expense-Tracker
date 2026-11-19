@@ -35,7 +35,18 @@ export async function importPreviewChecks(logic) {
     '0 rows rejected', '0 unusual rows kept exactly as saved',
   ]);
   logic('preview full: the replace sentence, exactly', full.lines[0],
-    "This device has no expenses of its own, so the backup's categories, budgets and settings will replace the current ones.");
+    "This device has no expenses of its own, so the backup's budgets and settings will replace the current ones, and its categories will be added.");
+  /* The sentence has to match planImport: budgets and settings ARE replaced,
+     categories are merged with local labels winning. */
+  logic('preview full: the sentence does not promise categories are replaced',
+    full.lines[0].includes('categories, budgets and settings will replace'), false);
+  logic('preview full: and the behaviour it describes is what planImport does',
+    (() => {
+      const device = DEVICE({ cats: [{ id: 'food', label: 'Makan', color: '#1' }] });
+      const p = planImport(device, envelope({ categories: [{ id: 'food', label: 'Food & Drinks', color: '#2' }, { id: 'new', label: 'Added', color: '#3' }], expenses: [row()] }));
+      return [p.next.cats.map((c) => c.label), p.next.budgets];
+    })(),
+    [['Makan', 'Added'], { food: 50 }]);
   logic('preview full: no sample sentence when there is no sample', full.lines.length, 1);
   logic('preview full: Import and Cancel, not Close', full.closeOnly, false);
 

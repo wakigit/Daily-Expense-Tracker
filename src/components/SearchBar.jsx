@@ -35,7 +35,7 @@ export default function SearchBar({ query, onQuery, sort, onSort, matchCount, so
         className="sort-btn"
         onClick={() => onSort(next.id)}
         aria-label={`Sort by ${next.label}`}
-        title={`Sorted by ${SORTS[current]?.label ?? 'Newest'} — tap for ${next.label}`}
+        title={`Sorted by ${SORTS[current]?.label ?? 'Newest'}, tap for ${next.label}`}
       >
         {SORTS[current]?.label ?? 'Newest'} ⇅
       </button>

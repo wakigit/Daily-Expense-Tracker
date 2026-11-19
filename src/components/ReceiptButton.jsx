@@ -73,7 +73,7 @@ export default function ReceiptButton({ cats, today, onScanned }) {
       const printed = printedTotal(res.draft);
       setWarn(
         printed
-          ? `This receipt is in ${res.draft.currency} — printed total ${printed}. `
+          ? `This receipt is in ${res.draft.currency}, printed total ${printed}. `
             + 'The amount has been left empty: convert it and type the Singapore '
             + 'dollar figure before saving.'
           : `This receipt is in ${res.draft.currency} and its total could not be read. `
@@ -86,7 +86,7 @@ export default function ReceiptButton({ cats, today, onScanned }) {
     const gap = describeMissing(res.draft.missing);
     setNote(
       gap
-        ? `Couldn't read ${gap} — add it below.`
+        ? `Couldn't read ${gap}. Add it below.`
         : 'Check the total before you save.'
     );
   };

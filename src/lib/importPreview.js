@@ -64,7 +64,10 @@ export function importPreview(plan) {
 
   const lines = [];
   if (plan.mode === 'full') {
-    lines.push("This device has no expenses of its own, so the backup's categories, budgets and settings will replace the current ones.");
+    /* Worded to match planImport: in full mode the budgets and settings are
+       replaced, but the categories are MERGED (local labels win, missing ones
+       are added). Saying "replace" there was a promise the code does not keep. */
+    lines.push("This device has no expenses of its own, so the backup's budgets and settings will replace the current ones, and its categories will be added.");
     if (plan.sampleRemoved > 0) lines.push('The sample data will be removed.');
   } else {
     lines.push('Your budgets, theme and name are not changed.');

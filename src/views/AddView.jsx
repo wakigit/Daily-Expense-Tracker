@@ -16,7 +16,7 @@ import { ERR } from '../lib/actions';
  */
 const MESSAGES = {
   [ERR.DESCRIPTION_REQUIRED]: 'Give the expense a description.',
-  [ERR.DESCRIPTION_TOO_LONG]: 'That description is too long — shorten it.',
+  [ERR.DESCRIPTION_TOO_LONG]: 'That description is too long. Shorten it.',
   [ERR.AMOUNT_REQUIRED]: 'Enter how much it cost.',
   [ERR.AMOUNT_INVALID]: "That amount isn't a number.",
   [ERR.AMOUNT_NOT_POSITIVE]: 'The amount has to be more than zero.',

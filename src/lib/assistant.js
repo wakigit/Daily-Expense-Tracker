@@ -201,7 +201,7 @@ function questionFor(error, cats) {
     case 'amount_invalid':
       return 'How much was it?';
     case 'amount_not_positive':
-      return 'That amount has to be more than zero — how much was it?';
+      return 'That amount has to be more than zero. How much was it?';
     case 'amount_too_large':
       return 'That looks too large to be right. How much was it?';
     case 'description_required':
