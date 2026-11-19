@@ -1901,6 +1901,10 @@ button:active { transform: scale(0.96); }
    reduced-motion rules have nothing to switch off here. */
 .set-data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .set-data-fallback { margin-top: 12px; }
+.set-data-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.set-data-error { color: var(--st-over); }
+.set-data-preview-title { margin: 0 0 8px; font-size: 14.5px; }
+.set-data-counts { margin: 0 0 10px; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: var(--tx-sub); }
 .set-data-text {
   width: 100%;
   box-sizing: border-box;

@@ -54,6 +54,29 @@ export function useAppData() {
 
   useEffect(() => { if (ready) save('roastPreferences', roastPrefs); }, [roastPrefs, ready]);
 
+  /**
+   * Applies a whole imported (or restored) state in one step.
+   *
+   * Used after `commitImport` has already written every key to storage and
+   * reported success, so this only brings React into line with what is on
+   * disk. The save effects above will then fire once more and write the SAME
+   * values back over themselves, which is wasted work and nothing else: it
+   * cannot lose data and it cannot half-apply, because the disk already holds
+   * exactly these values.
+   *
+   * Keys absent from `next` are left alone, which is what a merge needs.
+   */
+  const applyState = (next = {}) => {
+    if (Array.isArray(next.expenses)) setExpenses(next.expenses);
+    if (Array.isArray(next.cats)) setCats(next.cats);
+    if (next.budgets && typeof next.budgets === 'object') setBudgets(next.budgets);
+    if (typeof next.appName === 'string') setAppName(next.appName);
+    if (typeof next.theme === 'string') setThemeId(next.theme);
+    if (next.motion === 'on' || next.motion === 'auto') setMotion(next.motion);
+    if (next.roastPrefs && typeof next.roastPrefs === 'object') setRoastPrefs(normaliseRoastPreferences(next.roastPrefs));
+    if (Object.hasOwn(next, 'sampleMark')) setSampleMark(next.sampleMark);
+  };
+
   return {
     roastPrefs, setRoastPrefs, roastSeed,
     ready,
@@ -64,5 +87,6 @@ export function useAppData() {
     themeId, setThemeId,
     motion, setMotion,
     sampleMark, setSampleMark,
+    applyState,
   };
 }

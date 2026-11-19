@@ -1,5 +1,5 @@
 import { ROAST_DEFAULTS } from '../lib/roastContract';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { money } from '../lib/format';
 import { THEMES, PALETTE } from '../themes/themes';
 import Icon from '../components/Icon';
@@ -28,7 +28,20 @@ export default function SettingsView({
      removing data are both one tap from being regretted, so each asks once —
      and the asking names what will happen to what is already there. */
   const [ask, setAsk] = useState('idle');
-  const dataState = { note: '', fallback: null, onBackup: () => {}, onCsv: () => {}, onDismiss: () => {}, ...data };
+  const fileRef = useRef(null);
+  const firstPreviewRef = useRef(null);
+  const dataState = {
+    note: '', fallback: null, preview: null, busy: false, error: '',
+    onBackup: () => {}, onCsv: () => {}, onDismiss: () => {},
+    onPickFile: () => {}, onConfirmImport: () => {}, onCancelImport: () => {},
+    ...data,
+  };
+  /* Move focus to the preview's first button when it opens, so a keyboard or
+     screen-reader user lands on the decision instead of having to hunt for it.
+     No animation is involved, so there is nothing for reduced motion to turn
+     off here. */
+  useEffect(() => { if (data?.preview) firstPreviewRef.current?.focus(); }, [data?.preview]);
+
   const draftTotal = cats.reduce((s, c) => s + (Number(budDraft[c.id]) || 0), 0);
 
   return (
@@ -283,7 +296,65 @@ export default function SettingsView({
             onClick={() => dataState.onCsv()}>
             Export expenses (CSV)
           </button>
+          {/* The input is hidden and driven by the button, because a bare file
+              input cannot be styled to match and reads badly to a screen
+              reader next to two real buttons. */}
+          <button type="button" className="btn-ghost"
+            aria-label="Import a TallyAI backup from a JSON file"
+            onClick={() => fileRef.current?.click()}>
+            Import backup (JSON)
+          </button>
+          <input ref={fileRef} type="file" accept="application/json,.json"
+            className="set-data-file" tabIndex={-1} aria-hidden="true"
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) dataState.onPickFile(f); }} />
         </div>
+        {dataState.error && <p className="set-note set-data-error" role="alert">{dataState.error}</p>}
+        {dataState.preview && (
+          <div className="danger-zone" role="group" aria-label="Confirm before anything changes">
+            <h3 className="set-data-preview-title">{dataState.preview.title}</h3>
+            {dataState.preview.state !== 'refused' && (
+              <ul className="set-data-counts">
+                {dataState.preview.counts.map((line) => <li key={line}>{line}</li>)}
+              </ul>
+            )}
+            {dataState.preview.lines.map((line) => <p className="set-note" key={line}>{line}</p>)}
+            {dataState.preview.categories?.length > 0 && (
+              <p className="set-note">
+                <strong>Categories that will be created:</strong> {dataState.preview.categories.join(', ')}.
+              </p>
+            )}
+            {dataState.preview.invalidLines?.length > 0 && (
+              <>
+                <p className="set-note"><strong>Rejected rows:</strong></p>
+                <ul className="set-data-counts">
+                  {dataState.preview.invalidLines.map((line) => <li key={line}>{line}</li>)}
+                </ul>
+                {dataState.preview.invalidMore > 0 && (
+                  <p className="set-note set-note--quiet">{`and ${dataState.preview.invalidMore} more.`}</p>
+                )}
+              </>
+            )}
+            <div className="set-data-actions">
+              {dataState.preview.closeOnly ? (
+                <button type="button" className="btn-ghost" ref={firstPreviewRef}
+                  onClick={() => dataState.onCancelImport()}>
+                  Close
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="btn-primary" ref={firstPreviewRef}
+                    disabled={dataState.busy}
+                    onClick={() => dataState.onConfirmImport()}>
+                    {dataState.busy ? 'Importing…' : 'Import'}
+                  </button>
+                  <button type="button" className="btn-ghost" onClick={() => dataState.onCancelImport()}>
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
         {dataState.note && <p className="set-note" role="status">{dataState.note}</p>}
         {dataState.fallback && (
           <div className="set-data-fallback">

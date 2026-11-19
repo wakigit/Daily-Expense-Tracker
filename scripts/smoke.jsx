@@ -7,6 +7,7 @@ import { categoryCoverageChecks } from './category-coverage-checks';
 import { dataExportChecks } from './data-export-checks';
 import { dataImportChecks } from './data-import-checks';
 import { importCommitChecks } from './import-commit-checks';
+import { importPreviewChecks } from './import-preview-checks';
 import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
@@ -190,6 +191,40 @@ run('SettingsView data card', <SettingsView
   'aria-label="Export a full backup as a JSON file"',
   'aria-label="Export your expenses as a CSV file for a spreadsheet"',
   'Sample data is never included');
+run('SettingsView import preview, confirm state', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ preview: {
+    state: 'confirm', title: 'Import this backup?', closeOnly: false,
+    counts: ['2 new transactions', '0 already here, skipped'],
+    lines: ['Your budgets, theme and name are not changed.'],
+    categories: ['Bubble Tea'], invalidLines: ['row 12: date missing'], invalidMore: 3,
+  } }} />,
+  'Import this backup?', '2 new transactions', 'Your budgets, theme and name are not changed.',
+  'Categories that will be created', 'Bubble Tea', 'row 12: date missing', 'and 3 more',
+  'Confirm before anything changes', '>Import<', '>Cancel<');
+run('SettingsView import preview, refused state shows Close only', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ preview: {
+    state: 'refused', title: 'That backup cannot be imported', closeOnly: true,
+    counts: [], lines: ['This backup was made by a newer version of TallyAI.'], categories: [],
+  } }} />,
+  'That backup cannot be imported', 'newer version of TallyAI', '>Close<');
+run('SettingsView import error is an alert', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ error: "That file isn't a TallyAI backup" }} />,
+  "That file isn&#x27;t a TallyAI backup", 'role="alert"');
 run('SettingsView export note is neutral', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
   appName="TallyAI" onAppName={() => {}}
@@ -2137,6 +2172,7 @@ categoryCoverageChecks(logic);
 dataExportChecks(logic);
 dataImportChecks(logic);
 await importCommitChecks(logic);
+await importPreviewChecks(logic);
 /* Export ships without import: no file input, no "Import" control and no
    disabled placeholder promising one. Asserted as absence, which `run` cannot
    express. */
@@ -2148,9 +2184,13 @@ await importCommitChecks(logic);
     delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
     newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}} />);
   logic('settings: the data card exists', settingsHtml.includes('set--data'), true);
-  logic('settings: no Import control', /import/i.test(settingsHtml.replace(/Export/g, '')), false);
-  logic('settings: no file input', settingsHtml.includes('type="file"'), false);
-  logic('settings: no disabled placeholder button', settingsHtml.includes('disabled'), false);
+  logic('settings: the Import button is present', settingsHtml.includes('Import backup (JSON)'), true);
+  logic('settings: the file input accepts JSON only',
+    settingsHtml.includes('accept="application/json,.json"'), true);
+  logic('settings: the file input is hidden from the tab order and the reader',
+    settingsHtml.includes('tabindex="-1"') && settingsHtml.includes('aria-hidden="true"'), true);
+  logic('settings: no preview is shown until a file is picked', settingsHtml.includes('Confirm before anything changes'), false);
+  logic('settings: no disabled button before anything is picked', settingsHtml.includes('disabled'), false);
 }
 
 await comparisonV2Checks(logic);

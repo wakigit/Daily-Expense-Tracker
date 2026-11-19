@@ -20,6 +20,10 @@ import { requestIntent, explainIntentFailure } from './lib/assistantClient';
 import { mergeReceiptIntoForm } from './lib/receipt';
 import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
 import { backupJson, buildExpensesCsv, backupFilename, csvFilename } from './lib/dataExport';
+import { parseBackup, planImport } from './lib/dataImport';
+import { commitImport, previousValues } from './lib/importCommit';
+import { importPreview, COMMIT_FAILED, NOT_A_BACKUP } from './lib/importPreview';
+import { save as saveKey } from './lib/storage';
 import { deliverFile } from './lib/deliverFile';
 import { ymLabel as sampleYmLabel } from './lib/format';
 
@@ -66,6 +70,7 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     themeId, setThemeId,
     motion, setMotion,
     sampleMark, setSampleMark,
+    applyState,
   } = useAppData();
 
   const roaster = useRoaster({ ready, seed: roastSeed, expenses, cats, budgets, preferences: roastPrefs, today: today() });
@@ -91,6 +96,12 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
      refused to hand it over, so the user can still copy it out. */
   const [exportNote, setExportNote] = useState('');
   const [exportFallback, setExportFallback] = useState(null);
+  /* The plan is held between the preview and the confirm so both read the
+     same object: re-planning on confirm could show one thing and write
+     another. */
+  const [importPlan, setImportPlan] = useState(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importError, setImportError] = useState('');
   const [toast, setToast] = useState(null);
   // Conversation lives here rather than in the view so switching tabs and
   // coming back doesn't wipe the thread.
@@ -539,6 +550,44 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     setToast({ message: 'Category deleted' });
   };
 
+  const currentState = () => ({ expenses, cats, budgets, appName, theme: themeId, motion, roastPrefs, sampleMark, today: today() });
+
+  // Reading the picked file. Anything that is not a backup is a message, not a
+  // crash: the picker on iOS treats `accept` as advisory, so a photo is a
+  // perfectly ordinary thing to arrive here.
+  const pickImportFile = async (file) => {
+    setImportError('');
+    setImportPlan(null);
+    let text = '';
+    try {
+      text = await file.text();
+    } catch {
+      setImportError(NOT_A_BACKUP);
+      return;
+    }
+    const parsed = parseBackup(text);
+    if (!parsed.ok) {
+      // A JPEG or a stray text file gets the plain sentence; a real backup that
+      // is too big or too new gets its own specific reason.
+      setImportError(/not valid JSON|not a TallyAI backup|empty/.test(parsed.message) ? NOT_A_BACKUP : parsed.message);
+      return;
+    }
+    setImportPlan(planImport(currentState(), parsed.backup));
+  };
+
+  const confirmImport = async () => {
+    if (!importPlan || importPlan.ok === false) return;
+    setImportBusy(true);
+    const before = currentState();
+    const previous = previousValues(before);
+    const res = await commitImport(importPlan, { save: saveKey, previous });
+    setImportBusy(false);
+    if (!res.ok) { setImportPlan(null); setImportError(COMMIT_FAILED); return; }
+    applyState(importPlan.next);
+    setImportPlan(null);
+    setToast({ message: `Imported ${importPlan.new} ${importPlan.new === 1 ? 'transaction' : 'transactions'}` });
+  };
+
   // Export builds the file from current state and hands it to the device. No
   // success claim, and a device that refuses falls back to copyable text.
   const runExport = async (kind) => {
@@ -729,9 +778,15 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
             data={{
               note: exportNote,
               fallback: exportFallback,
+              preview: importPlan ? importPreview(importPlan) : null,
+              busy: importBusy,
+              error: importError,
               onBackup: () => runExport('json'),
               onCsv: () => runExport('csv'),
               onDismiss: () => { setExportFallback(null); setExportNote(''); },
+              onPickFile: pickImportFile,
+              onConfirmImport: confirmImport,
+              onCancelImport: () => { setImportPlan(null); setImportError(''); },
             }}
             sample={{
               loaded: hasSampleRows(expenses, sampleMark),
