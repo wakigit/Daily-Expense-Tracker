@@ -62,6 +62,10 @@ export async function importPreviewChecks(logic) {
   logic('preview nothing: explains why', nothing.lines[0],
     'Every transaction in that backup is already on this device. 1 already here, skipped.');
 
+  logic('preview nothing: does not claim to have kept an unusual row',
+    importPreview(planImport(DEVICE({ expenses: [row({ id: 'same', amount: 0 })] }), envelope({ expenses: [row({ id: 'same', amount: 0 })] }))).counts[4],
+    '0 unusual rows kept exactly as saved');
+
   /* ── Refused ───────────────────────────────────────────────── */
   const refusedParse = parseBackup(JSON.stringify({ format: 'tallyai-backup', schemaVersion: 2, data: { expenses: [] } }));
   logic('preview refused: a newer backup is refused at the parse step', refusedParse.ok, false);

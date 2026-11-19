@@ -294,8 +294,6 @@ export function planImport(current = {}, backup = {}) {
       invalid.push({ index, id: incomingId, reason: checked.reason, field: checked.field ?? null });
       continue;
     }
-    if (checked.keptAsIs) keptAsIs += 1;
-
     const row = { id: incomingId ?? newExpenseId(), ...checked.value };
 
     if (incomingId !== null && byId.has(String(incomingId))) {
@@ -308,6 +306,10 @@ export function planImport(current = {}, backup = {}) {
     kept.push(row);
     byId.set(String(row.id), row);
     added += 1;
+    /* Counted only for rows that are actually being added. Counting it at
+       validation time made "Nothing new to import" claim it had kept an
+       unusual row when it was importing nothing at all. */
+    if (checked.keptAsIs) keptAsIs += 1;
   }
 
   const settings = normaliseSettings(data);

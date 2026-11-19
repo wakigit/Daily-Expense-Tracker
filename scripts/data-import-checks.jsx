@@ -213,6 +213,15 @@ export function dataImportChecks(logic) {
   logic('keptAsIs: three decimals alone is not counted', planImport(DEVICE(), envelope({ expenses: [row({ amount: 4.567 })] })).keptAsIs, 0);
   logic('keptAsIs: counts rows, not reasons',
     planImport(DEVICE(), envelope({ expenses: [row({ id: 'a', amount: 0, description: 'y'.repeat(100) })] })).keptAsIs, 1);
+  logic('keptAsIs: a skipped duplicate is NOT counted',
+    planImport(DEVICE({ expenses: [row({ id: 'z', amount: 0 })] }), envelope({ expenses: [row({ id: 'z', amount: 0 })] })).keptAsIs, 0);
+  logic('keptAsIs: a conflict is NOT counted',
+    planImport(DEVICE({ expenses: [row({ id: 'z', amount: 5 })] }), envelope({ expenses: [row({ id: 'z', amount: 0 })] })).keptAsIs, 0);
+  logic('keptAsIs: a rejected row is NOT counted',
+    planImport(DEVICE(), envelope({ expenses: [row({ id: 'z', amount: 0, date: 'nope' })] })).keptAsIs, 0);
+  logic('keptAsIs: only the added row of a mixed file is counted',
+    planImport(DEVICE({ expenses: [row({ id: 'have', amount: 0 })] }),
+      envelope({ expenses: [row({ id: 'have', amount: 0 }), row({ id: 'fresh', amount: 0 })] })).keptAsIs, 1);
   logic('keptAsIs: a kept-as-is row is still a new row',
     planImport(DEVICE(), envelope({ expenses: [row({ amount: 0 })] })).new, 1);
 
