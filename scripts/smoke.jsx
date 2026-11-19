@@ -7,7 +7,7 @@ import { categoryCoverageChecks } from './category-coverage-checks';
 import { dataExportChecks } from './data-export-checks';
 import { dataImportChecks } from './data-import-checks';
 import { importCommitChecks } from './import-commit-checks';
-import { importPreviewChecks } from './import-preview-checks';
+import { importPreviewChecks, importUndoChecks } from './import-preview-checks';
 import { step3aChecks } from './step3a-checks';
 import { step2Checks } from './step2-checks';
 import { scopeChecks } from './scope-checks';
@@ -2173,6 +2173,7 @@ dataExportChecks(logic);
 dataImportChecks(logic);
 await importCommitChecks(logic);
 await importPreviewChecks(logic);
+await importUndoChecks(logic);
 /* Export ships without import: no file input, no "Import" control and no
    disabled placeholder promising one. Asserted as absence, which `run` cannot
    express. */

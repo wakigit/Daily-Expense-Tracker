@@ -1,6 +1,6 @@
 import { importPreview, invalidLine, reasonText, COMMIT_FAILED, NOT_A_BACKUP, INVALID_SHOWN } from '../src/lib/importPreview';
 import { planImport, parseBackup } from '../src/lib/dataImport';
-import { commitImport, previousValues } from '../src/lib/importCommit';
+import { commitImport, commitRestore, previousValues, snapshotToState } from '../src/lib/importCommit';
 import { buildBackup } from '../src/lib/dataExport';
 import { SAMPLE_PREFIX } from '../src/lib/sampleData';
 
@@ -129,4 +129,57 @@ export async function importPreviewChecks(logic) {
   logic('restore: budgets come from the backup in full mode', restore.next.budgets, { food: 99 });
   logic('restore: sampleMark is cleared', restore.next.sampleMark, null);
   logic('restore: the preview offers Import', importPreview(restore).closeOnly, false);
+}
+
+/**
+ * Undoing an import. The log entry holds the previous value of every key the
+ * import wrote, and undo writes exactly those back through the same
+ * all-or-nothing path — one step, not one per row.
+ */
+export async function importUndoChecks(logic) {
+  const SAMPLE_ROWS = [
+    { id: `${SAMPLE_PREFIX}1`, date: '2026-11-01', category: 'food', description: 'Sample lunch', amount: 9.9, notes: '' },
+    { id: `${SAMPLE_PREFIX}2`, date: '2026-11-02', category: 'pub', description: 'Sample bus', amount: 1.2, notes: '' },
+  ];
+  const MARK = { version: 2, loadedAt: '2026-11-01T00:00:00.000Z', todayYmd: '2026-11-01', months: 'November', rowCount: 2, previousBudgets: { food: 7 }, appliedBudgets: { food: 120 }, introducedCategories: [] };
+  const before = DEVICE({ expenses: SAMPLE_ROWS, budgets: { food: 120 }, sampleMark: MARK, appName: 'TallyAI', theme: 'forest' });
+
+  const backup = buildBackup({ expenses: [row({ id: 'real1' }), row({ id: 'real2', description: 'Teh' })], cats: CATS, budgets: { food: 300 }, appName: 'Restored', theme: 'forest', motion: 'on', roastPrefs: {} });
+  const plan = planImport(before, backup);
+  logic('undo: the import was a full restore that removed the sample', [plan.mode, plan.sampleRemoved], ['full', 2]);
+
+  const prev = previousValues(before);
+  const store = fakeStorage({ ...prev });
+  const res = await commitImport(plan, { save: store.save, previous: prev });
+  logic('undo: the import committed', res.ok, true);
+  logic('undo: the sample rows are gone after the import', store.store.expenses.map((e) => String(e.id)), ['real1', 'real2']);
+  logic('undo: budgets were replaced by the backup', store.store.budgets, { food: 300 });
+  logic('undo: sampleMark was cleared', store.store.sampleMark, null);
+
+  // The one log entry the app records: the previous value of every written key.
+  const action = { actionId: 'import-1', kind: 'import', previous: Object.fromEntries(res.written.map((k) => [k, prev[k]])) };
+  logic('undo: one entry covers every key the import wrote', Object.keys(action.previous).sort(),
+    ['appName', 'budgets', 'categories', 'expenses', 'motion', 'roastPreferences', 'sampleMark', 'theme']);
+
+  const undone = await commitRestore(action.previous, { save: store.save, previous: previousValues({ expenses: store.store.expenses, cats: store.store.categories, budgets: store.store.budgets, appName: store.store.appName, theme: store.store.theme, motion: store.store.motion, roastPrefs: store.store.roastPreferences, sampleMark: store.store.sampleMark }) });
+  logic('undo: the restore succeeds', undone.ok, true);
+  logic('undo: the sample rows are back', store.store.expenses, SAMPLE_ROWS);
+  logic('undo: sampleMark is back, so the sample can be removed again', store.store.sampleMark, MARK);
+  logic('undo: the old budgets are back', store.store.budgets, { food: 120 });
+  logic('undo: the old app name and motion are back', [store.store.appName, store.store.motion], ['TallyAI', 'auto']);
+  logic('undo: expenses were written before categories', store.log.slice(-8, -6), ['expenses', 'budgets']);
+  logic('undo: it is one step, not one per row', undone.written.length, 8);
+
+  logic('undo: snapshotToState maps storage keys back to state keys',
+    Object.keys(snapshotToState(action.previous)).sort(),
+    ['appName', 'budgets', 'cats', 'expenses', 'motion', 'roastPrefs', 'sampleMark', 'theme']);
+
+  /* A failed undo changes nothing and says so. */
+  const failing = fakeStorage({ ...prev }, 'categories');
+  const bad = await commitRestore(action.previous, { save: failing.save, previous: prev });
+  logic('undo: a failed restore is reported with its key', [bad.ok, bad.failedKey], [false, 'categories']);
+  logic('undo: a failed restore rolls back what it had written',
+    [failing.store.expenses, failing.store.budgets], [prev.expenses, prev.budgets]);
+  logic('undo: an empty snapshot is refused', (await commitRestore({}, { save: failing.save })).reason, 'no_snapshot');
+  logic('undo: a missing snapshot is refused', (await commitRestore(null, { save: failing.save })).reason, 'no_snapshot');
 }

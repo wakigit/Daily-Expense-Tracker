@@ -21,7 +21,7 @@ import { mergeReceiptIntoForm } from './lib/receipt';
 import { planLoad, planRemove, hasSampleRows, ownRows, sampleLoadNeedsConfirmation } from './lib/sampleState';
 import { backupJson, buildExpensesCsv, backupFilename, csvFilename } from './lib/dataExport';
 import { parseBackup, planImport } from './lib/dataImport';
-import { commitImport, previousValues } from './lib/importCommit';
+import { commitImport, commitRestore, previousValues, snapshotToState } from './lib/importCommit';
 import { importPreview, COMMIT_FAILED, NOT_A_BACKUP } from './lib/importPreview';
 import { save as saveKey } from './lib/storage';
 import { deliverFile } from './lib/deliverFile';
@@ -521,6 +521,8 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
   };
 
   const undoDelete = () => {
+    const importAction = actionLog.find((a) => a.actionId === toast?.actionId && a.kind === 'import');
+    if (importAction) { undoImport(importAction); return; }
     // By actionId, not by expense id. Adding a row and then deleting it logs
     // two actions carrying the SAME expense id, and matching on that found the
     // add — reversing which, with the row already gone, failed silently and
@@ -585,7 +587,30 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     if (!res.ok) { setImportPlan(null); setImportError(COMMIT_FAILED); return; }
     applyState(importPlan.next);
     setImportPlan(null);
-    setToast({ message: `Imported ${importPlan.new} ${importPlan.new === 1 ? 'transaction' : 'transactions'}` });
+    /* ONE log entry for the whole import, holding the previous value of every
+       key it wrote — sample rows and sampleMark included. A per-row log would
+       make Undo meaningless after a 200-row restore. Session-only, like the
+       rest of the log: an undo that outlived a reload would be a surprise. */
+    const action = {
+      actionId: `import-${Date.now()}`,
+      kind: 'import',
+      previous: Object.fromEntries(res.written.map((key) => [key, previous[key]])),
+    };
+    setActionLog((l) => pushAction(l, action));
+    setToast({
+      message: `Imported ${importPlan.new} ${importPlan.new === 1 ? 'transaction' : 'transactions'}`,
+      kind: 'undo', actionId: action.actionId,
+    });
+  };
+
+  // Undo of an import puts every key it wrote back, through the same
+  // all-or-nothing path, in one step.
+  const undoImport = async (action) => {
+    const res = await commitRestore(action.previous, { save: saveKey, previous: previousValues(currentState()) });
+    setActionLog((l) => l.filter((a) => a !== action));
+    if (!res.ok) { setToast({ message: COMMIT_FAILED }); return; }
+    applyState(snapshotToState(action.previous));
+    setToast({ message: 'Import undone' });
   };
 
   // Export builds the file from current state and hands it to the device. No
