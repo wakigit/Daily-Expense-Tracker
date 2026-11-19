@@ -14,3 +14,4 @@ One line per Claude Code session, newest last: date | task | result | commits.
 2026-11-18 | Import logic (parser, planner, commit with rollback), no UI | smoke 2473 -> 2602; full gate green; import not reachable yet | be98a18, d79a83e + this docs: status commit
 2026-11-19 | Import fix: keep every stored row unchanged | acceptStoredRow replaces validateExpense for backup rows; legacy round trip byte-identical; smoke 2650 | 682c5d8 + this docs: status commit
 2026-11-19 | Import screen: preview, confirm, undo | reachable in Settings; smoke 2650 -> 2714; full gate green; untested on a real phone | ca993d3, 2f4f244 + this docs: status commit
+2026-11-19 | Four fixes from the dev-Preview test (undo button, em dashes, keptAsIs, full-mode wording) | smoke 2714 -> 2728; full gate green on each commit | 6d8f452, eca9243, 8968813 + this docs: status commit
