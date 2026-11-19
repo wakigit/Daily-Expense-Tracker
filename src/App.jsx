@@ -552,6 +552,10 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
     setToast({ message: 'Category deleted' });
   };
 
+  /* The most recent import still in the session log, or undefined. The log is
+     session-only, so this is empty again after a reload. */
+  const lastImportAction = [...actionLog].reverse().find((entry) => entry.kind === 'import');
+
   const currentState = () => ({ expenses, cats, budgets, appName, theme: themeId, motion, roastPrefs, sampleMark, today: today() });
 
   // Reading the picked file. Anything that is not a backup is a message, not a
@@ -812,6 +816,12 @@ export default function App({ assistantRequest = requestIntent, referenceDate = 
               onPickFile: pickImportFile,
               onConfirmImport: confirmImport,
               onCancelImport: () => { setImportPlan(null); setImportError(''); },
+              /* The toast's Undo disappears with the toast after a few
+                 seconds. This button is the one that makes the preview's
+                 promise true: it lives as long as the log entry does, which is
+                 the rest of the session. */
+              canUndoImport: Boolean(lastImportAction),
+              onUndoImport: () => { if (lastImportAction) undoImport(lastImportAction); },
             }}
             sample={{
               loaded: hasSampleRows(expenses, sampleMark),

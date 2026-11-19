@@ -217,6 +217,14 @@ run('SettingsView import preview, refused state shows Close only', <SettingsView
     counts: [], lines: ['This backup was made by a newer version of TallyAI.'], categories: [],
   } }} />,
   'That backup cannot be imported', 'newer version of TallyAI', '>Close<');
+run('SettingsView offers Undo last import while an import is undoable', <SettingsView
+  themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+  appName="TallyAI" onAppName={() => {}}
+  cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+  delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+  newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+  data={{ canUndoImport: true }} />,
+  'Undo last import', 'aria-label="Undo the last import, putting back everything it changed"');
 run('SettingsView import error is an alert', <SettingsView
   themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
   appName="TallyAI" onAppName={() => {}}
@@ -2190,6 +2198,15 @@ await importUndoChecks(logic);
     settingsHtml.includes('accept="application/json,.json"'), true);
   logic('settings: the file input is hidden from the tab order and the reader',
     settingsHtml.includes('tabindex="-1"') && settingsHtml.includes('aria-hidden="true"'), true);
+  const undoableHtml = renderToString(<SettingsView
+    themeId="forest" onTheme={() => {}} motion="auto" onMotion={() => {}}
+    appName="TallyAI" onAppName={() => {}}
+    cats={cats} budDraft={budgets} onBudDraft={() => {}} onSaveBudgets={() => {}} saved={false}
+    delCatId={null} onAskDelCat={() => {}} onDelCat={() => {}}
+    newCat={{ label: '', color: '#D85A30' }} onNewCat={() => {}} onAddCat={() => {}}
+    data={{ canUndoImport: true, preview: { state: 'confirm', title: 'Import this backup?', closeOnly: false, counts: [], lines: [], categories: [] } }} />);
+  logic('settings: no undo button before any import', settingsHtml.includes('Undo last import'), false);
+  logic('settings: the undo button is hidden while a preview is open', undoableHtml.includes('Undo last import'), false);
   logic('settings: no preview is shown until a file is picked', settingsHtml.includes('Confirm before anything changes'), false);
   logic('settings: no disabled button before anything is picked', settingsHtml.includes('disabled'), false);
 }

@@ -34,6 +34,7 @@ export default function SettingsView({
     note: '', fallback: null, preview: null, busy: false, error: '',
     onBackup: () => {}, onCsv: () => {}, onDismiss: () => {},
     onPickFile: () => {}, onConfirmImport: () => {}, onCancelImport: () => {},
+    canUndoImport: false, onUndoImport: () => {},
     ...data,
   };
   /* Move focus to the preview's first button when it opens, so a keyboard or
@@ -309,6 +310,15 @@ export default function SettingsView({
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) dataState.onPickFile(f); }} />
         </div>
         {dataState.error && <p className="set-note set-data-error" role="alert">{dataState.error}</p>}
+        {dataState.canUndoImport && !dataState.preview && (
+          <div className="set-data-actions">
+            <button type="button" className="btn-ghost"
+              aria-label="Undo the last import, putting back everything it changed"
+              onClick={() => dataState.onUndoImport()}>
+              Undo last import
+            </button>
+          </div>
+        )}
         {dataState.preview && (
           <div className="danger-zone" role="group" aria-label="Confirm before anything changes">
             <h3 className="set-data-preview-title">{dataState.preview.title}</h3>

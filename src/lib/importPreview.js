@@ -72,6 +72,11 @@ export function importPreview(plan) {
   } else {
     lines.push('Your budgets, theme and name are not changed.');
   }
+  /* True because the Your data card keeps an "Undo last import" button for as
+     long as this import's log entry exists, which is the rest of the session.
+     The toast's Undo closes with the toast; this sentence does not depend on
+     it. */
+  lines.push('You can undo this from this page until you close TallyAI.');
   if (plan.keptAsIs > 0) {
     lines.push(`Some rows have an amount of zero or less, or a description longer than ${MAX_DESCRIPTION} characters. They are kept exactly as they were saved, not changed.`);
   }

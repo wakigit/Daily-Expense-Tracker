@@ -47,7 +47,18 @@ export async function importPreviewChecks(logic) {
       return [p.next.cats.map((c) => c.label), p.next.budgets];
     })(),
     [['Makan', 'Added'], { food: 50 }]);
-  logic('preview full: no sample sentence when there is no sample', full.lines.length, 1);
+  logic('preview full: no sample sentence when there is no sample',
+    full.lines.some((l) => l.includes('sample data will be removed')), false);
+  logic('preview full: promises the undo that the card actually provides',
+    full.lines.includes('You can undo this from this page until you close TallyAI.'), true);
+  logic('preview merge: makes the same undo promise',
+    importPreview(planImport(DEVICE({ expenses: [row({ id: 'own' })] }), envelope({ expenses: [row({ id: 'n' })] })))
+      .lines.includes('You can undo this from this page until you close TallyAI.'), true);
+  logic('preview refused: makes no undo promise, since nothing happens',
+    importPreview({ ok: false, message: 'nope' }).lines.some((l) => l.includes('undo')), false);
+  logic('preview nothing: makes no undo promise either',
+    importPreview(planImport(DEVICE({ expenses: [row({ id: 's' })] }), envelope({ expenses: [row({ id: 's' })] })))
+      .lines.some((l) => l.includes('undo')), false);
   logic('preview full: Import and Cancel, not Close', full.closeOnly, false);
 
   /* ── Full mode with sample removal ─────────────────────────── */
